@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>RentBooks — skaner</title>
+<!-- VERSIYA: v14 -->
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root {
+    --bg: var(--tg-theme-bg-color, #EDF0F2);
+    --text: var(--tg-theme-text-color, #1E2B3A);
+    --hint: var(--tg-theme-hint-color, #677385);
+    --btn: var(--tg-theme-button-color, #1E2B3A);
+    --btn-text: var(--tg-theme-button-text-color, #ffffff);
+    --card: var(--tg-theme-secondary-bg-color, #ffffff);
+    --ok: #2C7A4B; --bad: #B23A2E; --warn-bg: #FFF3CD; --warn-ink: #6B4E00;
+  }
+  :root.dark { --ok: #6CC08F; --bad: #F07D6E; --warn-bg: #3A3016; --warn-ink: #F2D9A6; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { overflow-x: hidden; max-width: 100%; }
+  body { margin: 0; padding: calc(16px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom));
+         background: var(--bg); color: var(--text); font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif; font-size: 16px; }
+  h1 { font-size: 21px; margin: 0 0 4px; }
+  .hint { color: var(--hint); font-size: 14px; margin: 0 0 14px; line-height: 1.45; }
+  .count { font-size: 44px; font-weight: 800; text-align: center; margin: 10px 0 0; font-variant-numeric: tabular-nums; }
+  .count-label { text-align: center; color: var(--hint); font-size: 14px; margin-bottom: 14px; }
+  button { width: 100%; min-height: 50px; padding: 14px; border: 0; border-radius: 12px; font-size: 16px; font-weight: 700;
+           background: var(--btn); color: var(--btn-text); margin-bottom: 10px; cursor: pointer; font-family: inherit; }
+  button.secondary { background: var(--card); color: var(--text); box-shadow: inset 0 0 0 1px rgba(127,127,127,.25); }
+  button:focus-visible, input:focus-visible { outline: 2px solid var(--btn); outline-offset: 2px; }
+  ul { list-style: none; padding: 0; margin: 12px 0; max-height: 42vh; overflow-y: auto; }
+  li { background: var(--card); border-radius: 10px; padding: 10px 6px 10px 12px; margin-bottom: 6px; display: flex; gap: 8px;
+       justify-content: space-between; align-items: center; font-size: 15px; }
+  li .code { font-family: ui-monospace, Menlo, Consolas, monospace; overflow-wrap: anywhere; min-width: 0; }
+  li button.x { width: 40px; min-height: 40px; margin: 0; padding: 0; background: none; color: var(--hint); font-size: 18px; flex: none; }
+  .row { display: flex; gap: 8px; }
+  .row input { flex: 1; min-width: 0; padding: 12px; border-radius: 10px; border: 1px solid var(--hint);
+               background: var(--card); color: var(--text); font-size: 16px; text-transform: uppercase; }
+  .row input::placeholder { text-transform: none; color: var(--hint); }
+  .row button { width: auto; min-width: 56px; margin: 0; padding: 12px 16px; }
+  .warn { background: var(--warn-bg); color: var(--warn-ink); border-radius: 10px; padding: 10px 12px; font-size: 14px; display: none; margin: 8px 0; line-height: 1.4; }
+  .verdict { font-size: 26px; font-weight: 800; text-align: center; margin: 12px 0; min-height: 34px; overflow-wrap: anywhere; }
+  .verdict.ok { color: var(--ok); } .verdict.bad { color: var(--bad); }
+  li.found { box-shadow: inset 3px 0 0 var(--ok); }
+  .manual { margin-top: 18px; }
+</style>
+</head>
+<body>
+  <h1 id="title">📷 Skaner</h1>
+  <p class="hint" id="hint">Kamera ochilmoqda…</p>
+
+  <section id="multi" hidden>
+    <div class="count" id="count" aria-live="polite">0</div>
+    <div class="count-label" id="countlabel">ta skanerlandi</div>
+    <button id="again" type="button">📷 Skanerlashni davom ettirish</button>
+    <button id="done" type="button" class="secondary" hidden>✅ Tayyor — botga yuborish</button>
+    <ul id="list"></ul>
+  </section>
+
+  <section id="findbox" hidden>
+    <ul id="wantlist"></ul>
+    <div class="verdict" id="verdict" aria-live="assertive"></div>
+    <button id="again2" type="button">📷 Qidirishni davom ettirish</button>
+    <button class="secondary" id="closebtn" type="button">✅ Yopish</button>
+  </section>
+
+  <section id="singlebox" hidden>
+    <button id="again3" type="button">📷 Kamerani ochish</button>
+  </section>
+
+  <div class="warn" id="warn" role="status"></div>
+
+  <div class="manual">
+    <p class="hint" id="manualhint">Kamera ishlamasa — kodni qo'lda yozing:</p>
+    <div class="row">
+      <input id="manual" placeholder="Masalan: OTKAN-1" autocapitalize="characters" autocomplete="off" enterkeyhint="done" aria-label="Kod">
+      <button id="add" type="button" aria-label="Qo'shish">➕</button>
+    </div>
+  </div>
+
+<script>
+(function () {
+  const tg = window.Telegram && window.Telegram.WebApp;
+  const $ = (id) => document.getElementById(id);
+  const params = new URLSearchParams(location.search);
+  const mode = ["single", "sotuv", "ijara", "inv", "find"].includes(params.get("m")) ? params.get("m") : "single";
+  const multi = mode === "sotuv" || mode === "ijara" || mode === "inv";
+  const LIMIT = 3800;                                  // Telegram sendData chegarasi 4096 bayt
+  const codes = [];                                    // botga ketadigan (tozalangan) kodlar
+  let sent = false;
+
+  // Kod ko'rinishini bir xillashtirish: havola, c_OTKAN-1 yoki otkan-1 — hammasi "OTKAN-1".
+  // Mijoz QR (u_...), ulanish (j_...) va tasdiqlash kodi (5 raqam) o'z prefiksi bilan qoladi — bot ularni ajratadi.
+  function canon(text) {
+    let t = String(text || "").trim();
+    const m = t.match(/[?&]start=([A-Za-z0-9_\-]+)/);
+    if (m) t = m[1];
+    const p = t.match(/^([cukj])_(.+)$/i);
+    if (p) return p[1].toLowerCase() === "c" ? p[2].toUpperCase() : p[1].toLowerCase() + "_" + p[2];
+    if (/^U-[A-Z0-9]{4,10}$/i.test(t)) return "u_" + t.toUpperCase();
+    return t.toUpperCase();
+  }
+  const isUser = (c) => c.startsWith("u_");
+  const want = (params.get("want") || "").split(",").map(canon).filter(Boolean);
+  const found = [];
+
+  const titles = { single: "📷 Skanerlash", sotuv: "🛒 Sotuv savati", ijara: "📖 Ijara savati", inv: "📋 Inventarizatsiya", find: "🔎 Javondan topish" };
+  const hints = {
+    single: "Kitobdagi yoki mijoz telefonidagi QR kodni kameraga tuting. Bo'sh kitobni skanerlasangiz, botda darhol «Sotildi» tugmalari chiqadi.",
+    sotuv: "Kitoblarni ketma-ket skanerlang. Mijozning shaxsiy QR kodini ham skanerlashingiz mumkin. Tugagach «Tayyor»ni bosing.",
+    ijara: "Kitoblarni ketma-ket skanerlang va mijozning shaxsiy QR kodini ham skanerlang. Tugagach «Tayyor»ni bosing.",
+    inv: "Javondagi kitoblarni ketma-ket skanerlang. Takroriy skanerlash bir marta hisoblanadi. Tugagach «Tayyor»ni bosing.",
+    find: "Javondagi nusxalarni ketma-ket kameraga tuting. Kerakli nusxa topilganda «SHU!» deyiladi."
+  };
+  $("title").textContent = titles[mode];
+  $("hint").textContent = hints[mode];
+
+  if (tg) {
+    tg.ready(); tg.expand();
+    document.documentElement.classList.toggle("dark", tg.colorScheme === "dark");
+    tg.onEvent("themeChanged", () => document.documentElement.classList.toggle("dark", tg.colorScheme === "dark"));
+  }
+  const canScan = !!(tg && tg.showScanQrPopup && tg.isVersionAtLeast && tg.isVersionAtLeast("6.4"));
+  const haptic = (t) => { try { tg && tg.HapticFeedback && tg.HapticFeedback.notificationOccurred(t); } catch (e) {} };
+
+  function warn(text) { $("warn").textContent = text || ""; $("warn").style.display = text ? "block" : "none"; }
+  const payload = () => JSON.stringify({ m: mode, c: codes });
+
+  function send() {
+    if (!codes.length) { warn("Hali hech narsa skanerlanmadi."); return; }
+    if (sent) return;
+    if (tg && tg.sendData) { sent = true; tg.sendData(payload()); }      // Telegram oynani o'zi yopadi
+    else { warn("Bu sahifa Telegram ichida ochilmagan. Ma'lumot: " + payload()); }
+  }
+
+  function render() {
+    if (!multi) return;
+    const users = codes.filter(isUser).length, books = codes.length - users;
+    $("count").textContent = books;
+    $("countlabel").textContent = "ta kitob skanerlandi" + (users ? " · 👤 mijoz QR qo'shildi" : "");
+    const ul = $("list"); ul.innerHTML = "";
+    codes.slice().reverse().forEach(function (c) {
+      const li = document.createElement("li");
+      const s = document.createElement("span"); s.className = "code";
+      s.textContent = (isUser(c) ? "👤 " + c.slice(2) : "📕 " + c);
+      const x = document.createElement("button"); x.type = "button"; x.className = "x"; x.textContent = "✕";
+      x.setAttribute("aria-label", "O'chirish: " + c);
+      x.onclick = function () { const i = codes.indexOf(c); if (i >= 0) { codes.splice(i, 1); render(); } };
+      li.appendChild(s); li.appendChild(x); ul.appendChild(li);
+    });
+    if (tg && tg.MainButton) {
+      if (codes.length) { tg.MainButton.setText("✅ Tayyor (" + codes.length + ")"); tg.MainButton.show(); }
+      else tg.MainButton.hide();
+    }
+    $("done").hidden = !codes.length || !!(tg && tg.MainButton);
+  }
+
+  // true qaytarsa — yangi kod qabul qilindi
+  function add(text) {
+    const c = canon(text);
+    if (!c) return false;
+    if (codes.indexOf(c) >= 0) { haptic("warning"); warn("«" + c.replace(/^u_/, "") + "» allaqachon ro'yxatda."); return false; }
+    // savatda bitta mijoz bo'ladi: yangi mijoz QR eskisini almashtiradi
+    if (isUser(c)) { for (let i = codes.length - 1; i >= 0; i--) if (isUser(codes[i])) codes.splice(i, 1); }
+    codes.push(c);
+    if (payload().length > LIMIT) {
+      codes.pop();
+      warn("Bir martada yuborish chegarasiga yetdingiz. «Tayyor»ni bosing, keyin yana davom ettiring.");
+      return false;
+    }
+    warn(""); haptic("success"); render();
+    return true;
+  }
+
+  // ---------- 🔎 javondan topish ----------
+  function renderFind(msg, ok) {
+    const ul = $("wantlist"); ul.innerHTML = "";
+    want.forEach(function (c) {
+      const li = document.createElement("li");
+      const done = found.indexOf(c) >= 0;
+      if (done) li.className = "found";
+      const s = document.createElement("span"); s.className = "code"; s.textContent = (done ? "✅ " : "⬜ ") + c;
+      li.appendChild(s); ul.appendChild(li);
+    });
+    const v = $("verdict");
+    v.textContent = msg || ""; v.className = "verdict " + (msg ? (ok ? "ok" : "bad") : "");
+    const all = want.length && found.length === want.length;
+    $("again2").hidden = !!all;
+    $("closebtn").className = all ? "" : "secondary";
+  }
+  function checkFind(text) {
+    const c = canon(text);
+    if (want.indexOf(c) >= 0) {
+      if (found.indexOf(c) < 0) found.push(c);
+      haptic("success");
+      const all = found.length === want.length;
+      renderFind(all ? "✅ " + c + " — SHU! Hammasi topildi" : "✅ " + c + " — SHU!", true);
+      try { tg && tg.closeScanQrPopup && tg.closeScanQrPopup(); } catch (e) {}
+      return true;
+    }
+    haptic("error");
+    renderFind("❌ " + c.replace(/^u_/, "") + " — bu emas", false);
+    return false;
+  }
+
+  // ---------- kamera ----------
+  function openScanner() {
+    warn("");
+    if (!canScan) {
+      warn("Bu Telegram versiyasida kamera ishlamaydi. Telegram'ni yangilang yoki kodni pastda qo'lda yozing.");
+      return;
+    }
+    const left = want.filter(function (c) { return found.indexOf(c) < 0; });
+    const text = mode === "find" ? ("Izlanmoqda: " + left.join(", ")).slice(0, 60)
+               : multi ? "Kitoblarni ketma-ket tuting" : "QR kodni kameraga tuting";
+    tg.showScanQrPopup({ text: text }, function (raw) {
+      if (mode === "find") return checkFind(raw);          // topilsa yopiladi, topilmasa kamera ochiq qoladi
+      if (!multi) {                                        // bitta skaner: darhol botga yuborib yopiladi
+        codes.length = 0; codes.push(canon(raw)); send();
+        return true;
+      }
+      add(raw);
+      return false;                                        // savat/inventarizatsiya: kamera ochiq qoladi
+    });
+  }
+
+  if (mode === "find") {
+    $("findbox").hidden = false;
+    $("again2").onclick = openScanner;
+    $("closebtn").onclick = function () { if (tg) tg.close(); else history.back(); };
+    $("manualhint").textContent = "Kod o'qilmasa — nusxa kodini qo'lda yozing:";
+    renderFind("", true);
+  } else if (multi) {
+    $("multi").hidden = false;
+    if (mode === "inv") $("countlabel").textContent = "ta kitob skanerlandi";
+    if (tg && tg.MainButton) tg.MainButton.onClick(send);
+    if (tg) tg.onEvent("scanQrPopupClosed", render);
+    $("done").onclick = send;
+  } else {
+    $("singlebox").hidden = false;
+    $("manualhint").textContent = "Kamera ishlamasa — nusxa kodi (OTKAN-1) yoki mijoz kodi (U-...) ni yozing:";
+  }
+  $("again").onclick = openScanner;
+  $("again3").onclick = openScanner;
+
+  function manualAdd() {
+    const inp = $("manual");
+    const v = inp.value.trim();
+    if (!v) return;
+    if (mode === "find") checkFind(v);
+    else if (!multi) { codes.length = 0; codes.push(canon(v)); send(); }
+    else add(v);
+    inp.value = "";
+    inp.focus();
+  }
+  $("add").onclick = manualAdd;
+  $("manual").addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); manualAdd(); } });
+
+  render();
+  if (!multi || mode === "find" || canScan) openScanner();
+  else warn("Bu Telegram versiyasida kamera ishlamaydi. Telegram'ni yangilang yoki kodni pastda qo'lda yozing.");
+})();
+</script>
+</body>
+</html>
