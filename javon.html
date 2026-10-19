@@ -118,7 +118,8 @@ const CONFIG = {
   BOT_USERNAME: "Kitobijarabot",                               // @ belgisisiz
   BRAND_NAME:   "RentBooks",
   LOGO_URL:     "logo.png",
-  CHANNEL:      "Rentbooksuz"                                  // rasmiy kanal (@ belgisisiz)
+  CHANNEL:      "Rentbooksuz",                                 // rasmiy kanal (@ belgisisiz)
+  INSTAGRAM:    "rentbooks.uz"                                 // Instagram sahifa nomi
 };
 /* ===================================================================== */
 
@@ -198,7 +199,10 @@ const CONFIG = {
     const link = "https://t.me/" + CONFIG.BOT_USERNAME + (payload ? "?start=" + payload : "");
     if (tg && tg.openTelegramLink) { tg.openTelegramLink(link); setTimeout(() => { try { tg.close(); } catch (e) {} }, 300); } else window.open(link, "_blank");
   };
-  const openLink = (l) => tg && tg.openTelegramLink ? tg.openTelegramLink(l) : window.open(l, "_blank");
+  const openLink = (l) => {
+    if (tg && /^https:\/\/t\.me\//.test(l) && tg.openTelegramLink) tg.openTelegramLink(l);
+    else if (tg && tg.openLink) tg.openLink(l); else window.open(l, "_blank");
+  };
 
   // ---------- holat ----------
   let books = [], sets = [], aksiyalar = [], me = null, meErr = null, hideMoney = true;
@@ -794,14 +798,15 @@ const CONFIG = {
       '<div class="card col" style="gap:2px;padding:12px"><b style="font-size:16px">' + (free.o_available || 0) + ' kun</b><span class="tiny muted">Tekin kunlar</span></div>' +
       '<div class="card col" style="gap:2px;padding:12px"><b style="font-size:16px">' + (me.friends || 0) + ' ta</b><span class="tiny muted">Do\'stlar</span></div></div>' +
       '<div class="list">' + [["profile", "Mening ma'lumotlarim"], ["qr", "🪪 Mening QR kodim"], ["history", "📜 Balans tarixi"], ["sos", "🆘 Yordam (SOS)"],
-        ["f_request", "🙋 Kitob so'rash"], ["f_offer", "📤 Kitobingizni soting"], ["sets", "📦 To'plamlar"], ["channel", "📢 Rasmiy kanal"]].map(([k, t]) =>
+        ["f_request", "🙋 Kitob so'rash"], ["f_offer", "📤 Kitobingizni soting"], ["sets", "📦 To'plamlar"], ["channel", "📢 Telegram kanalimiz"], ["insta", "📸 Instagram sahifamiz"]].map(([k, t]) =>
         '<button data-m="' + k + '"><span>' + t + '</span><span class="muted">›</span></button>').join("") + "</div>" +
-      '<p class="tiny muted" style="margin:0">⚠️ Rasmiy manzillar faqat: @' + esc(CONFIG.BOT_USERNAME) + ", @" + esc(CONFIG.CHANNEL) + " va Instagram: rentbooks.uz. Boshqalardan kelgan to'lov so'rovlariga ishonmang.</p>"
+      '<p class="tiny muted" style="margin:0">⚠️ Rasmiy manzillar faqat: @' + esc(CONFIG.BOT_USERNAME) + ", @" + esc(CONFIG.CHANNEL) + " va Instagram: @" + esc(CONFIG.INSTAGRAM) + ". Boshqalardan kelgan to'lov so'rovlariga ishonmang.</p>"
     );
     $("#wd", el).onclick = () => confirmSheet("Pulni yechib olish", "Xavfsizlik uchun pul yechish bot chatida rasmiylashtiriladi (karta raqami faqat u yerda so'raladi). Botga o'tasizmi?", async () => goBot("wd"));
     $$("[data-m]", el).forEach((b) => b.onclick = () => {
       const k = b.dataset.m;
       if (k === "channel") openLink("https://t.me/" + CONFIG.CHANNEL);
+      else if (k === "insta") openLink("https://www.instagram.com/" + CONFIG.INSTAGRAM + "/");
       else if (k.startsWith("f_")) formSheet(k.slice(2)); else go(k);
     });
   };
