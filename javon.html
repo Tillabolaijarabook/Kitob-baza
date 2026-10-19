@@ -4,514 +4,1003 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex">
-<title>RentBooks — kitoblar javoni</title>
-<!-- VERSIYA: v14 -->
+<title>RentBooks</title>
+<!-- VERSIYA: v17 — to'liq mijoz kabineti -->
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-/* =====================================================================
-   🎨 BREND (RentBooks logotipidan): to'q ko'k siyoh + oltin. Ranglarni faqat shu yerda o'zgartiring
-   ===================================================================== */
+/* 🎨 Ranglar faqat shu yerda */
 :root {
-  --paper:   #EDF0F2;   /* fon: logotip fonidagi sovuq oq-kulrang */
-  --card:    #FFFFFF;
-  --ink:     #1E2B3A;   /* asosiy matn va tugmalar: logotipdagi to'q ko'k */
-  --muted:   #677385;
-  --accent:  #1E2B3A;
-  --accent-ink: #FFFFFF;
-  --gold:    #A97A2E;   /* logotipdagi "Books" oltini: narx, yangi */
-  --line:    #D9DEE4;
-  --ok:      #2C7A4B;
-  --busy:    #9A5B22;
-  --serif: "Cormorant Garamond", Georgia, "Times New Roman", serif;
-  --sans:  "Manrope", -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-}
-:root.dark {
-  --paper: #121922; --card: #1B2430; --ink: #E7EBF0; --muted: #98A3B1;
-  --accent: #D9B06A; --accent-ink: #121922; --gold: #D9B06A; --line: #2A3542; --ok: #6CC08F; --busy: #E0A465;
+  --bg: #13110F; --card: #1E1B18; --card2: #2A2118; --line: #2E2A25; --line2: #4A443D;
+  --ink: #F4EFE6; --muted: #A89F92; --soft: #D9CBB4; --accent: #F0B54A; --accent-ink: #1A1408;
+  --red: #F2B8A8; --ok: #9FD3A8;
+  --serif: "Fraunces", Georgia, serif; --sans: "Manrope", -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-html, body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--sans); font-size: 15px;
-             overflow-x: hidden; max-width: 100%; }
-img { max-width: 100%; }
-body { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
-button { font-family: inherit; color: inherit; }
-:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
-
-/* ---------- sarlavha ---------- */
-.top { padding: calc(14px + env(safe-area-inset-top)) 16px 8px; display: flex; align-items: center; gap: 12px; }
-.logo { width: 44px; height: 44px; border-radius: 12px; background: #fff; color: var(--ink); flex: none; overflow: hidden;
-        display: grid; place-items: center; font-family: var(--serif); font-weight: 700; font-size: 24px;
-        box-shadow: 0 0 0 1px var(--line); }
-.logo img { width: 100%; height: 100%; object-fit: cover; }
-.who { min-width: 0; flex: 1; }
-.brand { font-family: var(--serif); font-size: 27px; font-weight: 700; line-height: 1.05; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.hello { color: var(--muted); font-size: 13px; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.lang { flex: none; border: 1px solid var(--line); background: var(--card); border-radius: 10px; padding: 7px 10px;
-        font-size: 13px; font-weight: 700; cursor: pointer; min-width: 44px; min-height: 36px; }
-
-/* ---------- banner: yangi kelganlar ---------- */
-.hero { margin: 6px 14px 4px; position: relative; border-radius: 18px; overflow: hidden; height: 200px; background: #1E2B3A; }
-.slide { position: absolute; inset: 0; display: flex; opacity: 0; transition: opacity .5s ease; cursor: pointer; visibility: hidden; }
-.slide.on { opacity: 1; visibility: visible; }
-.slide .bg { position: absolute; inset: -20px; background-size: cover; background-position: center; filter: blur(18px) brightness(.5); transform: scale(1.1); }
-.slide .txt { position: relative; flex: 1; min-width: 0; padding: 16px 8px 34px 18px; display: flex; flex-direction: column; justify-content: flex-end; color: #fff; }
-.slide .new { align-self: flex-start; font-size: 12px; font-weight: 700; color: #1E2B3A; background: #E8C27A; padding: 4px 10px; border-radius: 99px; margin-bottom: auto; }
-.slide h2 { font-family: var(--serif); font-size: 25px; line-height: 1.05; margin: 0 0 6px; font-weight: 700; overflow-wrap: anywhere;
-            display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-.slide .au { font-size: 13px; opacity: .85; margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.slide .pr { font-size: 13.5px; font-weight: 700; color: #F2D9A6; }
-.slide .cov { position: relative; width: 108px; margin: 16px 16px 16px 0; border-radius: 6px; box-shadow: 0 10px 24px rgba(0,0,0,.45); overflow: hidden; flex: none; }
-.slide .cov img, .slide .cov .gen { width: 100%; height: 100%; object-fit: cover; }
-.dots { position: absolute; bottom: 12px; left: 18px; display: flex; gap: 5px; }
-.dots i { width: 6px; height: 6px; border-radius: 3px; background: rgba(255,255,255,.4); transition: width .3s; }
-.dots i.on { width: 18px; background: #E8C27A; }
-
-/* ---------- qidiruv va janrlar ---------- */
-.bar { position: sticky; top: 0; z-index: 5; background: var(--paper); padding: 12px 14px 6px; }
-.search { display: flex; align-items: center; gap: 8px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 0 12px; }
-.search svg { flex: none; opacity: .55; }
-.search input { flex: 1; min-width: 0; border: 0; background: transparent; color: var(--ink); font: inherit; font-size: 16px; padding: 12px 0; outline: none; }
-.search input::placeholder { color: var(--muted); }
-.search input::-webkit-search-cancel-button { display: none; }
-.clear { border: 0; background: none; color: var(--muted); font-size: 20px; cursor: pointer; padding: 4px 2px; display: none; }
-.chips { display: flex; gap: 8px; overflow-x: auto; padding: 10px 0 2px; scrollbar-width: none; }
+html, body { margin: 0; background: var(--bg); color: var(--ink); font: 500 15px/1.45 var(--sans); }
+body { padding-bottom: calc(96px + env(safe-area-inset-bottom)); min-height: 100vh; }
+button, input, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+a { color: var(--accent); text-decoration: none; }
+.wrap { max-width: 560px; margin: 0 auto; padding: 16px 16px 0; display: flex; flex-direction: column; gap: 16px; }
+.serif { font-family: var(--serif); font-weight: 700; }
+.h1 { font-family: var(--serif); font-weight: 700; font-size: 24px; margin: 0; }
+.h2 { font-family: var(--serif); font-weight: 700; font-size: 20px; margin: 0; }
+.muted { color: var(--muted); } .small { font-size: 12.5px; } .tiny { font-size: 11.5px; }
+.row { display: flex; align-items: center; gap: 10px; } .between { justify-content: space-between; }
+.col { display: flex; flex-direction: column; gap: 8px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 14px; }
+.warm { background: var(--card2); border-color: #4A3820; }
+.btn { height: 50px; border-radius: 16px; border: 0; background: var(--accent); color: var(--accent-ink); font-weight: 800; padding: 0 18px; width: 100%; }
+.btn.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line2); }
+.btn.sm { height: 38px; border-radius: 12px; font-size: 13px; width: auto; padding: 0 13px; }
+.btn.danger { background: transparent; color: var(--red); border: 1px solid #6A3A30; }
+.btn:disabled { opacity: .5; }
+.chip { flex: 0 0 auto; height: 38px; padding: 0 15px; border-radius: 19px; border: 1px solid var(--line); background: var(--card); font-weight: 700; font-size: 13px; }
+.chip.on { background: var(--ink); color: var(--accent-ink); border-color: var(--ink); }
+.chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin: 0 -16px; padding: 0 16px; }
 .chips::-webkit-scrollbar { display: none; }
-.chip { flex: none; border: 1px solid var(--line); background: var(--card); border-radius: 99px;
-        padding: 7px 14px; font-size: 13.5px; font-weight: 600; cursor: pointer; white-space: nowrap; }
-.chip.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
-.count { color: var(--muted); font-size: 13px; padding: 6px 18px 2px; }
-
-/* ---------- javon ---------- */
-.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 12px; padding: 10px 14px; }
-.book { background: none; border: 0; padding: 0; text-align: left; cursor: pointer; min-width: 0; width: 100%; }
-.book .cv { position: relative; aspect-ratio: 2 / 3; border-radius: 8px; overflow: hidden; background: var(--line);
-            box-shadow: 0 6px 14px rgba(30,43,58,.12); }
-.book .cv img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.badge { position: absolute; bottom: 8px; left: 8px; max-width: calc(100% - 16px); font-size: 11.5px; font-weight: 700; padding: 3px 8px;
-         border-radius: 99px; background: var(--card); color: var(--ok); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.badge.sale { color: var(--gold); } .badge.busy { color: var(--busy); }
-.book h3 { font-family: var(--serif); font-size: 18px; line-height: 1.12; margin: 8px 2px 2px; font-weight: 700;
-           display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
-.book .a { color: var(--muted); font-size: 12.5px; margin: 0 2px 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.book .p { font-size: 13px; font-weight: 700; margin: 0 2px; overflow-wrap: anywhere; }
-.book .p span { font-weight: 500; color: var(--muted); }
-
-/* rasm bo'lmasa — kitob nomi bilan muqova */
-.gen { display: flex; flex-direction: column; justify-content: space-between; gap: 8px; padding: 14px 12px 38px; color: #fff; height: 100%;
-       background-image: linear-gradient(90deg, rgba(0,0,0,.2) 0 6px, transparent 6px); overflow: hidden; }
-.gen b { font-family: var(--serif); font-size: 19px; line-height: 1.05; overflow-wrap: anywhere; }
-.gen small { font-size: 11px; opacity: .85; }
-
-.empty { text-align: center; color: var(--muted); padding: 40px 20px; line-height: 1.5; grid-column: 1 / -1; }
-.empty b { display: block; color: var(--ink); font-family: var(--serif); font-size: 22px; margin-bottom: 6px; }
-.skel { aspect-ratio: 2 / 3; border-radius: 8px; background: var(--line); animation: pulse 1.2s ease-in-out infinite alternate; }
-@keyframes pulse { to { opacity: .45; } }
-
-/* ---------- kitob sahifasi ---------- */
-.sheet { position: fixed; inset: 0; z-index: 20; background: var(--paper); overflow-y: auto; transform: translateY(100%); visibility: hidden;
-         transition: transform .32s cubic-bezier(.2,.8,.2,1), visibility 0s .32s; padding-bottom: calc(110px + env(safe-area-inset-bottom)); }
-.sheet.open { transform: none; visibility: visible; transition: transform .32s cubic-bezier(.2,.8,.2,1); }
-.sh-head { position: relative; height: 290px; overflow: hidden; display: flex; justify-content: center; align-items: flex-end; background: #1E2B3A; }
-.sh-head .bg { position: absolute; inset: -30px; background-size: cover; background-position: center; filter: blur(22px) brightness(.6); transform: scale(1.1); }
-.sh-head .cov { position: relative; width: 152px; aspect-ratio: 2 / 3; margin-bottom: 22px; border-radius: 8px; overflow: hidden; box-shadow: 0 16px 34px rgba(0,0,0,.4); }
-.sh-head .cov img, .sh-head .cov .gen { width: 100%; height: 100%; object-fit: cover; }
-.close { position: absolute; top: calc(12px + env(safe-area-inset-top)); right: 14px; width: 40px; height: 40px; border-radius: 20px; border: 0;
-         background: rgba(0,0,0,.4); color: #fff; font-size: 22px; cursor: pointer; }
-.sh-body { padding: 18px 20px; }
-.sh-body h1 { font-family: var(--serif); font-size: 30px; line-height: 1.05; margin: 0 0 6px; overflow-wrap: anywhere; }
-.sh-body .au { color: var(--muted); margin-bottom: 14px; }
-.facts { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
-.facts span { background: var(--card); border: 1px solid var(--line); border-radius: 99px; padding: 5px 11px; font-size: 13px; }
-.status { font-weight: 700; margin-bottom: 12px; }
-.status.ok { color: var(--ok); } .status.busy { color: var(--busy); } .status.sale { color: var(--gold); }
-.mode { background: var(--card); border-left: 3px solid var(--gold); border-radius: 0 10px 10px 0; padding: 10px 12px; font-size: 13.5px; margin-bottom: 14px; line-height: 1.45; }
-.price { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 16px; margin-bottom: 18px; }
-.price .row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 5px 0; }
-.price .row span { color: var(--muted); }
-.price .row b { font-size: 17px; white-space: nowrap; }
-.price .row.big b { color: var(--gold); font-size: 19px; }
-.price .note { color: var(--muted); font-size: 12.5px; margin-top: 6px; line-height: 1.5; border-top: 1px solid var(--line); padding-top: 8px; }
-.sh-body h4 { font-family: var(--serif); font-size: 21px; margin: 18px 0 6px; }
-.sh-body p { line-height: 1.6; margin: 0; max-width: 65ch; }
-.actions { position: fixed; left: 0; right: 0; bottom: 0; z-index: 21; display: flex; gap: 10px; flex-wrap: wrap;
-           padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); background: var(--paper); border-top: 1px solid var(--line);
-           transform: translateY(110%); transition: transform .32s cubic-bezier(.2,.8,.2,1); }
-.actions.open { transform: none; }
-.btn { flex: 1 1 130px; border: 0; border-radius: 14px; padding: 15px 10px; font-size: 15px; font-weight: 700; cursor: pointer;
-       background: var(--accent); color: var(--accent-ink); min-height: 50px; }
-.btn.ghost { background: transparent; color: var(--ink); border: 1.5px solid var(--ink); }
-:root.dark .btn.ghost { color: var(--accent); border-color: var(--accent); }
-
-/* ---------- pastki menyu ---------- */
-.nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; display: flex; background: var(--card); border-top: 1px solid var(--line);
-       padding-bottom: env(safe-area-inset-bottom); }
-.nav button { flex: 1 1 0; min-width: 0; border: 0; background: none; color: var(--muted); padding: 9px 2px 10px; font-size: 11.5px; font-weight: 600; cursor: pointer;
-              display: flex; flex-direction: column; align-items: center; gap: 3px; min-height: 52px; }
-.nav button.on { color: var(--ink); }
-:root.dark .nav button.on { color: var(--accent); }
-.nav svg { width: 22px; height: 22px; flex: none; }
-.nav span { max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-@media (prefers-reduced-motion: reduce) { .slide, .sheet, .actions, .dots i, .skel { transition: none; animation: none; } }
-@media (min-width: 560px) { .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } body { max-width: 760px; margin: 0 auto; } }
-@media (max-width: 340px) { .brand { font-size: 23px; } .logo { width: 40px; height: 40px; } .grid { gap: 14px 10px; padding: 10px; } .book h3 { font-size: 16px; } .hero { height: 184px; } .slide .cov { width: 92px; } }
+.tag { display: inline-block; font-size: 10.5px; font-weight: 800; letter-spacing: .05em; padding: 4px 8px; border-radius: 8px; background: var(--accent); color: var(--accent-ink); }
+.tag.w { background: var(--ink); } .tag.d { background: var(--bg); color: var(--ink); border: 1px solid #5A5048; }
+.search { display: flex; align-items: center; gap: 10px; height: 48px; padding: 0 16px; border-radius: 16px; background: var(--card); border: 1px solid var(--line); }
+.search input { flex: 1; background: transparent; border: 0; outline: 0; font-size: 15px; min-width: 0; }
+.iconbtn { width: 44px; height: 44px; border-radius: 22px; background: var(--card); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+.logo { width: 42px; height: 42px; border-radius: 13px; background: var(--accent); color: var(--accent-ink); display: flex; align-items: center; justify-content: center; font: 700 24px var(--serif); overflow: hidden; flex: 0 0 auto; }
+.logo img { width: 100%; height: 100%; object-fit: cover; }
+.pill { height: 44px; padding: 0 14px; border-radius: 22px; border: 1px solid var(--line); background: var(--card); display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 13.5px; }
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.sec { position: relative; isolation: isolate; overflow: hidden; min-height: 122px; border-radius: 18px; padding: 14px; border: 1px solid var(--line); text-align: left; display: flex; flex-direction: column; gap: 4px; background: var(--card); }
+.sec b { font-size: 14.5px; margin-top: 6px; } .sec span { font-size: 12px; color: var(--muted); }
+.sec .art { position: absolute; right: -8px; bottom: -12px; z-index: -1; }
+.covers { display: flex; gap: 10px; overflow-x: auto; margin: 0 -16px; padding: 0 16px; scrollbar-width: none; }
+.cov { position: relative; border-radius: 6px 12px 12px 6px; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; padding: 12px; color: #F4EFE6; background-size: cover; background-position: center; }
+.cov b { font: 700 15px/1.15 var(--serif); text-shadow: 0 1px 6px rgba(0,0,0,.35); } .cov small { font-size: 11px; opacity: .85; margin-top: 4px; }
+.cov.img b, .cov.img small { display: none; }
+.books { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 12px; }
+.bk { text-align: left; background: none; border: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+.bk .tag { position: absolute; top: 10px; left: 10px; }
+.bk .t { font-weight: 700; font-size: 14px; line-height: 1.25; } .bk .a { font-size: 12px; color: var(--muted); }
+.hero { position: relative; height: 166px; border-radius: 20px; overflow: hidden; border: 1px solid var(--line); display: flex; gap: 14px; padding: 16px; text-align: left; width: 100%; color: var(--ink); }
+.dots { display: flex; justify-content: center; }
+.dots button { width: 28px; height: 28px; border: 0; background: none; display: flex; align-items: center; justify-content: center; }
+.dots span { display: block; height: 7px; width: 7px; border-radius: 4px; background: var(--line2); transition: width .3s; }
+.dots .on span { width: 20px; background: var(--accent); }
+.nav { position: fixed; left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); max-width: 536px; margin: 0 auto; height: 66px; border-radius: 24px; background: var(--card); border: 1px solid var(--line); display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); z-index: 20; }
+.nav button { position: relative; background: none; border: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: var(--muted); font-size: 11px; font-weight: 700; }
+.nav button.on { color: var(--accent); }
+.nav .badge { position: absolute; top: 6px; left: calc(50% + 6px); min-width: 18px; height: 18px; border-radius: 9px; background: var(--accent); color: var(--accent-ink); font-size: 10.5px; font-weight: 800; display: flex; align-items: center; justify-content: center; padding: 0 5px; }
+.tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; padding: 4px; border-radius: 16px; background: var(--card); border: 1px solid var(--line); }
+.tabs button { height: 38px; border-radius: 12px; border: 0; background: none; color: var(--muted); font-weight: 700; font-size: 12.5px; }
+.tabs .on { background: var(--ink); color: var(--accent-ink); }
+.bar { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; } .bar i { display: block; height: 100%; background: var(--accent); }
+.list { display: flex; flex-direction: column; border-radius: 18px; background: var(--card); border: 1px solid var(--line); overflow: hidden; }
+.list > * { min-height: 52px; padding: 12px 14px; border: 0; border-bottom: 1px solid var(--line); background: none; text-align: left; display: flex; align-items: center; justify-content: space-between; gap: 10px; font-weight: 700; font-size: 14px; color: var(--ink); }
+.list > *:last-child { border-bottom: 0; }
+.kv { display: flex; justify-content: space-between; gap: 10px; font-size: 13.5px; } .kv span:first-child { color: var(--muted); }
+.price2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.price2 > div { padding: 14px; display: flex; flex-direction: column; gap: 3px; } .price2 > div + div { border-left: 1px solid var(--line); }
+.big { font-size: 20px; font-weight: 800; }
+.spec { display: flex; flex-wrap: wrap; gap: 7px; } .spec span { font-size: 12px; font-weight: 600; padding: 7px 11px; border-radius: 10px; background: var(--card); border: 1px solid var(--line); }
+.foot { position: fixed; left: 0; right: 0; bottom: 0; padding: 12px 16px calc(14px + env(safe-area-inset-bottom)); background: var(--bg); border-top: 1px solid var(--line); z-index: 25; }
+.foot .in { max-width: 560px; margin: 0 auto; display: flex; gap: 10px; }
+.sheet-bg { position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 40; display: flex; align-items: flex-end; justify-content: center; }
+.sheet { width: 100%; max-width: 560px; max-height: 88vh; overflow-y: auto; background: var(--bg); border: 1px solid var(--line); border-bottom: 0; border-radius: 24px 24px 0 0; padding: 18px 16px calc(18px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 14px; }
+.toast { position: fixed; left: 16px; right: 16px; bottom: calc(92px + env(safe-area-inset-bottom)); max-width: 528px; margin: 0 auto; background: var(--ink); color: var(--accent-ink); padding: 12px 14px; border-radius: 14px; font-weight: 700; font-size: 13.5px; z-index: 60; }
+.field { height: 48px; padding: 0 14px; border-radius: 14px; border: 1px solid var(--line); background: var(--card); outline: 0; width: 100%; font-size: 15px; }
+textarea.field { height: 110px; padding: 12px 14px; resize: vertical; }
+.field:focus { border-color: var(--accent); }
+.bubble { max-width: 82%; padding: 11px 13px; border-radius: 16px; font-size: 13.5px; line-height: 1.45; white-space: pre-wrap; word-wrap: break-word; }
+.bubble.me { align-self: flex-end; background: var(--card2); border: 1px solid #4A3820; border-bottom-right-radius: 4px; }
+.bubble.them { align-self: flex-start; background: var(--card); border: 1px solid var(--line); border-bottom-left-radius: 4px; }
+.skel { height: 210px; border-radius: 12px; background: linear-gradient(90deg, var(--card), #26221E, var(--card)); background-size: 200% 100%; animation: sk 1.2s infinite; }
+@keyframes sk { to { background-position: -200% 0; } }
+.empty { text-align: center; padding: 30px 10px; color: var(--muted); }
+.stars button { background: none; border: 0; font-size: 30px; color: var(--accent); padding: 2px 4px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.qrbox { background: #fff; padding: 18px; border-radius: 18px; align-self: center; }
 </style>
 </head>
 <body>
-
-<header class="top">
-  <div class="logo" id="logo">R</div>
-  <div class="who">
-    <div class="brand" id="brand">RentBooks</div>
-    <div class="hello" id="hello"></div>
-  </div>
-  <button id="lang" class="lang" type="button">RU</button>
-</header>
-
-<section class="hero" id="hero" aria-label="Yangi kelgan kitoblar"></section>
-
-<div class="bar">
-  <div class="search">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
-    <input id="q" type="search" autocomplete="off" enterkeyhint="search">
-    <button class="clear" id="clear" type="button" aria-label="Tozalash">×</button>
-  </div>
-  <div class="chips" id="chips"></div>
-</div>
-<div class="count" id="count" aria-live="polite"></div>
-<main class="grid" id="grid"></main>
-
-<article class="sheet" id="sheet" aria-hidden="true"></article>
-<div class="actions" id="actions"></div>
-
-<nav class="nav">
-  <button class="on" data-tab="all" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 19V5m5 14V5m5 14l3-14 3 .6-3 14"/></svg><span data-t="nav_all"></span></button>
-  <button data-tab="new" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3l2.4 5.6 6 .5-4.6 4 1.4 5.9L12 16l-5.2 3 1.4-5.9-4.6-4 6-.5z"/></svg><span data-t="nav_new"></span></button>
-  <button data-tab="free" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 12l4 4 10-10"/></svg><span data-t="nav_free"></span></button>
-  <button data-tab="me" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg><span data-t="nav_me"></span></button>
-</nav>
+<div id="view"></div>
+<nav class="nav" id="nav" aria-label="Asosiy menyu"></nav>
+<div id="layer"></div>
 
 <script>
 /* =====================================================================
-   ⚙️ SOZLAMALAR — Supabase va bot ma'lumotlarini shu yerga yozing
+   ⚙️ SOZLASH — faqat shu qatorlarni to'ldiring
    ===================================================================== */
 const CONFIG = {
   SUPABASE_URL: "https://cyvrjjqzevyqcvxadjay.supabase.co",        // Supabase → Project Settings → Data API → Project URL
-  SUPABASE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN5dnJqanF6ZXZ5cWN2eGFkamF5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTExNjI0NTMsImV4cCI6MjEwNjczODQ1M30.cps7FKgc_8btkPswlpRbrGHLtlQOIf7GC2XZlpacLC0",         // Supabase → API Keys → Publishable key (OCHIQ kalit! secret EMAS)
+  SUPABASE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN5dnJqanF6ZXZ5cWN2eGFkamF5Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MTE2MjQ1MywiZXhwIjoyMTA2NzM4NDUzfQ.1RbTusjUq40wvMsRoZfwelcm6MQ-DWI5XoD9yHK_VKY",         // Supabase → API Keys → Publishable key (OCHIQ kalit! secret EMAS)
   BOT_USERNAME: "Kitobijarabot",                               // @ belgisisiz
   BRAND_NAME:   "RentBooks",
-  LOGO_URL:     "logo.png"                                     // shu papkadagi logo.png. Bo'sh bo'lsa — harf
+  LOGO_URL:     "logo.png",
+  CHANNEL:      "Rentbooksuz"                                  // rasmiy kanal (@ belgisisiz)
 };
 /* ===================================================================== */
 
-const I18N = {
-  uz: { hello: "Salom, {n}! Bugun nima o'qiymiz?", hello0: "Kitob tanlang — ijaraga oling yoki sotib oling", search: "Kitob yoki muallifni qidiring", all: "Barchasi",
-        count: "{n} ta kitob", avail: "Mavjud", busy: "Band", forsale: "Sotuvda", damaged: "Faqat sotuvda",
-        rent: "Ijara {p} so'm", days: "{d} kun", sale: "Narxi {p} so'm", nowbusy: "Hozir band", fresh: "Yangi keldi",
-        from: "Ijara {p} so'mdan", more: "Batafsil",
-        nothing: "Hech narsa topilmadi", nothing_q: "«{q}» bo'yicha kitob yo'q. Boshqacha yozib ko'ring yoki kitobni so'rang.", nothing_tab: "Bu bo'limda hozircha kitob yo'q.",
-        ask: "🙋 Kerakli kitobni so'rash", fail: "Katalog yuklanmadi", fail2: "Internet aloqasini tekshiring.", retry: "Qayta urinish",
-        noauthor: "Muallif ko'rsatilmagan", edition: "{y}-yil nashri", written: "Yozilgan: {y}", pages: "{p} bet",
-        st_ok: "✓ Ijaraga mavjud — {n} ta nusxa", st_sale: "✓ Sotuvda — {n} ta nusxa", st_dmg: "Faqat sotuvda: nusxa biroz zararlangan, shuning uchun arzon",
-        st_busy: "Hozir hammasi band", fee: "Ijara haqi", term: "Muddati", dep: "Garov (depozit)", buy: "Sotib olish narxi",
-        note: "Ijaraga olsangiz, garov balansingizda muzlatiladi. Kitobni qaytarganingizda ijara haqi ayirilib, qolgani balansga qaytadi. Erta qaytarsangiz — ijara haqi kamroq. Balans yetmasa, do'konda naqd to'lash mumkin.",
-        m_sale: "Bu kitob faqat sotiladi — ijaraga berilmaydi.", m_rent: "Bu kitob faqat ijaraga beriladi — sotilmaydi.",
-        summary: "Qisqacha mazmuni", themes: "Asosiy mavzular", b_rent: "Ijaraga olish", b_buy: "Sotib olish", b_wait: "Bo'shaganda xabar berish",
-        nav_all: "Javon", nav_new: "Yangilar", nav_free: "Mavjud", nav_me: "Kabinet", close: "Yopish", clear: "Tozalash" },
-  ru: { hello: "Привет, {n}! Что почитаем сегодня?", hello0: "Выберите книгу — в аренду или в покупку", search: "Поиск книги или автора", all: "Все",
-        count: "Книг: {n}", avail: "В наличии", busy: "Занята", forsale: "В продаже", damaged: "Только продажа",
-        rent: "Аренда {p} сум", days: "{d} дн.", sale: "Цена {p} сум", nowbusy: "Сейчас занята", fresh: "Новинка",
-        from: "Аренда от {p} сум", more: "Подробнее",
-        nothing: "Ничего не найдено", nothing_q: "По запросу «{q}» книг нет. Попробуйте иначе или закажите книгу.", nothing_tab: "В этом разделе пока нет книг.",
-        ask: "🙋 Запросить нужную книгу", fail: "Каталог не загрузился", fail2: "Проверьте подключение к интернету.", retry: "Повторить",
-        noauthor: "Автор не указан", edition: "Издание {y} г.", written: "Написано: {y}", pages: "{p} стр.",
-        st_ok: "✓ Можно взять в аренду — {n} экз.", st_sale: "✓ В продаже — {n} экз.", st_dmg: "Только продажа: экземпляр немного повреждён, поэтому дешевле",
-        st_busy: "Сейчас все экземпляры заняты", fee: "Стоимость аренды", term: "Срок", dep: "Залог (депозит)", buy: "Цена покупки",
-        note: "При аренде залог замораживается на вашем балансе. Когда вернёте книгу, стоимость аренды вычтется, остаток вернётся на баланс. Вернёте раньше — аренда дешевле. Если баланса не хватает, можно доплатить наличными в магазине.",
-        m_sale: "Эта книга только продаётся — в аренду не выдаётся.", m_rent: "Эта книга только в аренду — не продаётся.",
-        summary: "Кратко о книге", themes: "Основные темы", b_rent: "Взять в аренду", b_buy: "Купить", b_wait: "Сообщить, когда освободится",
-        nav_all: "Полка", nav_new: "Новинки", nav_free: "Есть", nav_me: "Кабинет", close: "Закрыть", clear: "Очистить" }
-};
-
 (function () {
+  "use strict";
   const tg = window.Telegram && window.Telegram.WebApp;
-  const $ = (id) => document.getElementById(id);
-  const DEMO = CONFIG.SUPABASE_URL.includes("SIZNING");
-  let books = [], genre = "*", tab = "all", heroTimer = null, openId = null;
-  let lang = "";
-  try { lang = localStorage.getItem("javon_lang") || ""; } catch (e) {}
-  if (!lang) { const lc = tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.language_code; lang = lc === "ru" ? "ru" : "uz"; }
-  const T = (k, v) => { let s = (I18N[lang] || I18N.uz)[k] || I18N.uz[k] || k; for (const x in (v || {})) s = s.split("{" + x + "}").join(v[x]); return s; };
-  let userName = "";
-
-  function applyLang() {
-    document.documentElement.lang = lang;
-    $("lang").textContent = lang === "uz" ? "RU" : "UZ";
-    $("lang").setAttribute("aria-label", lang === "uz" ? "Русский язык" : "O'zbek tili");
-    $("hello").textContent = userName ? T("hello", { n: userName }) : T("hello0");
-    $("q").placeholder = T("search");
-    $("clear").setAttribute("aria-label", T("clear"));
-    document.querySelectorAll("[data-t]").forEach((el) => el.textContent = T(el.dataset.t));
-  }
-
-  // ---------- Telegram: mavzu, rang, orqaga tugmasi ----------
-  function applyTheme() {
-    const dark = tg ? tg.colorScheme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
-    document.documentElement.classList.toggle("dark", dark);
-    const bg = getComputedStyle(document.documentElement).getPropertyValue("--paper").trim();
-    if (tg) { try { tg.setHeaderColor(bg); tg.setBackgroundColor(bg); if (tg.setBottomBarColor) tg.setBottomBarColor(bg); } catch (e) {} }
-  }
-  if (tg) {
-    tg.ready(); tg.expand();
-    const u = tg.initDataUnsafe && tg.initDataUnsafe.user;
-    if (u && u.first_name) userName = u.first_name;
-    tg.onEvent("themeChanged", applyTheme);
-  }
-  applyTheme();
-  $("lang").onclick = () => { lang = lang === "uz" ? "ru" : "uz"; try { localStorage.setItem("javon_lang", lang); } catch (e) {}
-                              applyLang(); if (books.length) { draw(); if (openId) openBook(openId, true); } };
-  applyLang();
-  $("brand").textContent = CONFIG.BRAND_NAME;
-  $("logo").textContent = CONFIG.BRAND_NAME.trim().charAt(0).toUpperCase();
-  if (CONFIG.LOGO_URL) {   // logotip yuklansa — rasm, yuklanmasa — harf qoladi
-    const img = new Image(); img.alt = ""; img.src = CONFIG.LOGO_URL;
-    img.onload = () => { $("logo").textContent = ""; $("logo").appendChild(img); };
-  }
+  const $ = (s, r) => (r || document).querySelector(s);
+  const $$ = (s, r) => [...(r || document).querySelectorAll(s)];
+  const BASE = CONFIG.SUPABASE_URL.replace(/\/$/, "");
+  const DEMO = BASE.includes("SIZNING");
+  const INIT = (tg && tg.initData) || "";
 
   // ---------- yordamchilar ----------
   const fmt = (n) => String(Math.round(Number(n || 0))).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
   const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
-  const cover = (b) => b.cover_path ? CONFIG.SUPABASE_URL.replace(/\/$/, "") + "/storage/v1/object/public/covers/" + encodeURIComponent(b.cover_path) : "";
-  const PALETTE = ["#1E2B3A", "#7A4E3A", "#3F4E73", "#6B5B2E", "#5B3F66", "#2F5A3E", "#7A3A44"];
-  const colorOf = (b) => {            // FNV-1a: nomga qarab barqaror, lekin xilma-xil rang
-    let h = 2166136261; for (const ch of String(b.title)) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); }
-    return PALETTE[(h >>> 0) % PALETTE.length]; };
-  const genCover = (b) => '<div class="gen" style="background-color:' + colorOf(b) + '"><b>' + esc(b.title) + '</b><small>' + esc(b.author || "") + '</small></div>';
-  const coverHtml = (b) => cover(b)
-    ? '<img loading="lazy" decoding="async" alt="" src="' + esc(cover(b)) + '" data-gen="' + b.id + '">'
-    : genCover(b);
-  // muqova yuklanmasa — o'rniga nom yozilgan muqova
-  document.addEventListener("error", (ev) => {
-    const el = ev.target;
-    if (el && el.tagName === "IMG" && el.dataset.gen) {
-      const b = books.find((x) => String(x.id) === el.dataset.gen);
-      if (b) el.outerHTML = genCover(b);
-    }
-  }, true);
-  const bgStyle = (b) => "background-color:" + colorOf(b) + (cover(b) ? ";background-image:url('" + cover(b).replace(/'/g, "%27") + "')" : "");
+  const pct = (v) => String(Math.round(Number(v || 0) * 10) / 10).replace(".", ",");
+  const MONTHS = ["yanvar", "fevral", "mart", "aprel", "may", "iyun", "iyul", "avgust", "sentyabr", "oktyabr", "noyabr", "dekabr"];
+  const dt = (v, time) => { if (!v) return "—"; const d = new Date(v); if (isNaN(d)) return String(v).slice(0, 16);
+    return d.getDate() + " " + MONTHS[d.getMonth()] + (time ? " " + String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0") : ""); };
+  const daysLeft = (v) => Math.ceil((new Date(v) - Date.now()) / 864e5);
+  const haptic = (t) => { try { if (tg && tg.HapticFeedback) t === "ok" ? tg.HapticFeedback.notificationOccurred("success") : tg.HapticFeedback.impactOccurred("light"); } catch (e) {} };
+  const cover = (path) => path ? BASE + "/storage/v1/object/public/covers/" + encodeURIComponent(path) : "";
+  const PALETTE = ["#6B2E2E", "#23415A", "#3F5A3A", "#4A4038", "#5B3F66", "#2F5A5A", "#7A4E3A"];
+  const colorOf = (t) => { let h = 2166136261; for (const ch of String(t)) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); } return PALETTE[(h >>> 0) % PALETTE.length]; };
+  const coverHtml = (b, h) => {
+    const u = cover(b.cover_path || b.cover);
+    return '<div class="cov' + (u ? " img" : "") + '" style="height:' + (h || 210) + 'px;background-color:' + colorOf(b.title) +
+      (u ? ";background-image:url('" + u.replace(/'/g, "%27") + "')" : "") + '"><b>' + esc(b.title) + '</b><small>' + esc(b.author || "") + '</small></div>';
+  };
+  const ERR = {
+    BALANCE: "Balansingizda bo'sh summa yetmaydi.", DEBT: "Avval qarzni yoping.", BUSY: "Bu nusxa hozirgina band bo'ldi. Boshqasini tanlang.",
+    NO_PHONE: "Avval botda telefon raqamingizni yuboring.", NOT_REGISTERED: "Avval botda ro'yxatdan o'ting.", BANNED: "Hisobingiz bloklangan. Yordamga yozing.",
+    TOO_MANY: "Juda tez-tez so'rov. Bir daqiqadan keyin urinib ko'ring.", NOTE_REQUIRED: "Biroz batafsilroq yozing.", PROMO_INVALID: "Promokod topilmadi.",
+    PROMO_USED: "Bu promokod ishlatilgan.", PROMO_EXPIRED: "Promokod muddati tugagan.", PROMO_NOT_NEW: "Sotuvda promokod faqat yangi nusxaga.",
+    NO_PAYMENTS: "Onlayn to'lov hali ulanmagan. Do'konda naqd to'lashingiz mumkin.", PUL_TOXTATILGAN: "Pul amallari vaqtincha to'xtatilgan.",
+    MODE_RENT_ONLY: "Bu kitob faqat ijaraga beriladi.", MODE_SALE_ONLY: "Bu kitob faqat sotiladi.", ALREADY: "Bu amal allaqachon bajarilgan.",
+    PREORDER_FREE: "Hozir bo'sh nusxa bor — oddiy bron qiling.", LIMIT: "Bir vaqtda olish mumkin bo'lgan kitoblar soni to'lgan.",
+    SERVER: "Serverda xatolik. Birozdan keyin urinib ko'ring.", DB: "Bazada xatolik. Birozdan keyin urinib ko'ring.", NETWORK: "Internet aloqasini tekshiring.",
+    BAD_SIGN: "Mini App'ni bot orqali qayta oching.", REVIEW_SHORT: "Sharh juda qisqa.", BAD_AMOUNT: "Summa noto'g'ri.", PAY_LINK: "To'lov oynasini ochib bo'lmadi.",
+    DEMO: "Namuna rejimi: CONFIG to'ldirilmagan.", NOT_FOUND: "Topilmadi."
+  };
+  const errText = (r) => (r && (ERR[r.error] || r.error)) || "Xatolik";
 
-  // 📚 v14: kitob rejimi va holati
-  // available — ijaraga beriladigan bo'sh nusxalar; sale_only — faqat sotiladigan bo'sh nusxalar
-  // (zararlanganlar + "faqat sotuv" kitobning hamma nusxasi); price — sotib olish narxi (1000 ga yaxlitlangan)
-  function st(b) {
-    const mode = b.mode || "ijara_va_sotuv";
-    const rent = mode !== "faqat_sotuv" && Number(b.available) > 0;
-    const sellCount = Number(b.sale_only || 0) + (mode === "ijara_va_sotuv" ? Number(b.available || 0) : 0);
-    const buy = b.price != null && sellCount > 0;
-    const damaged = mode !== "faqat_sotuv" && Number(b.sale_only) > 0;
-    return { mode, rent, buy, sellCount, damaged };
-  }
-
-  // aqlli qidiruv: apostroflar, kirill-lotin, kichik xatolar
-  const CYR = { "а":"a","б":"b","в":"v","г":"g","д":"d","е":"e","ё":"yo","ж":"j","з":"z","и":"i","й":"y","к":"k","л":"l","м":"m","н":"n","о":"o","п":"p","р":"r","с":"s","т":"t","у":"u","ф":"f","х":"x","ц":"ts","ч":"ch","ш":"sh","щ":"sh","ъ":"","ы":"i","ь":"","э":"e","ю":"yu","я":"ya","ў":"o","қ":"q","ғ":"g","ҳ":"h" };
-  function norm(s) {
-    s = String(s || "").toLowerCase().replace(/[ʻʼ‘’'`´]/g, "");
-    let out = ""; for (const ch of s) out += (CYR[ch] !== undefined ? CYR[ch] : ch);
-    return out.replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
-  }
-  function fuzzy(hay, word) {
-    if (hay.includes(word)) return true;
-    if (word.length < 4) return false;
-    let i = 0; for (const ch of hay) { if (ch === word[i]) i++; if (i === word.length) return true; }
-    return false;
-  }
-  const matches = (b, q) => { const hay = norm(b.title + " " + (b.author || "") + " " + (b.genre || "")); return norm(q).split(" ").filter(Boolean).every((w) => fuzzy(hay, w)); };
-
-  function priceLine(b) {
-    const s = st(b);
-    if (s.rent && b.rent_fee) return T("rent", { p: fmt(b.rent_fee) }) + (b.rent_days ? " <span>· " + T("days", { d: b.rent_days }) + "</span>" : "");
-    if (s.buy) return T("sale", { p: fmt(b.price) });
-    return '<span>' + T("nowbusy") + '</span>';
-  }
-  function badge(b) {
-    const s = st(b);
-    if (s.rent) return '<span class="badge">' + T("avail") + '</span>';
-    if (s.buy) return '<span class="badge sale">' + (s.mode === "faqat_sotuv" ? T("forsale") : T("damaged")) + '</span>';
-    return '<span class="badge busy">' + T("busy") + '</span>';
+  let toastT;
+  function toast(msg) {
+    let el = $(".toast"); if (!el) { el = document.createElement("div"); el.className = "toast"; el.setAttribute("role", "status"); document.body.appendChild(el); }
+    el.textContent = msg; el.style.display = "block"; clearTimeout(toastT); toastT = setTimeout(() => el.style.display = "none", 3400);
   }
 
-  // ---------- banner ----------
-  function renderHero() {
-    const fresh = books.slice(0, 5);
-    clearInterval(heroTimer);
-    if (!fresh.length) { $("hero").style.display = "none"; return; }
-    $("hero").style.display = "";
-    $("hero").innerHTML = fresh.map((b, i) => {
-      const s = st(b);
-      const pr = s.rent && b.rent_fee ? T("from", { p: fmt(b.rent_fee) }) : s.buy ? T("sale", { p: fmt(b.price) }) : T("more");
-      return '<div class="slide' + (i === 0 ? " on" : "") + '" data-id="' + b.id + '" role="button" tabindex="' + (i === 0 ? 0 : -1) + '">' +
-        '<div class="bg" style="' + bgStyle(b) + '"></div>' +
-        '<div class="txt"><span class="new">' + T("fresh") + '</span><h2>' + esc(b.title) + '</h2><div class="au">' + esc(b.author || "") + '</div>' +
-        '<div class="pr">' + pr + '</div></div><div class="cov">' + coverHtml(b) + '</div></div>';
-    }).join("") + (fresh.length > 1 ? '<div class="dots">' + fresh.map((_, i) => '<i class="' + (i === 0 ? "on" : "") + '"></i>').join("") + '</div>' : "");
-    let k = 0;
-    const slides = $("hero").querySelectorAll(".slide"), dots = $("hero").querySelectorAll(".dots i");
-    slides.forEach((s) => { s.onclick = () => openBook(s.dataset.id);
-                            s.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openBook(s.dataset.id); } }; });
-    if (fresh.length > 1 && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      heroTimer = setInterval(() => {
-        if (document.hidden || openId) return;
-        slides[k].classList.remove("on"); slides[k].tabIndex = -1; dots[k].classList.remove("on");
-        k = (k + 1) % slides.length;
-        slides[k].classList.add("on"); slides[k].tabIndex = 0; dots[k].classList.add("on");
-      }, 4500);
-    }
+  // ---------- baza: katalog (ochiq kalit — faqat katalogni o'qiy oladi) ----------
+  async function pub(fn, body) {
+    const headers = { apikey: CONFIG.SUPABASE_KEY, "Content-Type": "application/json" };
+    if (CONFIG.SUPABASE_KEY.startsWith("eyJ")) headers.Authorization = "Bearer " + CONFIG.SUPABASE_KEY;
+    const r = await fetch(BASE + "/rest/v1/rpc/" + fn, { method: "POST", headers, body: JSON.stringify(body || {}) });
+    if (!r.ok) throw new Error(r.status);
+    return r.json();
   }
-
-  // ---------- janrlar ----------
-  function renderChips() {
-    const genres = ["*"].concat([...new Set(books.map((b) => b.genre).filter(Boolean))].sort((a, b) => a.localeCompare(b)));
-    if (!genres.includes(genre)) genre = "*";
-    $("chips").innerHTML = genres.map((g, i) => '<button type="button" class="chip' + (g === genre ? " on" : "") + '" data-i="' + i + '" aria-pressed="' + (g === genre) + '">' +
-      esc(g === "*" ? T("all") : g) + '</button>').join("");
-    $("chips").querySelectorAll(".chip").forEach((c) => c.onclick = () => { genre = genres[+c.dataset.i]; renderChips(); renderGrid(); });
-  }
-
-  // ---------- javon ----------
-  function renderGrid() {
-    const q = $("q").value.trim();
-    $("clear").style.display = q ? "block" : "none";
-    let list = books.filter((b) => (genre === "*" || b.genre === genre) && (!q || matches(b, q)));
-    if (tab === "new") list = list.slice(0, 20);
-    if (tab === "free") list = list.filter((b) => { const s = st(b); return s.rent || s.buy; });
-    $("count").textContent = list.length ? T("count", { n: list.length }) : "";
-    if (!list.length) {
-      $("grid").innerHTML = '<div class="empty"><b>' + T("nothing") + '</b>' + (q ? T("nothing_q", { q: esc(q) }) : T("nothing_tab")) +
-        '<br><br><button type="button" class="btn ghost" id="askbtn" style="max-width:300px">' + T("ask") + '</button></div>';
-      $("askbtn").onclick = () => goBot("req");
-      return;
-    }
-    $("grid").innerHTML = list.map((b) =>
-      '<button type="button" class="book" data-id="' + b.id + '"><div class="cv">' + coverHtml(b) + badge(b) +
-      '</div><h3>' + esc(b.title) + '</h3><div class="a">' + esc(b.author || T("noauthor")) + '</div><div class="p">' + priceLine(b) + '</div></button>').join("");
-    $("grid").querySelectorAll(".book").forEach((el) => el.onclick = () => openBook(el.dataset.id));
-  }
-
-  // ---------- botga o'tish ----------
-  function goBot(payload) {
-    const link = "https://t.me/" + CONFIG.BOT_USERNAME + "?start=" + payload;
-    if (tg && tg.openTelegramLink) { tg.openTelegramLink(link); setTimeout(() => { try { tg.close(); } catch (e) {} }, 400); }
-    else window.open(link, "_blank");
-  }
-
-  // ---------- kitob sahifasi ----------
-  function openBook(id, keepScroll) {
-    const b = books.find((x) => String(x.id) === String(id)); if (!b) return;
-    openId = b.id;
-    const s = st(b);
-    const facts = [b.genre, b.publish_year ? T("edition", { y: b.publish_year }) : "",
-                   b.written_year ? T("written", { y: b.written_year }) : "", b.pages ? T("pages", { p: b.pages }) : ""].filter(Boolean);
-    let status;
-    if (s.rent) status = '<div class="status ok">' + T("st_ok", { n: b.available }) + '</div>';
-    else if (s.buy && s.mode === "faqat_sotuv") status = '<div class="status ok">' + T("st_sale", { n: s.sellCount }) + '</div>';
-    else if (s.buy) status = '<div class="status sale">' + T("st_dmg") + '</div>';
-    else status = '<div class="status busy">' + T("st_busy") + '</div>';
-    const modeNote = s.mode === "faqat_sotuv" ? T("m_sale") : s.mode === "faqat_ijara" ? T("m_rent") : "";
-    let price = "";
-    if (s.rent || s.buy) {
-      price = '<div class="price">';
-      if (s.rent && b.rent_fee) {
-        price += '<div class="row big"><span>' + T("fee") + '</span><b>' + fmt(b.rent_fee) + " so'm</b></div>";
-        if (b.rent_days) price += '<div class="row"><span>' + T("term") + '</span><b>' + T("days", { d: b.rent_days }) + "</b></div>";
-        if (b.deposit) price += '<div class="row"><span>' + T("dep") + '</span><b>' + fmt(b.deposit) + " so'm</b></div>";
-      }
-      if (s.buy) price += '<div class="row' + (s.rent ? "" : " big") + '"><span>' + T("buy") + '</span><b>' + fmt(b.price) + " so'm</b></div>";
-      if (s.rent) price += '<div class="note">' + T("note") + '</div>';
-      price += '</div>';
-    }
-    $("sheet").innerHTML =
-      '<div class="sh-head"><div class="bg" style="' + bgStyle(b) + '"></div>' +
-      '<div class="cov">' + coverHtml(b) + '</div><button type="button" class="close" aria-label="' + T("close") + '">×</button></div>' +
-      '<div class="sh-body"><h1>' + esc(b.title) + '</h1><div class="au">' + esc(b.author || T("noauthor")) + '</div>' +
-      (facts.length ? '<div class="facts">' + facts.map((f) => "<span>" + esc(f) + "</span>").join("") + '</div>' : "") +
-      status + (modeNote ? '<div class="mode">' + modeNote + '</div>' : "") + price +
-      (b.description ? "<h4>" + T("summary") + "</h4><p>" + esc(b.description) + "</p>" : "") +
-      (b.themes ? "<h4>" + T("themes") + "</h4><p>" + esc(b.themes) + "</p>" : "") + '</div>';
-    const btns = [];
-    if (s.buy && s.rent) btns.push('<button type="button" class="btn ghost" data-go="1">' + T("b_buy") + '</button>');
-    if (s.rent) btns.push('<button type="button" class="btn" data-go="1">' + T("b_rent") + '</button>');
-    if (s.buy && !s.rent) btns.push('<button type="button" class="btn" data-go="1">' + T("b_buy") + '</button>');
-    if (!btns.length) btns.push('<button type="button" class="btn" data-go="1">' + T("b_wait") + '</button>');
-    $("actions").innerHTML = btns.join("");
-    // botda kitob oynasi ochiladi: ijara / sotib olish / navbat — o'sha yerda tanlanadi
-    $("actions").querySelectorAll("[data-go]").forEach((el) => el.onclick = () => goBot("b_" + b.id + "_app"));
-    $("sheet").querySelector(".close").onclick = closeBook;
-    if (!keepScroll) $("sheet").scrollTop = 0;
-    $("sheet").classList.add("open"); $("actions").classList.add("open"); $("sheet").setAttribute("aria-hidden", "false");
-    if (tg && tg.BackButton) tg.BackButton.show();
-    if (!keepScroll) setTimeout(() => { const c = $("sheet").querySelector(".close"); if (c) c.focus({ preventScroll: true }); }, 50);
-  }
-  function closeBook() {
-    if (!openId) return;
-    const prev = openId; openId = null;
-    $("sheet").classList.remove("open"); $("actions").classList.remove("open"); $("sheet").setAttribute("aria-hidden", "true");
-    if (tg && tg.BackButton) tg.BackButton.hide();
-    const card = document.querySelector('.book[data-id="' + prev + '"]'); if (card) card.focus({ preventScroll: true });
-  }
-  if (tg && tg.BackButton) tg.BackButton.onClick(closeBook);
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeBook(); });
-
-  // ---------- pastki menyu ----------
-  document.querySelectorAll(".nav button").forEach((btn) => btn.onclick = () => {
-    if (btn.dataset.tab === "me") { goBot("start"); return; }   // kabinet: balans, ijaralar, bonus — botda
-    document.querySelectorAll(".nav button").forEach((x) => x.classList.toggle("on", x === btn));
-    tab = btn.dataset.tab; closeBook(); renderGrid(); window.scrollTo({ top: 0, behavior: "smooth" });
-  });
-  let qTimer = null;
-  $("q").addEventListener("input", () => { clearTimeout(qTimer); qTimer = setTimeout(renderGrid, 120); });
-  $("q").addEventListener("keydown", (e) => { if (e.key === "Enter") e.target.blur(); });
-  $("clear").onclick = () => { $("q").value = ""; renderGrid(); $("q").focus(); };
-
-  // ---------- ma'lumot ----------
-  function skeleton() { $("grid").innerHTML = '<div class="skel"></div>'.repeat(4); $("count").textContent = ""; }
-  async function load() {
-    skeleton();
-    if (DEMO) { books = window.__DEMO; return draw(); }
-    const headers = { "apikey": CONFIG.SUPABASE_KEY, "Content-Type": "application/json" };
-    if (CONFIG.SUPABASE_KEY.startsWith("eyJ")) headers["Authorization"] = "Bearer " + CONFIG.SUPABASE_KEY;
+  // ---------- darvoza: mijoz amallari (har so'rovda Telegram imzosi) ----------
+  async function api(action, body) {
+    if (DEMO) return { ok: false, error: "DEMO" };
+    if (!INIT) return { ok: false, error: "BAD_SIGN" };
     try {
-      const ctrl = new AbortController(); const t = setTimeout(() => ctrl.abort(), 15000);
-      const r = await fetch(CONFIG.SUPABASE_URL.replace(/\/$/, "") + "/rest/v1/rpc/app_katalog", { method: "POST", headers, body: "{}", signal: ctrl.signal });
-      clearTimeout(t);
-      if (!r.ok) throw new Error(r.status + " " + (await r.text()).slice(0, 120));
-      const data = await r.json();
-      books = Array.isArray(data) ? data : [];
-      draw();
-    } catch (e) {
-      $("hero").style.display = "none";
-      $("grid").innerHTML = '<div class="empty"><b>' + T("fail") + '</b>' + T("fail2") +
-        '<br><br><button type="button" class="btn" id="retry" style="max-width:240px">' + T("retry") + '</button>' +
-        '<br><small style="opacity:.6">' + esc(e.name === "AbortError" ? "timeout" : e.message) + '</small></div>';
-      $("retry").onclick = load;
-    }
+      const r = await fetch(BASE + "/functions/v1/app", {
+        method: "POST", headers: { "Content-Type": "application/json", "x-init-data": INIT, apikey: CONFIG.SUPABASE_KEY },
+        body: JSON.stringify(Object.assign({ action }, body || {}))
+      });
+      const d = await r.json().catch(() => ({ ok: false, error: "SERVER" }));
+      if (d.error === "SIGN_EXPIRED") expired();
+      return d;
+    } catch (e) { return { ok: false, error: "NETWORK" }; }
   }
-  function draw() { renderHero(); renderChips(); renderGrid(); }
+  function expired() {
+    sheet('<div class="h2">Sessiya eskirdi</div><p class="muted" style="margin:0">Xavfsizlik uchun Mini App vaqti-vaqti bilan qayta ochilishi kerak.</p>' +
+      '<button class="btn" id="re">Yopish</button>', (el) => { $("#re", el).onclick = () => tg ? tg.close() : location.reload(); });
+  }
+  const goBot = (payload) => {
+    const link = "https://t.me/" + CONFIG.BOT_USERNAME + (payload ? "?start=" + payload : "");
+    if (tg && tg.openTelegramLink) { tg.openTelegramLink(link); setTimeout(() => { try { tg.close(); } catch (e) {} }, 300); } else window.open(link, "_blank");
+  };
+  const openLink = (l) => tg && tg.openTelegramLink ? tg.openTelegramLink(l) : window.open(l, "_blank");
 
-  // namuna rejimi: CONFIG to'ldirilmaguncha dizaynni ko'rish uchun (v14 maydonlari bilan)
-  window.__DEMO = [
-    { id: 1, title: "O'tkan kunlar", author: "Abdulla Qodiriy", genre: "O'zbek adabiyoti", pages: 384, publish_year: 2021, written_year: "1922–1925", mode: "ijara_va_sotuv", available: 2, sale_only: 0, price: 57000, deposit: 56250, rent_fee: 10130, rent_days: 40, description: "O'zbek adabiyotidagi birinchi roman. XIX asr Turkistonida yashagan Otabek va Kumushning sevgisi, ular boshidan kechirgan sinovlar tasvirlanadi.", themes: "sevgi va sadoqat, oila, tarixiy davr" },
-    { id: 2, title: "Boburnoma (sovg'a nashri)", author: "Zahiriddin Muhammad Bobur", genre: "Tarixiy", pages: 520, publish_year: 2024, mode: "faqat_sotuv", available: 0, sale_only: 2, price: 150000, deposit: null, rent_fee: null, rent_days: null, description: "Sovg'a uchun chiroyli muqovali yangi nashr.", themes: "tarix, sayohat" },
-    { id: 3, title: "Qutadg'u bilig", author: "Yusuf Xos Hojib", genre: "Tarixiy", pages: 600, publish_year: 1990, mode: "faqat_ijara", available: 1, sale_only: 0, price: null, deposit: 187500, rent_fee: 33750, rent_days: 60, description: "Noyob nashr — faqat ijaraga beriladi.", themes: "donolik, davlat boshqaruvi" },
-    { id: 4, title: "Alkimyogar", author: "Paulo Koelo", genre: "Jahon adabiyoti", pages: 208, publish_year: 2022, mode: "ijara_va_sotuv", available: 3, sale_only: 0, price: 63000, deposit: 62500, rent_fee: 11250, rent_days: 21, description: "Yosh cho'pon Santyago o'z orzusi — xazina izidan uzoq safarga chiqadi.", themes: "orzu, taqdir, sabr" },
-    { id: 5, title: "Kecha va kunduz", author: "Cho'lpon", genre: "O'zbek adabiyoti", pages: 290, publish_year: 2019, mode: "ijara_va_sotuv", available: 0, sale_only: 1, price: 29000, deposit: null, rent_fee: null, rent_days: null, description: "Zebi taqdiri orqali jamiyat fojiasi.", themes: "erk, ayol taqdiri" },
-    { id: 6, title: "Jinoyat va jazo", author: "Fyodor Dostoyevskiy", genre: "Jahon adabiyoti", pages: 672, publish_year: 2018, mode: "ijara_va_sotuv", available: 0, sale_only: 0, price: null, deposit: null, rent_fee: null, rent_days: null, description: "Raskolnikovning ichki kurashi haqida.", themes: "vijdon, jazo" },
-    { id: 7, title: "Atom odatlar", author: "Jeyms Klir", genre: "Shaxsiy rivojlanish", pages: 320, publish_year: 2023, mode: "ijara_va_sotuv", available: 1, sale_only: 0, price: 82000, deposit: 81250, rent_fee: 16250, rent_days: 32, description: "Kichik odatlar vaqt o'tib katta natijalarga olib kelishi haqida.", themes: "odatlar, intizom" },
-    { id: 8, title: "Sariq devni minib", author: "Xudoyberdi To'xtaboyev", genre: "Bolalar", pages: 210, publish_year: 2022, mode: "ijara_va_sotuv", available: 2, sale_only: 0, price: 38000, deposit: 37500, rent_fee: 5630, rent_days: 26, description: "Hoshimjonning sehrli qalpoqcha bilan sarguzashtlari.", themes: "bolalik, mehnat" }
+  // ---------- holat ----------
+  let books = [], sets = [], aksiyalar = [], me = null, meErr = null, hideMoney = true;
+  const stack = [];
+  let screen = "home", param = null, timers = [];
+
+  // ---------- ikonkalar ----------
+  const I = {
+    home: '<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
+    shelf: '<path d="M4 19V5m5 14V5m5 14l3-14 3 .6-3 14"/>',
+    mybook: '<path d="M5 4h10a4 4 0 0 1 4 4v12H9a4 4 0 0 1-4-4z"/><path d="M9 9h6M9 13h4"/>',
+    user: '<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/>',
+    eye: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+    back: '<path d="M15 6l-6 6 6 6"/>', search: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>',
+    share: '<path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M12 3v13M7 8l5-5 5 5"/>',
+    lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+    tagi: '<path d="M20 12l-8 8-9-9V3h8z"/><circle cx="7.5" cy="7.5" r="1.5"/>', send: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+    clip: '<path d="M21 12l-8.5 8.5a5 5 0 0 1-7-7L14 5a3.5 3.5 0 0 1 5 5l-8.5 8.5a2 2 0 0 1-3-3L15 8"/>'
+  };
+  const ic = (n, s, c) => '<svg width="' + (s || 20) + '" height="' + (s || 20) + '" viewBox="0 0 24 24" fill="none" stroke="' + (c || "currentColor") +
+    '" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + I[n] + '</svg>';
+
+  // ---------- navigatsiya ----------
+  const ROOTS = ["home", "catalog", "my", "me"];
+  function go(s, p, push) {
+    if (push !== false) stack.push([screen, param, window.scrollY]);
+    screen = s; param = p == null ? null : p; render(); window.scrollTo(0, 0);
+  }
+  function back() {
+    if ($(".sheet-bg")) { closeSheet(); return; }
+    const prev = stack.pop();
+    if (!prev) { if (screen !== "home") { screen = "home"; param = null; render(); } return; }
+    screen = prev[0]; param = prev[1]; render(); window.scrollTo(0, prev[2] || 0);
+  }
+  function syncBack() {
+    if (!tg || !tg.BackButton) return;
+    (ROOTS.includes(screen) && !stack.length && !$(".sheet-bg")) ? tg.BackButton.hide() : tg.BackButton.show();
+  }
+  function render() {
+    timers.forEach(clearInterval); timers = [];
+    $("#nav").style.display = screen === "book" ? "none" : "grid";
+    drawNav();
+    (SCREENS[screen] || SCREENS.home)();
+    syncBack();
+  }
+  function drawNav() {
+    const items = [["home", "Bosh sahifa", "home"], ["catalog", "Katalog", "shelf"], ["my", "Kitoblarim", "mybook"], ["me", "Kabinet", "user"]];
+    const cnt = me && Number(me.open_count) ? '<span class="badge">' + me.open_count + "</span>" : "";
+    $("#nav").innerHTML = items.map(([k, t, i]) => '<button type="button" data-nav="' + k + '" class="' + (screen === k ? "on" : "") + '">' +
+      ic(i, 22) + (k === "my" ? cnt : "") + t + "</button>").join("");
+    $$("[data-nav]").forEach((b) => b.onclick = () => { stack.length = 0; go(b.dataset.nav, null, false); });
+  }
+  function head(title, sub) {
+    return '<div class="row"><button class="iconbtn" data-back aria-label="Orqaga">' + ic("back") + '</button><div class="col" style="gap:0">' +
+      '<span class="h1" style="font-size:22px">' + title + "</span>" + (sub ? '<span class="small muted">' + sub + "</span>" : "") + "</div></div>";
+  }
+  function bindCommon(root) {
+    $$("[data-back]", root).forEach((b) => b.onclick = back);
+    $$("[data-book]", root).forEach((b) => b.onclick = () => { closeSheet(); go("book", +b.dataset.book); });
+    $$("[data-go]", root).forEach((b) => b.onclick = () => { closeSheet(); go(b.dataset.go, b.dataset.p ? +b.dataset.p : null); });
+    $$("[data-money]", root).forEach((b) => b.onclick = () => { hideMoney = !hideMoney; render(); });
+  }
+  const money = (v) => hideMoney ? "•••••" : fmt(v);
+  const view = (html) => { $("#view").innerHTML = '<div class="wrap">' + html + "</div>"; bindCommon($("#view")); return $("#view"); };
+
+  // ---------- pastki oyna ----------
+  function sheet(html, bind) {
+    $("#layer").innerHTML = '<div class="sheet-bg"><div class="sheet" role="dialog" aria-modal="true">' + html + "</div></div>";
+    const bg = $(".sheet-bg"); bg.onclick = (e) => { if (e.target === bg) closeSheet(); };
+    bindCommon(bg); syncBack(); if (bind) bind($(".sheet"));
+  }
+  function closeSheet() { $("#layer").innerHTML = ""; syncBack(); }
+  function needReg() {
+    if (me && me.ok && me.registered) return false;
+    sheet('<div class="h2">Ro\'yxatdan o\'ting</div><p class="muted" style="margin:0">Kitob bron qilish va kabinet uchun botda telefon raqamingizni bir marta yuboring.</p>' +
+      '<button class="btn" id="reg">Botga o\'tish</button>', (el) => { $("#reg", el).onclick = () => goBot("start"); });
+    return true;
+  }
+
+  // ---------- 🎨 bo'lim chizmalari ----------
+  const ART = {
+    rent: '<svg class="art" width="118" height="96" viewBox="0 0 120 100" aria-hidden="true"><path d="M8 66 Q34 54 60 66 Q86 54 112 66 V96 Q86 84 60 96 Q34 84 8 96Z" fill="#6B2E2E"/><path d="M14 64 Q36 54 58 64 V90 Q36 80 14 90Z M62 64 Q84 54 106 64 V90 Q84 80 62 90Z" fill="#C9A27E" opacity=".55"/><circle cx="92" cy="30" r="18" fill="#F0B54A"/><path d="M92 19 V30 L100 35" stroke="#2A1F1B" stroke-width="3.5" fill="none" stroke-linecap="round"/></svg>',
+    buy: '<svg class="art" width="110" height="96" viewBox="0 0 120 100" aria-hidden="true"><rect x="58" y="14" width="30" height="44" rx="3" fill="#23415A" transform="rotate(-10 73 36)"/><rect x="74" y="18" width="26" height="40" rx="3" fill="#6B2E2E" transform="rotate(8 87 38)"/><path d="M44 44 H108 L102 100 H50Z" fill="#3A5874"/><path d="M62 44 A14 14 0 0 1 90 44" stroke="#F0B54A" stroke-width="4" fill="none"/><circle cx="76" cy="68" r="9" fill="#F0B54A"/></svg>',
+    sets: '<svg class="art" width="112" height="92" viewBox="0 0 120 100" aria-hidden="true"><rect x="26" y="78" width="86" height="16" rx="3" fill="#3F5A3A"/><rect x="34" y="62" width="76" height="16" rx="3" fill="#6B2E2E"/><rect x="30" y="46" width="78" height="16" rx="3" fill="#23415A"/><rect x="66" y="40" width="9" height="56" fill="#F0B54A"/><ellipse cx="62" cy="38" rx="10" ry="6" fill="#F0B54A"/><ellipse cx="79" cy="38" rx="10" ry="6" fill="#F0B54A"/></svg>',
+    sell: '<svg class="art" width="110" height="92" viewBox="0 0 120 100" aria-hidden="true"><rect x="30" y="24" width="40" height="58" rx="3" fill="#5A4630" transform="rotate(-12 50 53)"/><ellipse cx="88" cy="88" rx="20" ry="7" fill="#B8862F"/><ellipse cx="88" cy="80" rx="20" ry="7" fill="#D49E3C"/><ellipse cx="88" cy="72" rx="20" ry="7" fill="#F0B54A"/><ellipse cx="88" cy="72" rx="11" ry="3.5" fill="#D49E3C"/></svg>',
+    ask: '<svg class="art" width="110" height="92" viewBox="0 0 120 100" aria-hidden="true"><rect x="26" y="36" width="46" height="60" rx="3" fill="#4A3A5A"/><rect x="26" y="36" width="7" height="60" fill="#33283F"/><circle cx="82" cy="46" r="18" fill="#231D28" stroke="#F0B54A" stroke-width="6"/><path d="M95 59 L110 74" stroke="#F0B54A" stroke-width="8" stroke-linecap="round"/></svg>',
+    qr: '<svg class="art" width="96" height="96" viewBox="0 0 100 100" aria-hidden="true" style="opacity:.55"><g fill="none" stroke="#F0B54A" stroke-width="7"><rect x="10" y="10" width="30" height="30"/><rect x="60" y="10" width="30" height="30"/><rect x="10" y="60" width="30" height="30"/></g><g fill="#F0B54A"><rect x="20" y="20" width="10" height="10"/><rect x="70" y="20" width="10" height="10"/><rect x="20" y="70" width="10" height="10"/><rect x="58" y="58" width="12" height="12"/><rect x="78" y="62" width="12" height="12"/><rect x="64" y="80" width="12" height="12"/></g></svg>'
+  };
+
+  // ---------- 📕 kitob kartochkasi ----------
+  function st(b) {
+    const rent = b.mode !== "faqat_sotuv" && Number(b.available) > 0;
+    const buy = (b.mode !== "faqat_ijara" && Number(b.available) > 0) || Number(b.sale_only) > 0;
+    return { rent, buy };
+  }
+  function priceLine(b) {
+    const s = st(b), parts = [];
+    if (s.rent && b.rent_fee != null) parts.push('<b style="color:var(--accent)">Ijara ' + fmt(b.rent_fee) + "</b>");
+    if (s.buy && b.price != null) parts.push((Number(b.full_price) > Number(b.price) ? '<s class="muted">' + fmt(b.full_price) + "</s> " : "") + fmt(b.price));
+    return parts.length ? parts.join(" · ") : '<span class="muted">Bo\'shaganda xabar beramiz</span>';
+  }
+  const isNew = (b) => b.created_at && (Date.now() - new Date(b.created_at)) < 21 * 864e5;
+  function bookCard(b) {
+    const s = st(b);
+    const tag = !s.rent && !s.buy ? '<span class="tag d">BAND</span>' : (b.aksiya_sale || b.aksiya_rent) ? '<span class="tag">−' + pct(b.aksiya_sale || b.aksiya_rent) + "%</span>"
+      : isNew(b) ? '<span class="tag w">YANGI</span>' : "";
+    const r = b.rating && b.rating.show ? " · ★ " + String(b.rating.avg).replace(".", ",") + " (" + b.rating.count + ")" : "";
+    return '<button type="button" class="bk" data-book="' + b.id + '"><div style="position:relative">' + coverHtml(b) + tag + "</div>" +
+      '<span class="t">' + esc(b.title) + '</span><span class="a">' + esc(b.author || "") + r + '</span><span class="small">' + priceLine(b) + "</span></button>";
+  }
+
+  // =====================================================================
+  //  EKRANLAR
+  // =====================================================================
+  const SCREENS = {};
+
+  // ---------- 🏠 Bosh sahifa ----------
+  SCREENS.home = function () {
+    const u = tg && tg.initDataUnsafe && tg.initDataUnsafe.user;
+    const name = (me && me.name) || (u && u.first_name) || "";
+    const ak = aksiyalar.find((a) => a.active) || aksiyalar[0];
+    const fresh = [...books].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 8);
+    const sec = (key, title, sub, bg, br, k) => '<button type="button" class="sec" data-sec="' + k + '" style="background:' + bg + ";border-color:" + br + '">' +
+      ART[key] + "<b>" + title + "</b><span>" + sub + "</span></button>";
+    const akTitle = ak ? (ak.scope === "kitob" ? "«" + esc(ak.book) + "»" : ak.scope === "janr" ? esc(ak.genre) + " janriga" : "Barcha kitoblarga") : "";
+    const el = view(
+      '<div class="row between"><div class="row"><div class="logo" id="logo">' + esc(CONFIG.BRAND_NAME.charAt(0)) + '</div><div class="col" style="gap:0">' +
+      '<span class="serif" style="font-size:19px">' + esc(CONFIG.BRAND_NAME) + '</span><span class="small muted">' + (name ? "Assalomu alaykum, " + esc(name) : "Kitob tanlang") + "</span></div></div>" +
+      (me && me.ok ? '<button class="pill" data-money aria-label="Balansni ko\'rsatish">' + ic("eye", 16, "#F0B54A") + money(me.available) + " so'm</button>" : "") + "</div>" +
+      '<label class="search">' + ic("search", 18, "#A89F92") + '<span class="sr">Qidiruv</span><input id="q" type="search" placeholder="Kitob yoki muallif nomi…" enterkeyhint="search"></label>' +
+      (meErr && meErr !== "nosign" ? '<div class="card warm col"><b>Kabinet uchun ro\'yxatdan o\'ting</b><span class="small muted">Botga telefon raqamingizni bir marta yuboring.</span><button class="btn sm" id="regbtn" style="align-self:flex-start">Botga o\'tish</button></div>' : "") +
+      (ak ? '<button type="button" class="card warm row between" id="akbtn" style="text-align:left;padding:18px;border-radius:22px;color:var(--ink)"><div class="col" style="gap:5px">' +
+        '<span class="tag" style="align-self:flex-start">AKSIYA · ' + ({ sotuv: "SOTUV", ijara: "IJARA", ikkalasi: "SOTUV VA IJARA" }[ak.kind] || "") + '</span><span class="serif" style="font-size:22px;line-height:1.1">' + akTitle + '</span><span class="small" style="color:var(--soft)">' +
+        (ak.active ? dt(ak.start) + " – " + dt(ak.until) + " · yana " + Math.max(daysLeft(ak.until), 1) + " kun" : dt(ak.start) + " dan boshlanadi") + "</span>" +
+        (Number(ak.limit) && ak.kind !== "ijara" ? '<span class="tiny" style="color:#BFAF96">Har mijozga ' + fmt(ak.limit) + " so'mgacha</span>" : "") +
+        '</div><span class="serif" style="font-size:50px;color:var(--accent);line-height:1">−' + pct(ak.pct) + "%</span></button>" : "") +
+      '<div class="col" style="gap:10px"><span class="h2">Bo\'limlar</span><div class="grid2">' +
+      sec("rent", "Ijaraga olish", "O'qing va qaytaring", "#2A1F1B", "#43302A", "f_rent") +
+      sec("buy", "Sotib olish", "Yangi nusxalar", "#1A232B", "#2C3B48", "f_buy") +
+      sec("sets", "To'plamlar", "Birga arzonroq", "#1E2619", "#33422B", "sets") +
+      sec("sell", "Kitobingizni soting", "Balansga pul oling", "#29231B", "#45392A", "offer") +
+      sec("ask", "Kitob so'rash", "Topib beramiz", "#231D28", "#3A3044", "request") +
+      sec("qr", "QR kodim", "Do'konda ko'rsating", "#1E1B18", "#36302A", "qr") + "</div></div>" +
+      (fresh.length ? '<div class="col" style="gap:10px"><div class="row between"><span class="h2">Yangi kelganlar</span><button class="btn ghost sm" data-go="catalog">Hammasi →</button></div>' +
+        '<div class="covers">' + fresh.map((b) => '<button type="button" data-book="' + b.id + '" style="flex:0 0 112px;border:0;padding:0;background:none;text-align:left" aria-label="' + esc(b.title) + '">' + coverHtml(b, 160) + "</button>").join("") + "</div></div>" : "")
+    );
+    logoImg();
+    $("#q", el).onkeydown = (e) => { if (e.key === "Enter") { catState.q = e.target.value; go("catalog"); } };
+    if ($("#regbtn", el)) $("#regbtn", el).onclick = () => goBot("start");
+    if ($("#akbtn", el)) $("#akbtn", el).onclick = () => { catState.filter = "aksiya"; go("catalog"); };
+    $$("[data-sec]", el).forEach((b) => b.onclick = () => {
+      const k = b.dataset.sec;
+      if (k === "f_rent" || k === "f_buy") { catState.filter = k === "f_rent" ? "rent" : "buy"; go("catalog"); }
+      else if (k === "offer" || k === "request") formSheet(k);
+      else if (k === "qr") { if (!needReg()) go("qr"); }
+      else go(k);
+    });
+  };
+  function logoImg() {
+    if (!CONFIG.LOGO_URL || !$("#logo")) return;
+    const img = new Image(); img.alt = ""; img.src = CONFIG.LOGO_URL;
+    img.onload = () => { const l = $("#logo"); if (l) { l.textContent = ""; l.appendChild(img); } };
+  }
+
+  // ---------- 📚 Katalog ----------
+  const catState = { q: "", genre: "*", filter: "all" };
+  SCREENS.catalog = function () {
+    const genres = ["*", ...[...new Set(books.map((b) => b.genre || "Boshqa"))].sort()];
+    const top = [...books].filter((b) => Number(b.rent_30) > 0).sort((a, b) => b.rent_30 - a.rent_30).slice(0, 3).map((b) => [b, "top"]);
+    const fresh = [...books].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).filter((b) => !top.find((x) => x[0].id === b.id)).slice(0, 3).map((b) => [b, "new"]);
+    const slides = []; for (let i = 0; i < 3; i++) { if (top[i]) slides.push(top[i]); if (fresh[i]) slides.push(fresh[i]); }
+    const filters = [["all", "Hammasi"], ["rent", "Ijaraga"], ["buy", "Sotuvda"], ["aksiya", "Aksiya"]];
+    const el = view(
+      '<span class="h1">Katalog</span>' +
+      '<label class="search">' + ic("search", 18, "#A89F92") + '<span class="sr">Qidiruv</span><input id="q" type="search" placeholder="Kitob yoki muallif nomi…" value="' + esc(catState.q) + '"></label>' +
+      (slides.length && !catState.q ? '<div class="col" style="gap:2px"><button type="button" class="hero" id="hero"></button><div class="dots" id="dots"></div></div>' : "") +
+      '<div class="chips">' + filters.map(([k, t]) => '<button class="chip' + (catState.filter === k ? " on" : "") + '" data-f="' + k + '">' + t + "</button>").join("") + "</div>" +
+      '<div class="chips">' + genres.map((g) => '<button class="chip' + (catState.genre === g ? " on" : "") + '" data-g="' + esc(g) + '">' + (g === "*" ? "Barcha janrlar" : esc(g)) + "</button>").join("") + "</div>" +
+      '<div class="small muted" id="count"></div><div class="books" id="grid"></div>' +
+      '<div class="card col" style="text-align:center"><span class="small muted">Kerakli kitob topilmadimi?</span><button class="btn ghost" id="ask">🙋 Kitob so\'rash</button></div>'
+    );
+    if (slides.length && !catState.q) {
+      let i = 0;
+      const drawHero = () => {
+        const hero = $("#hero"); if (!hero) return;
+        const [b, kind] = slides[i];
+        hero.style.background = kind === "top" ? "#2A1A1A" : "#1A2530";
+        hero.innerHTML = '<div class="col" style="flex:1;gap:6px;min-width:0"><span class="tag ' + (kind === "new" ? "w" : "") + '" style="align-self:flex-start">' +
+          (kind === "top" ? "🔥 ENG KO'P O'QILAYOTGAN" : "YANGI") + '</span><b class="serif" style="font-size:21px;line-height:1.12">' + esc(b.title) + '</b><span class="small" style="color:#E6DCCD">' +
+          esc(b.author || "") + '</span><span class="small" style="color:var(--soft);margin-top:auto">' + (kind === "top" ? "Bu oy " + b.rent_30 + " marta ijaraga olindi" : "Yaqinda keldi · " + (Number(b.available) || 0) + " nusxa bo'sh") +
+          '</span></div><div style="flex:0 0 88px">' + coverHtml(b, 128) + "</div>";
+        hero.onclick = () => go("book", b.id);
+        $("#dots").innerHTML = slides.map((_, j) => '<button type="button" aria-label="' + (j + 1) + '-kitob" class="' + (j === i ? "on" : "") + '" data-d="' + j + '"><span></span></button>').join("");
+        $$("[data-d]").forEach((d) => d.onclick = () => { i = +d.dataset.d; drawHero(); });
+      };
+      drawHero();
+      timers.push(setInterval(() => { i = (i + 1) % slides.length; drawHero(); }, 3500));
+    }
+    const drawGrid = () => {
+      const q = catState.q.trim().toLowerCase();
+      let list = books.filter((b) => (catState.genre === "*" || (b.genre || "Boshqa") === catState.genre) &&
+        (!q || (b.title + " " + (b.author || "")).toLowerCase().includes(q)));
+      if (catState.filter === "rent") list = list.filter((b) => st(b).rent);
+      if (catState.filter === "buy") list = list.filter((b) => st(b).buy);
+      if (catState.filter === "aksiya") list = list.filter((b) => b.aksiya_sale || b.aksiya_rent);
+      $("#count").textContent = list.length + " ta kitob · " + list.filter((b) => st(b).rent || st(b).buy).length + " tasi hozir bor";
+      $("#grid").innerHTML = list.length ? list.map(bookCard).join("") : '<div class="empty" style="grid-column:1/-1">Hech narsa topilmadi.</div>';
+      bindCommon($("#grid"));
+    };
+    if (!books.length) $("#grid").innerHTML = '<div class="skel"></div><div class="skel"></div>'; else drawGrid();
+    $("#q", el).oninput = (e) => { catState.q = e.target.value; drawGrid(); };
+    $$("[data-f]", el).forEach((b) => b.onclick = () => { catState.filter = b.dataset.f; render(); });
+    $$("[data-g]", el).forEach((b) => b.onclick = () => { catState.genre = b.dataset.g; render(); });
+    $("#ask", el).onclick = () => formSheet("request", catState.q);
+  };
+
+  // ---------- 📕 Kitob sahifasi ----------
+  let promoCode = "";
+  SCREENS.book = async function () {
+    const id = param;
+    const b = books.find((x) => x.id === id) || { id, title: "…" };
+    const el = view('<div style="margin:-16px -16px 0;height:260px;background:#1C1814;position:relative;display:flex;align-items:center;justify-content:center">' +
+      '<button class="iconbtn" data-back aria-label="Orqaga" style="position:absolute;top:14px;left:14px;background:var(--bg)">' + ic("back") + "</button>" +
+      '<button class="iconbtn" id="share" aria-label="Do\'stga ulashish" style="position:absolute;top:14px;right:14px;background:var(--bg)">' + ic("share") + "</button>" +
+      '<div style="width:150px;box-shadow:0 18px 40px rgba(0,0,0,.45)">' + coverHtml(b, 215) + "</div></div>" +
+      '<div class="col" style="gap:4px"><h1 class="h1" style="font-size:25px">' + esc(b.title) + '</h1><span class="muted">' + esc(b.author || "Muallif noma'lum") + (b.genre ? " · " + esc(b.genre) : "") + "</span>" +
+      (b.rating && b.rating.show ? '<span style="color:var(--accent);font-weight:700">' + "★★★★★".slice(0, Math.round(b.rating.avg)) + ' <span style="color:var(--ink)">' + String(b.rating.avg).replace(".", ",") + '</span> <span class="muted small">· ' + b.rating.count + " ta baho</span></span>" : "") +
+      "</div>" + '<div class="spec">' + [b.muqova, b.qogoz, b.til, b.pages ? b.pages + " bet" : "", b.publish_year ? b.publish_year + "-yil nashri" : ""].filter(Boolean).map((x) => "<span>" + esc(x) + "</span>").join("") + "</div>" +
+      '<div id="bk"><div class="skel" style="height:150px"></div></div>' +
+      (b.description ? '<p style="margin:0;color:#D2C8BA;line-height:1.6">' + esc(b.description) + "</p>" : "") +
+      (b.themes ? '<div class="small"><b>Asosiy mavzular:</b> <span class="muted">' + esc(b.themes) + "</span></div>" : "") +
+      '<div id="revs"></div><div style="height:70px"></div>');
+    $("#share", el).onclick = () => openLink("https://t.me/share/url?url=" + encodeURIComponent("https://t.me/" + CONFIG.BOT_USERNAME + "?startapp=b_" + id) +
+      "&text=" + encodeURIComponent("📚 «" + b.title + "» — RentBooks'da"));
+    loadReviews(id);
+    if (DEMO || !me || !me.ok) return bookPublic(b);
+    const d = await api("book", { book_id: id });
+    if (screen !== "book" || param !== id) return;
+    if (!d.ok) { $("#bk").innerHTML = '<div class="card muted">' + esc(errText(d)) + "</div>"; return; }
+    bookPrivate(b, d);
+  };
+  function bookPublic(b) {   // ro'yxatdan o'tmagan / namuna rejimi: katalogdagi narxlar
+    const s = st(b);
+    $("#bk").innerHTML = '<div class="card price2" style="padding:0">' +
+      '<div><span class="small muted">Ijara · ' + (b.rent_days || "—") + ' kun</span><span class="big" style="color:var(--accent)">' + (s.rent && b.rent_fee != null ? fmt(b.rent_fee) + " so'm" : "—") + "</span></div>" +
+      '<div><span class="small muted">Sotib olish</span><span class="big">' + (s.buy && b.price != null ? fmt(b.price) + " so'm" : "—") + "</span></div></div>";
+    foot('<button class="btn" id="reg">Bron qilish</button>', () => { $("#reg").onclick = () => { if (DEMO) toast(ERR.DEMO); else needReg(); }; });
+  }
+  // ⚖️ Ijara narxi: botdagi bilan bir xil hisob (chegirma → pastki chegara)
+  function rentNet(q, x) { x = Number(x || 0); const a = Number(q.rent_disc_amount || 0); if (a) return Math.max(x - a, 0);
+    const p = Number(q.rent_disc_pct || 0); return p ? x - Math.round(x * p / 100) : x; }
+  function rentFloor(q, early) { return Math.round(Number(q.fee_total || 0) * Number(early ? q.floor_early_pct || 50 : q.floor_full_pct || 60) / 100 / 100) * 100; }
+  const rentNF = (q, x, early) => Math.max(rentNet(q, x), rentFloor(q, early));
+  function priceTable(q) {
+    const days = +q.rental_days, disc = Number(q.discount_percent || 0), fixed = +q.fee_fixed, v = +q.fee_variable;
+    const pts = [...new Set([1, 3, 7, 14, 21, Math.floor(days / 2), days])].filter((d) => d >= 1 && d <= days).sort((a, b) => a - b);
+    return pts.map((d) => { const cost = d === days ? +q.max_charge : d === 1 ? +q.min_charge : fixed + Math.round(v * d / days * (1 - disc / 100) / 100) * 100;
+      const net = rentNF(q, cost, d < days);
+      return '<div class="kv"><span>' + d + " kunda qaytarsangiz" + (d === days ? " (muddat oxiri)" : "") + "</span><b>" + (d > 1 && d < days ? "≈ " : "") + fmt(net) + " so'm</b></div>"; }).join("") +
+      (Number(q.daily_fine) ? '<div class="kv"><span>Kechiksa, har kuni</span><b>+' + fmt(q.daily_fine) + " so'm</b></div>" : "") +
+      '<span class="tiny muted">Chegirma va tekin kunlar bilan ham ijara haqining kamida ' + (q.floor_full_pct || 60) + "% i, erta qaytarsangiz kamida " + (q.floor_early_pct || 50) + "% i olinadi.</span>";
+  }
+  function bookPrivate(b, d) {
+    const q = d.quote && d.quote.ok !== false ? d.quote : null;
+    const buyC = d.copies.find((c) => c.id === d.buy_copy), dmgC = d.copies.find((c) => c.id === d.damaged_copy);
+    const canRent = !!(q && d.rent_copy), canBuy = !!buyC;
+    let html = "";
+    if (canRent || canBuy || dmgC) {
+      const fee = q ? +q.fee_total : 0, net = q ? rentNF(q, fee) : 0;
+      const sp = buyC ? buyC.sale : null;
+      html += '<div class="card" style="padding:0;overflow:hidden"><div class="price2">' +
+        '<div><span class="small muted">Ijara · ' + (q ? q.rental_days : "—") + ' kun</span><span class="big" style="color:var(--accent)">' + (canRent ? fmt(net) + ' <span style="font-size:13px">so\'m</span>' : "—") + "</span>" +
+        (canRent && net < fee ? '<span class="tiny muted"><s>' + fmt(fee) + "</s> · " + esc(String(q.rent_disc_label || "chegirma").replace(/[−-]\s*\d+([.,]\d+)?\s*%\s*$/, "")) + "</span>" : "") + "</div>" +
+        '<div><span class="small muted">Sotib olish' + (buyC && buyC.new ? " · yangi" : "") + '</span><span class="big">' + (canBuy ? fmt(sp.price) + ' <span style="font-size:13px">so\'m</span>' : "—") + "</span>" +
+        (canBuy && +sp.full > +sp.price ? '<span class="tiny muted"><s>' + fmt(sp.full) + "</s> · aksiya −" + pct(sp.pct) + "%" + (sp.partial ? " (qisman)" : "") + "</span>" : "") + "</div></div>" +
+        (canRent ? '<div class="row small" style="padding:12px 14px;border-top:1px solid var(--line);color:var(--soft);align-items:flex-start">' + ic("lock", 16, "#F0B54A") +
+          "<span>Garov " + fmt(q.deposit) + " so'm — kitobni qaytarganingizda balansingizga qaytadi" + (me.premium ? " (⭐ Premium: faqat ijara haqi muzlatiladi)" : "") + "</span></div>" : "") +
+        (canRent ? '<button type="button" id="tbl" style="width:100%;height:46px;border:0;border-top:1px solid var(--line);background:none;font-weight:700;font-size:13px;display:flex;justify-content:space-between;align-items:center;padding:0 14px">' +
+          '<span>Batafsil hisob — qaytarish kuniga qarab</span><span style="color:var(--accent)" id="tbla">Ochish ▾</span></button><div id="tblb" class="col" style="display:none;padding:4px 14px 14px">' + priceTable(q) + "</div>" : "") + "</div>";
+      if (sp && Number(sp.limit) > 0) html += '<div class="card warm row small" style="color:#F4E3C4">' + ic("tagi", 16, "#F0B54A") + "<span>Aksiya limitingizdan <b>" + fmt(sp.left_after != null ? sp.left_after : sp.left) + " so'm</b> qoladi (har mijozga " + fmt(sp.limit) + " so'm)</span></div>";
+      if (q && Number(q.free_available) > 0) html += '<div class="card small">🎁 Sizda <b>' + q.free_available + " tekin kun</b> bor — ijaraga olishda ishlatishingiz yoki uzaytirish uchun saqlashingiz mumkin.</div>";
+      if (dmgC && !canBuy && d.mode !== "faqat_ijara") html += '<div class="card small">🔧 Zararlangan nusxa sotuvda: <b>' + fmt(dmgC.sale.price) + " so'm</b></div>";
+      html += '<button type="button" class="btn ghost sm" id="promo" style="align-self:flex-start">' + ic("tagi", 16) + " " + (promoCode ? "Promokod: " + esc(promoCode) : "Promokodim bor") + "</button>";
+    } else {
+      html += '<div class="card col"><b>🔴 Hozir barcha nusxalar band</b><span class="small muted">Navbatda ' + d.waitlist + " kishi.</span>" +
+        '<button class="btn ghost" id="wl"' + (d.on_waitlist ? " disabled" : "") + ">" + (d.on_waitlist ? "✅ Bo'shaganda xabar beramiz" : "🔔 Bo'shaganda xabar ber") + "</button>" +
+        (d.mode !== "faqat_sotuv" ? '<button class="btn ghost" data-pre="ijara">⏳ Oldindan to\'lab navbatga (ijara)</button>' : "") +
+        (d.mode !== "faqat_ijara" ? '<button class="btn ghost" data-pre="sotuv">⏳ Oldindan to\'lab navbatga (sotib olish)</button>' : "") + "</div>";
+    }
+    if (d.genre) html += '<button class="btn ghost sm" id="gsub" style="align-self:flex-start;height:auto;min-height:38px;padding:8px 13px;text-align:left">' + (d.genre_sub ? "🔕 «" + esc(d.genre) + "» obunasini bekor qilish" : "🔔 «" + esc(d.genre) + "» janriga yangi kitob kelsa xabar ber") + "</button>";
+    $("#bk").innerHTML = '<div class="col" style="gap:12px">' + html + "</div>";
+    if ($("#tbl")) $("#tbl").onclick = () => { const o = $("#tblb").style.display === "none"; $("#tblb").style.display = o ? "flex" : "none"; $("#tbla").textContent = o ? "Yopish ▴" : "Ochish ▾"; };
+    if ($("#promo")) $("#promo").onclick = () => promoSheet(b, d);
+    if ($("#wl")) $("#wl").onclick = async () => { const r = await api("waitlist", { book_id: b.id }); toast(r.ok ? "🔔 Bo'shashi bilan xabar beramiz. Navbatda: " + r.position : errText(r)); if (r.ok) go("book", b.id, false); };
+    $$("[data-pre]").forEach((x) => x.onclick = () => confirmSheet("Oldindan to'lab navbatga turish", "Nusxa bo'shashi bilan siz uchun avtomatik bron qilinadi. Summa hozir balansingizda muzlatiladi va istalgan payt bekor qilsangiz bo'shaydi.",
+      async () => { const r = await api("preorder", { book_id: b.id, kind: x.dataset.pre });
+        if (r.ok) { haptic("ok"); toast("⏳ Navbatga qo'shildingiz: " + r.position + "-o'rin, " + fmt(r.amount) + " so'm muzlatildi"); refreshMe(); myData = null; }
+        else if (r.error === "BALANCE") topupOffer(r.need); else toast(errText(r)); }));
+    if ($("#gsub")) $("#gsub").onclick = async () => { const r = await api("genre_sub", { genre: d.genre }); toast(r.ok ? (r.subscribed ? "🔔 Obuna bo'ldingiz" : "🔕 Obuna bekor qilindi") : errText(r)); if (r.ok) go("book", b.id, false); };
+    const btns = [];
+    if (canBuy || (dmgC && d.mode !== "faqat_ijara")) btns.push('<button class="btn ghost" id="buy">Sotib olish</button>');
+    if (canRent) btns.push('<button class="btn" id="rent">Ijaraga olish</button>');
+    if (btns.length) foot(btns.join(""), () => {
+      if ($("#rent")) $("#rent").onclick = () => rentSheet(b, d, q);
+      if ($("#buy")) $("#buy").onclick = () => buySheet(b, buyC || dmgC);
+    });
+  }
+  function foot(html, bind) { $("#view").insertAdjacentHTML("beforeend", '<div class="foot"><div class="in">' + html + "</div></div>"); if (bind) bind(); }
+
+  async function loadReviews(id) {
+    if (DEMO) return;
+    try {
+      const list = await pub("app_book_reviews", { p_book_id: id });
+      if (!Array.isArray(list) || !list.length || !$("#revs")) return;
+      $("#revs").innerHTML = '<div class="col"><span class="h2" style="font-size:18px">Sharhlar</span>' + list.slice(0, 4).map((x) =>
+        '<div class="card col" style="gap:4px"><span style="color:var(--accent)">' + "★★★★★".slice(0, x.stars) + '</span><span>«' + esc(x.text) + '»</span><span class="tiny muted">' + (x.best ? "🏆 " : "") + esc(x.name || "") + "</span></div>").join("") + "</div>";
+    } catch (e) {}
+  }
+  function promoSheet(b, d) {
+    sheet('<div class="h2">🏷 Promokod</div><label class="col"><span class="small muted">Kodni yozing</span><input class="field" id="pc" value="' + esc(promoCode) + '" autocapitalize="characters"></label>' +
+      '<div id="pres" class="small"></div><div class="row"><button class="btn ghost" id="pclr">Olib tashlash</button><button class="btn" id="pok">Tekshirish</button></div>', (el) => {
+      $("#pclr", el).onclick = () => { promoCode = ""; closeSheet(); go("book", b.id, false); };
+      $("#pok", el).onclick = async () => {
+        const code = $("#pc", el).value.trim().toUpperCase(); if (!code) return;
+        const copy = d.rent_copy || d.buy_copy; if (!copy) return;
+        const r = await api("promo", { code, copy_id: copy });
+        const lines = [];
+        if (r.rent && r.rent.ok) lines.push("📖 Ijarada: −" + (Number(r.rent.pct) ? pct(r.rent.pct) + "%" : fmt(r.rent.amount) + " so'm") + " (avtomatik chegirmadan katta bo'lsagina qo'llanadi)");
+        if (r.sale && r.sale.ok) lines.push("🛒 Sotuvda (yangi nusxa): −" + (Number(r.sale.pct) ? pct(r.sale.pct) + "%" : fmt(r.sale.amount) + " so'm") + " (aksiyadan foydali bo'lsagina)");
+        if (!lines.length) { $("#pres", el).textContent = errText((r.rent && r.rent.error ? r.rent : r.sale) || r); return; }
+        promoCode = code; $("#pres", el).innerHTML = lines.map(esc).join("<br>") + '<br><b style="color:var(--ok)">✓ Bron qilishda qo\'llanadi</b>';
+        setTimeout(() => { closeSheet(); go("book", b.id, false); }, 1400);
+      };
+    });
+  }
+
+  // ---------- bron oynalari ----------
+  function rentSheet(b, d, q) {
+    const free = Number(q.free_available) > 0;
+    let uf = false;
+    const body = () => {
+      const pay = uf ? rentNF(q, q.max_charge_free) : rentNF(q, q.fee_total);
+      return '<div class="h2">📖 Ijaraga olish</div><div class="card col">' +
+        '<div class="kv"><span>Kitob</span><b>' + esc(b.title) + "</b></div>" +
+        '<div class="kv"><span>Ijara haqi (' + q.rental_days + " kun, muddat oxirigacha)</span><b>" + fmt(pay) + " so'm</b></div>" +
+        '<div class="kv"><span>Garov (qaytariladi)</span><b>' + (me.premium ? "yo'q ⭐" : fmt(Math.max(q.deposit - pay, 0)) + " so'm") + "</b></div>" +
+        '<div class="kv" style="border-top:1px solid var(--line);padding-top:8px"><span>Hozir muzlatiladi</span><b style="color:var(--accent)">' + fmt(me.premium ? pay : q.deposit) + " so'm</b></div>" +
+        '<span class="tiny muted">Pul balansingizda faqat band turadi. Qaytarganingizda ijara haqi ayirilib, qolgani balansga qaytadi. Erta qaytarsangiz arzonroq.</span></div>' +
+        (free ? '<label class="card row" style="gap:12px"><input type="checkbox" id="uf"' + (uf ? " checked" : "") + ' style="width:22px;height:22px;accent-color:#F0B54A"><span class="small">🎁 ' + q.free_use + " tekin kunni ishlatish (sizda " + q.free_available + " kun)</span></label>" : "") +
+        (promoCode ? '<div class="small">🏷 Promokod: <b>' + esc(promoCode) + "</b></div>" : "") +
+        '<div class="small muted">⏳ Kitobni ' + Math.round(q.pickup_hours || 48) + " soat ichida do'kondan olib ketasiz.</div>" +
+        '<button class="btn" id="ok">Bron qilish</button>';
+    };
+    const bind = (el) => {
+      if ($("#uf", el)) $("#uf", el).onchange = (e) => { uf = e.target.checked; el.innerHTML = body(); bind(el); };
+      $("#ok", el).onclick = () => doBook("rent", { copy_id: d.rent_copy, use_free: uf, promo: promoCode }, b, q);
+    };
+    sheet(body(), bind);
+  }
+  function buySheet(b, c) {
+    const sp = c.sale;
+    sheet('<div class="h2">🛒 Sotib olish</div><div class="card col">' +
+      '<div class="kv"><span>Kitob</span><b>' + esc(b.title) + "</b></div>" +
+      '<div class="kv"><span>Nusxa</span><b>' + (c.sale_only ? "zararlangan" : c.new ? "yangi" : "ijarada bo'lgan") + "</b></div>" +
+      '<div class="kv"><span>Narxi</span><b style="color:var(--accent)">' + (+sp.full > +sp.price ? '<s class="muted">' + fmt(sp.full) + "</s> " : "") + fmt(sp.price) + " so'm</b></div>" +
+      (sp.partial ? '<span class="tiny muted">Aksiya limitingizdan faqat bir qismi qolgani uchun chegirma kitobning bir qismiga qo\'llandi.</span>' : "") +
+      '<span class="tiny muted">Summa balansingizda muzlatiladi va kitobni olganingizda yechiladi. Bonus xaridda ishlatilmaydi.</span></div>' +
+      (promoCode ? '<div class="small">🏷 Promokod: <b>' + esc(promoCode) + "</b> (aksiyadan foydali bo'lsa qo'llanadi)</div>" : "") +
+      '<div class="small muted">📲 Fiskal chek beriladi — Soliq ilovasida skanerlab keshbek olishingiz mumkin.</div>' +
+      '<button class="btn" id="ok">Bron qilish</button>', (el) => { $("#ok", el).onclick = () => doBook("buy", { copy_id: c.id, promo: promoCode }, b); });
+  }
+  async function doBook(action, body, b, q) {
+    const btn = $("#ok"); if (btn) { btn.disabled = true; btn.textContent = "Bajarilmoqda…"; }
+    const r = await api(action, Object.assign({ pay: "balans" }, body));
+    if (r.ok) { haptic("ok"); promoCode = ""; myData = null; doneSheet(action, r, b); refreshMe(); loadCatalog(); return; }
+    if (r.error === "BALANCE" && r.cash_full != null) return cashSheet(action, body, b, r, q);
+    if (btn) { btn.disabled = false; btn.textContent = "Bron qilish"; }
+    toast(errText(r));
+  }
+  function cashSheet(action, body, b, r, q) {
+    const fee = q ? Math.min(rentNF(q, body.use_free ? q.max_charge_free : q.fee_total), +r.need) : null;
+    sheet('<div class="h2">Balans yetmaydi</div><div class="card col">' +
+      (fee != null ? '<div class="kv"><span>Ijara narxi</span><b>' + fmt(fee) + " so'm</b></div>" + '<div class="kv"><span>Garov (qaytariladi)</span><b>' + fmt(r.need - fee) + " so'm</b></div>" : "") +
+      '<div class="kv"><span>Kerak</span><b>' + fmt(r.need) + " so'm</b></div>" + '<div class="kv"><span>Bo\'sh balans</span><b>' + fmt(r.available) + " so'm</b></div></div>" +
+      '<button class="btn" id="tp">💳 Balansni to\'ldirish</button>' +
+      (r.cash_allowed && r.partial_possible ? '<button class="btn ghost" id="pq">💵 ' + fmt(r.balance_part) + " balansdan + " + fmt(r.cash_part) + " naqd</button>" : "") +
+      (r.cash_allowed ? '<button class="btn ghost" id="pn">💵 Hammasini do\'konda naqd: ' + fmt(r.cash_full) + " so'm</button>" +
+        '<span class="tiny muted">Naqd summa 1000 so\'mga yaxlitlanadi, ortgani balansingizga tushadi.</span>' : '<span class="small muted">' + esc(ERR[r.cash_reason] || "") + "</span>"), (el) => {
+      $("#tp", el).onclick = () => { closeSheet(); go("topup", Math.max(1000, Math.ceil((r.need - r.available) / 1000) * 1000)); };
+      if ($("#pq", el)) $("#pq", el).onclick = () => doBook(action, Object.assign({}, body, { pay: "qisman" }), b, q);
+      if ($("#pn", el)) $("#pn", el).onclick = () => doBook(action, Object.assign({}, body, { pay: "naqd" }), b, q);
+    });
+  }
+  function doneSheet(action, r, b) {
+    const cash = Number(r.cash_due || 0);
+    const held = r.held_amount != null ? Number(r.held_amount) : Number(action === "rent" ? r.deposit : r.total);
+    sheet('<div style="font-size:44px;text-align:center">✅</div><div class="h2" style="text-align:center">Bron qilindi!</div><div class="card col">' +
+      '<div class="kv"><span>Kitob</span><b>' + esc(r.title || b.title) + "</b></div>" +
+      (held ? '<div class="kv"><span>Muzlatildi</span><b>' + fmt(held) + " so'm</b></div>" : "") +
+      (cash ? '<div class="kv"><span>Do\'konda naqd</span><b>' + fmt(cash) + " so'm</b></div>" : "") +
+      '<div class="kv"><span>Olib ketish muddati</span><b>' + dt(r.pickup_deadline, true) + "</b></div></div>" +
+      '<p class="small muted" style="margin:0">Do\'konda <b>🪪 QR kodingizni</b> ko\'rsating. Manzil va xarita bot chatiga yuborildi.</p>' +
+      '<div class="row"><button class="btn ghost" id="qrb">🪪 QR kodim</button><button class="btn" id="myb">Kitoblarim</button></div>', (el) => {
+      $("#qrb", el).onclick = () => { closeSheet(); go("qr"); };
+      $("#myb", el).onclick = () => { closeSheet(); stack.length = 0; myTab = 1; go("my", null, false); };
+    });
+  }
+  function confirmSheet(title, text, fn) {
+    sheet('<div class="h2">' + esc(title) + '</div><p class="muted" style="margin:0">' + text + '</p><div class="row"><button class="btn ghost" id="no">Yo\'q</button><button class="btn" id="yes">Ha</button></div>', (el) => {
+      $("#no", el).onclick = closeSheet; $("#yes", el).onclick = async () => { $("#yes", el).disabled = true; closeSheet(); await fn(); };
+    });
+  }
+  function topupOffer(need) {
+    sheet('<div class="h2">Balans yetmaydi</div><p class="muted" style="margin:0">Kerak: <b>' + fmt(need) + ' so\'m</b>.</p><button class="btn" id="tp">💳 Balansni to\'ldirish</button>',
+      (el) => { $("#tp", el).onclick = () => { closeSheet(); go("topup"); }; });
+  }
+
+  // ---------- 📖 Mening kitoblarim ----------
+  let myTab = 0, myData = null;
+  SCREENS.my = async function () {
+    if (!me || !me.ok) return regScreen("Mening kitoblarim");
+    const tabs = ["Hozirgi", "Bronlar", "Navbat", "Tarix"];
+    const el = view('<span class="h1">Mening kitoblarim</span><div class="tabs">' + tabs.map((t, i) => '<button data-t="' + i + '" class="' + (myTab === i ? "on" : "") + '">' + t + "</button>").join("") +
+      '</div><div id="mb">' + (myData ? "" : '<div class="skel" style="height:120px"></div>') + "</div>");
+    $$("[data-t]", el).forEach((b) => b.onclick = () => { myTab = +b.dataset.t; render(); });
+    if (myData) drawMy();
+    const d = await api("my");
+    if (screen !== "my") return;
+    if (!d.ok) { if ($("#mb")) $("#mb").innerHTML = '<div class="card muted">' + esc(errText(d)) + "</div>"; return; }
+    myData = d; drawMy();
+  };
+  function drawMy() {
+    const d = myData, box = $("#mb"); if (!box || !d) return;
+    const act = d.rentals.filter((r) => r.status !== "kutilmoqda"), pend = d.rentals.filter((r) => r.status === "kutilmoqda");
+    let h = "";
+    if (myTab === 0) {
+      h += act.map((r) => { const left = daysLeft(r.due), total = Number(r.days) || 30, w = Math.max(5, Math.min(100, 100 - (left / total) * 100));
+        return '<div class="card row" style="align-items:flex-start;gap:12px"><div style="flex:0 0 56px">' + coverHtml(r, 80) + '</div><div class="col" style="flex:1;gap:6px;min-width:0">' +
+          "<b>" + esc(r.title) + '</b><span class="small ' + (left < 0 ? "" : "muted") + '"' + (left < 0 ? ' style="color:var(--red)"' : "") + ">" +
+          (left < 0 ? "⚠️ Muddati " + (-left) + " kun o'tdi (" + dt(r.due) + ")" : "Qaytarish: " + dt(r.due) + " · " + left + " kun qoldi") + '</span><div class="bar"><i style="width:' + w + '%"></i></div>' +
+          '<div class="row" style="flex-wrap:wrap;gap:8px"><button class="btn sm" data-rn="' + r.id + '">Batafsil</button>' + (r.status === "faol" ? '<button class="btn ghost sm" data-ext="' + r.id + '">Uzaytirish</button>' : "") + "</div></div></div>"; }).join("");
+      if (!act.length) h += '<div class="empty">Qo\'lingizda kitob yo\'q.<br><br><button class="btn ghost sm" data-go="catalog">📚 Katalogga o\'tish</button></div>';
+      const m = d.marathon;
+      if (m && (m.active || m.goal)) h += '<div class="card warm col"><b>🏃 ' + esc(m.title || "Kitob marafoni") + '</b><span class="small" style="color:var(--soft)">' + (m.done || 0) + " / " + (m.goal || 0) + " kitob" + (m.reward ? " · mukofot " + fmt(m.reward) + " so'm bonus" : "") + "</span>" +
+        '<div class="bar"><i style="width:' + Math.min(100, ((m.done || 0) / Math.max(m.goal || 1, 1)) * 100) + '%"></i></div></div>';
+      if (d.bundles && d.bundles.length) h += '<div class="card col"><b>📦 To\'plamlar</b>' + d.bundles.map((x) => '<span class="small muted">' + esc(x.name || x.bundle_name || "To'plam") + (x.status ? " — " + esc(x.status) : "") + "</span>").join("") + "</div>";
+    } else if (myTab === 1) {
+      h += pend.map((r) => '<div class="card col"><div class="row between"><b>' + esc(r.title) + '</b><span class="tag">IJARA</span></div><span class="small muted">Olib ketish: ' + dt(r.deadline, true) + " gacha</span>" +
+        (Number(r.cash_due) ? '<span class="small" style="color:var(--soft)">💵 Olishda naqd: ' + fmt(r.cash_due) + " so'm</span>" : "") +
+        '<div class="row"><button class="btn ghost sm" data-go="qr">🪪 QR kod</button><button class="btn danger sm" data-cr="' + r.id + '">Bronni bekor qilish</button></div></div>').join("");
+      h += d.sales.map((s) => '<div class="card col"><div class="row between"><b>' + esc(s.title) + '</b><span class="tag w">XARID</span></div><span class="small muted">' + fmt(s.total) + " so'm · " + dt(s.deadline, true) + " gacha</span>" +
+        (Number(s.cash_due) ? '<span class="small" style="color:var(--soft)">💵 Olishda naqd: ' + fmt(s.cash_due) + " so'm</span>" : "") +
+        '<div class="row"><button class="btn ghost sm" data-go="qr">🪪 QR kod</button><button class="btn danger sm" data-cs="' + s.id + '">Bronni bekor qilish</button></div></div>').join("");
+      if (!pend.length && !d.sales.length) h += '<div class="empty">Bronlar yo\'q.</div>';
+    } else if (myTab === 2) {
+      h += (d.preorders || []).map((p) => '<div class="card col"><b>' + esc(p.title) + '</b><span class="small muted">Oldindan to\'langan navbat (' + (p.kind === "ijara" ? "ijara" : "xarid") + ") · " + p.position + "-o'rin · 🔒 " + fmt(p.amount) + " so'm</span>" +
+        '<button class="btn danger sm" style="align-self:flex-start" data-pc="' + p.id + '">Navbatdan chiqish</button></div>').join("");
+      h += (d.waitlist || []).map((w) => '<button class="card col" data-book="' + w.book_id + '" style="text-align:left;color:var(--ink)"><b>' + esc(w.title) + '</b><span class="small muted">🔔 Bo\'shaganda xabar beramiz · navbatda ' + w.people + " kishi</span></button>").join("");
+      const RS = { kutilmoqda: "qidirilmoqda", keldi: "✅ keldi", bekor: "bekor" };
+      if ((d.requests || []).length) h += '<div class="card col"><b>🙋 So\'rovlarim</b>' + d.requests.map((x) => '<span class="small"><span class="muted">' + dt(x.at) + "</span> «" + esc(x.text) + "» — " + (RS[x.status] || esc(x.status)) + "</span>").join("") + "</div>";
+      const OS = { yangi: "baholanmoqda", taklif: "narx taklif qilindi", rozi: "kelishildi — do'konga olib keling", keldi: "✅ qabul qilindi", rad: "rad etildi", bekor: "bekor" };
+      h += (d.offers || []).map((o) => '<div class="card col"><b>📤 ' + esc(String(o.text).slice(0, 80)) + '</b><span class="small muted">' + (OS[o.status] || esc(o.status)) + (o.amount ? " · " + fmt(o.amount) + " so'm" : "") + "</span>" +
+        (o.note ? '<span class="small">' + esc(o.note) + "</span>" : "") +
+        (o.status === "taklif" ? '<div class="row"><button class="btn sm" data-oa="' + o.id + '">✅ Roziman</button><button class="btn ghost sm" data-od="' + o.id + '">Yo\'q</button></div>' : "") + "</div>").join("");
+      if (!h) h = '<div class="empty">Navbat, so\'rov va takliflar yo\'q.</div>';
+    } else {
+      h += d.history.length ? '<div class="list">' + d.history.map((x) => '<div><span class="col" style="gap:2px"><span>' + esc(x.title) + '</span><span class="small muted" style="font-weight:500">' +
+        (x.kind === "sotuv" || x.status === "sotib_olingan" ? "Sotib olindi" : "Qaytarildi") + " · " + dt(x.at) + (x.stars ? " · " + "★".repeat(x.stars) : "") + "</span></span>" +
+        (x.can_rate ? '<button class="btn ghost sm" data-rate="' + x.id + '" data-tt="' + esc(x.title) + '">Baholash</button>' : "") + "</div>").join("") + "</div>" : '<div class="empty">Tarix bo\'sh.</div>';
+    }
+    box.innerHTML = '<div class="col" style="gap:10px">' + h + "</div>";
+    bindCommon(box);
+    $$("[data-rn]", box).forEach((b) => b.onclick = () => rentalSheet(+b.dataset.rn));
+    $$("[data-ext]", box).forEach((b) => b.onclick = () => extendSheet(+b.dataset.ext));
+    $$("[data-cr]", box).forEach((b) => b.onclick = () => confirmSheet("Bronni bekor qilasizmi?", "Balansdan muzlatilgan pul darhol bo'shaydi. Naqd qismi hali olinmagan.", async () => {
+      const r = await api("cancel_rental", { id: +b.dataset.cr }); toast(r.ok ? "✅ Bron bekor qilindi" + (Number(r.released) ? ", " + fmt(r.released) + " so'm bo'shadi" : "") : errText(r)); afterChange(); }));
+    $$("[data-cs]", box).forEach((b) => b.onclick = () => confirmSheet("Bronni bekor qilasizmi?", "Balansdan muzlatilgan pul darhol bo'shaydi. Naqd qismi hali olinmagan.", async () => {
+      const r = await api("cancel_sale", { id: +b.dataset.cs }); toast(r.ok ? "✅ Bron bekor qilindi" + (Number(r.released) ? ", " + fmt(r.released) + " so'm bo'shadi" : "") : errText(r)); afterChange(); }));
+    $$("[data-pc]", box).forEach((b) => b.onclick = () => confirmSheet("Navbatdan chiqasizmi?", "Muzlatilgan pul darhol bo'shaydi.", async () => {
+      const r = await api("preorder_cancel", { id: +b.dataset.pc }); toast(r.ok ? "✅ Navbatdan chiqdingiz" : errText(r)); afterChange(); }));
+    $$("[data-oa],[data-od]", box).forEach((b) => b.onclick = async () => {
+      const accept = !!b.dataset.oa; const r = await api("offer_answer", { id: +(b.dataset.oa || b.dataset.od), accept });
+      toast(r.ok ? (accept ? "✅ Kelishdik! Kitobni do'konga olib keling va QR kodingizni ko'rsating." : "Mayli, rahmat!") : errText(r)); afterChange(); });
+    $$("[data-rate]", box).forEach((b) => b.onclick = () => rateSheet(+b.dataset.rate, b.dataset.tt));
+  }
+  function afterChange() { myData = null; refreshMe(); if (screen === "my") render(); }
+
+  async function rentalSheet(id) {
+    sheet('<div class="skel" style="height:200px"></div>');
+    const d = await api("rental", { id });
+    if (!d.ok) { closeSheet(); toast(errText(d)); return; }
+    const r = d.rental, ch = d.charges;
+    let calc = "";
+    if (ch && ch.ok !== false && ch.fee_fixed != null) {
+      const rent = ch.rent != null ? +ch.rent : +ch.fee_fixed + +ch.charged_variable - Number(ch.promo || 0);
+      const backDays = Number(ch.free_back || 0) + Number(ch.free_back_floor || 0);
+      calc = '<div class="card col"><b>💳 Bugun qaytarsangiz (' + ch.days_used + " kun)</b>" +
+        '<div class="kv"><span>O\'zgarmas qism</span><span>' + fmt(ch.fee_fixed) + "</span></div>" +
+        '<div class="kv"><span>Kunlik qism</span><span>+ ' + fmt(ch.charged_variable) + "</span></div>" +
+        (Number(ch.promo) ? '<div class="kv"><span>' + esc(ch.promo_label || "Chegirma") + "</span><span>− " + fmt(ch.promo) + "</span></div>" : "") +
+        (ch.floor_applied ? '<div class="kv"><span>⚖️ Eng kam to\'lov (' + pct(ch.floor_pct) + "%)</span><span>" + fmt(ch.floor) + "</span></div>" : "") +
+        '<div class="kv" style="border-top:1px solid var(--line);padding-top:6px"><b>Ijara haqi</b><b>' + fmt(rent) + " so'm</b></div>" +
+        (Number(ch.fine) ? '<div class="kv"><span>⚠️ Kechikish jarimasi</span><b>+ ' + fmt(ch.fine) + "</b></div>" : "") +
+        (Number(ch.deposit || r.deposit_amount) ? (Number(ch.refund) >= 0 ? '<div class="kv"><span>🔒 Garovdan qaytadi</span><b style="color:var(--ok)">' + fmt(ch.refund) + " so'm</b></div>"
+          : '<div class="kv"><span>🔒 Garov yetmaydi — balansdan</span><b>' + fmt(-Number(ch.refund)) + " so'm</b></div>") : "") +
+        (backDays ? '<span class="tiny muted">🎁 ' + backDays + " tekin kun hisobingizga qaytadi</span>" : "") + "</div>";
+    }
+    const ST = { kutilmoqda: "⏳ olib ketish kutilmoqda", faol: "📖 qo'lingizda", muddati_otgan: "⚠️ muddati o'tgan" };
+    sheet('<div class="h2">' + esc(r.title) + '</div><div class="card col">' +
+      '<div class="kv"><span>Holati</span><b>' + (ST[r.status] || esc(r.status)) + "</b></div>" +
+      '<div class="kv"><span>Nusxa</span><b>' + esc(r.copy_code) + "</b></div>" +
+      (r.picked_up_at ? '<div class="kv"><span>Olingan</span><b>' + dt(r.picked_up_at) + "</b></div>" + '<div class="kv"><span>Qaytarish muddati</span><b>' + dt(r.due_date) + "</b></div>" : "") +
+      '<div class="kv"><span>Garov</span><b>' + fmt(r.deposit_amount) + " so'm</b></div>" + '<div class="kv"><span>To\'liq ijara haqi</span><b>' + fmt(r.fee_total) + " so'm</b></div>" +
+      (r.extension_count ? '<div class="kv"><span>Uzaytirilgan</span><b>' + r.extension_count + " marta (+" + r.extension_days + " kun)</b></div>" : "") + "</div>" + calc +
+      '<div class="row">' + (r.status === "faol" ? '<button class="btn ghost" id="ex">🔁 Uzaytirish</button>' : "") +
+      (["faol", "muddati_otgan"].includes(r.status) ? '<button class="btn ghost" id="rb">🛒 Sotib olish</button>' : "") + "</div>", (el) => {
+      if ($("#ex", el)) $("#ex", el).onclick = () => extendSheet(id);
+      if ($("#rb", el)) $("#rb", el).onclick = () => rbuySheet(id);
+    });
+  }
+  function extendSheet(id) {
+    const opts = [3, 5, 7, 10, 14, 21, 30];
+    sheet('<div class="h2">🔁 Muddatni uzaytirish</div><p class="small muted" style="margin:0">Necha kunga? Tekin kunlaringiz bo\'lsa, avval ular ishlatiladi (xohlasangiz saqlab qolasiz).</p>' +
+      '<div class="grid2" style="grid-template-columns:repeat(4,minmax(0,1fr))">' + opts.map((n) => '<button class="chip" data-d="' + n + '" style="width:100%;padding:0">' + n + " kun</button>").join("") + '</div><div id="eq"></div>', (el) => {
+      $$("[data-d]", el).forEach((b) => b.onclick = async () => {
+        $$("[data-d]", el).forEach((x) => x.classList.toggle("on", x === b));
+        const days = +b.dataset.d; $("#eq", el).innerHTML = '<div class="skel" style="height:80px"></div>';
+        const [a, p] = await Promise.all([api("extend", { id, days, apply: false, use_free: true }), api("extend", { id, days, apply: false, use_free: false })]);
+        if (!a.ok) { $("#eq", el).innerHTML = '<div class="card small">' + esc(errText(a)) + "</div>"; return; }
+        const opt = (res, uf, label) => '<button class="btn' + (uf ? "" : " ghost") + '" data-ok="' + (uf ? 1 : 0) + '">' + (res.free_days ? "🎁 " + res.free_days + " tekin kun + " : "") + fmt(res.fee) + " so'm — " + label + "</button>";
+        $("#eq", el).innerHTML = '<div class="col"><div class="kv"><span>Yangi muddat</span><b>' + dt(a.new_due) + "</b></div>" + opt(a, true, "tasdiqlash") +
+          (a.free_days && p.ok ? opt(p, false, "tekin kunlarni saqlab") : "") + '<span class="tiny muted">Summa balansingizdan olinadi.</span></div>';
+        $$("[data-ok]", el).forEach((x) => x.onclick = async () => {
+          x.disabled = true; const r = await api("extend", { id, days, apply: true, use_free: x.dataset.ok === "1" });
+          if (r.ok) { haptic("ok"); closeSheet(); toast("✅ Uzaytirildi. Yangi muddat: " + dt(r.new_due)); afterChange(); }
+          else if (r.error === "BALANCE") topupOffer(r.need); else { x.disabled = false; toast(errText(r)); }
+        });
+      });
+    });
+  }
+  async function rbuySheet(id) {
+    const r = await api("rbuy", { id, apply: false });
+    if (!r.ok) { if (r.error === "BALANCE") topupOffer(r.need); else toast(errText(r)); return; }
+    sheet('<div class="h2">🛒 Kitobni o\'zingizga olib qolish</div><div class="card col">' +
+      '<div class="kv"><span>Kitob narxi</span><span>' + fmt(r.price) + "</span></div>" + '<div class="kv"><span>Ijara haqidan olinadi (o\'zgarmas qism)</span><span>' + fmt(r.fee_fixed) + "</span></div>" +
+      (Number(r.fine) ? '<div class="kv"><span>Kechikish jarimasi</span><span>' + fmt(r.fine) + "</span></div>" : "") +
+      '<div class="kv" style="border-top:1px solid var(--line);padding-top:6px"><b>Jami</b><b>' + fmt(r.total) + " so'm</b></div>" +
+      '<div class="kv"><span>Balansdan olinadi</span><b style="color:var(--accent)">' + fmt(r.extra) + " so'm</b></div>" +
+      (Number(r.back) ? '<div class="kv"><span>Garovdan qaytadi</span><b>' + fmt(r.back) + " so'm</b></div>" : "") + "</div>" +
+      '<button class="btn" id="ok">Ha, sotib olaman</button>', (el) => { $("#ok", el).onclick = async () => {
+        $("#ok", el).disabled = true; const x = await api("rbuy", { id, apply: true });
+        if (x.ok) { haptic("ok"); closeSheet(); toast("🎉 Tabriklaymiz, kitob endi sizniki!"); afterChange(); }
+        else { $("#ok", el).disabled = false; toast(errText(x)); } }; });
+  }
+  function rateSheet(rid, title) {
+    sheet('<div class="h2">⭐ Baholang</div><p class="muted" style="margin:0">«' + esc(title) + '» sizga yoqdimi?</p><div class="stars row" style="justify-content:center">' +
+      [1, 2, 3, 4, 5].map((n) => '<button data-s="' + n + '" aria-label="' + n + ' yulduz">☆</button>').join("") + '</div><div id="rt"></div>', (el) => {
+      let done = false;
+      $$("[data-s]", el).forEach((b) => b.onclick = async () => {
+        if (done) return; done = true;
+        const n = +b.dataset.s; $$("[data-s]", el).forEach((x) => x.textContent = +x.dataset.s <= n ? "★" : "☆");
+        const r = await api("review", { rental_id: rid, stars: n });
+        if (!r.ok) { done = false; toast(errText(r)); return; }
+        haptic("ok");
+        $("#rt", el).innerHTML = '<div class="col"><span class="small muted">Bir-ikki gap bilan sharh yozasizmi? Eng yaxshi sharh har hafta bonus oladi 🏆</span><textarea class="field" id="tx" placeholder="Nima yoqdi, kimga tavsiya qilasiz?"></textarea><div class="row"><button class="btn ghost" id="sk">Keyinroq</button><button class="btn" id="sv">Yuborish</button></div></div>';
+        $("#sk", el).onclick = () => { closeSheet(); afterChange(); };
+        $("#sv", el).onclick = async () => { const t = $("#tx", el).value.trim(); if (!t) { closeSheet(); afterChange(); return; }
+          const x = await api("review_text", { review_id: r.review_id, text: t });
+          if (x.ok) { closeSheet(); toast("✅ Rahmat! Sharh tekshiruvdan keyin ko'rinadi."); afterChange(); }
+          else toast(x.error === "REVIEW_SHORT" ? "Biroz batafsilroq yozing (kamida " + x.min + " belgi)" : errText(x)); };
+      });
+    });
+  }
+
+  // ---------- 👤 Kabinet ----------
+  const maskPhone = (p) => !p ? "—" : hideMoney ? p.slice(0, 4) + " •• ••• •• " + p.slice(-2) : p.replace(/^(\+998)(\d{2})(\d{3})(\d{2})(\d{2})$/, "$1 $2 $3 $4 $5");
+  SCREENS.me = function () {
+    if (!me || !me.ok) return regScreen("Kabinet");
+    const loy = me.loyalty || {}, free = me.free || {};
+    const el = view(
+      '<div class="row"><div class="logo" style="border-radius:26px;width:52px;height:52px;background:var(--card2);color:var(--accent);border:1px solid #4A3820">' + esc((me.name || "?").charAt(0).toUpperCase()) + '</div>' +
+      '<div class="col" style="gap:2px;flex:1;min-width:0"><b style="font-size:17px">' + esc(me.name || "—") + '</b><span class="small muted">' + maskPhone(me.phone) + "</span></div>" +
+      (me.premium ? '<span class="tag">⭐ PREMIUM</span>' : Number(loy.o_tier) ? '<span class="tag d">DOIMIY · ' + loy.o_tier + "</span>" : "") + "</div>" +
+      '<div class="card col" style="gap:12px;border-radius:22px;padding:18px"><div class="row between"><span class="small muted">Balans</span><button class="btn ghost sm" data-money>' + ic("eye", 15, "#F0B54A") + " " + (hideMoney ? "Ko'rsatish" : "Yashirish") + "</button></div>" +
+      '<span style="font-size:32px;font-weight:800">' + money(me.balance) + " so'm</span>" +
+      '<div class="grid2 small"><div class="card" style="background:var(--bg);padding:10px"><span class="muted">Bo\'sh</span><br><b>' + money(me.available) + '</b></div><div class="card" style="background:var(--bg);padding:10px"><span class="muted">Muzlatilgan</span><br><b>' + money(me.held) + "</b></div></div>" +
+      (Number(me.deposits) ? '<span class="small muted">📖 Qo\'lingizdagi kitoblar garovi: ' + money(me.deposits) + " so'm</span>" : "") +
+      (Number(me.debt) ? '<span class="small" style="color:var(--red)">⚠️ Qarz: ' + fmt(me.debt) + " so'm (balans to'ldirilganda o'zi yopiladi)</span>" : "") +
+      (Number(me.withdrawing) ? '<span class="small muted">💸 Yechish so\'rovida: ' + fmt(me.withdrawing) + " so'm</span>" : "") +
+      '<div class="grid2"><button class="btn" data-go="topup">To\'ldirish</button><button class="btn ghost" id="wd">Pulni yechish</button></div></div>' +
+      '<div class="grid2" style="grid-template-columns:repeat(3,minmax(0,1fr))">' +
+      '<div class="card col" style="gap:2px;padding:12px"><b style="font-size:16px">' + fmt(me.bonus) + '</b><span class="tiny muted">Bonus · faqat ijaraga</span></div>' +
+      '<div class="card col" style="gap:2px;padding:12px"><b style="font-size:16px">' + (free.o_available || 0) + ' kun</b><span class="tiny muted">Tekin kunlar</span></div>' +
+      '<div class="card col" style="gap:2px;padding:12px"><b style="font-size:16px">' + (me.friends || 0) + ' ta</b><span class="tiny muted">Do\'stlar</span></div></div>' +
+      '<div class="list">' + [["profile", "Mening ma'lumotlarim"], ["qr", "🪪 Mening QR kodim"], ["history", "📜 Balans tarixi"], ["sos", "🆘 Yordam (SOS)"],
+        ["f_request", "🙋 Kitob so'rash"], ["f_offer", "📤 Kitobingizni soting"], ["sets", "📦 To'plamlar"], ["channel", "📢 Rasmiy kanal"]].map(([k, t]) =>
+        '<button data-m="' + k + '"><span>' + t + '</span><span class="muted">›</span></button>').join("") + "</div>" +
+      '<p class="tiny muted" style="margin:0">⚠️ Rasmiy manzillar faqat: @' + esc(CONFIG.BOT_USERNAME) + ", @" + esc(CONFIG.CHANNEL) + " va Instagram: rentbooks.uz. Boshqalardan kelgan to'lov so'rovlariga ishonmang.</p>"
+    );
+    $("#wd", el).onclick = () => confirmSheet("Pulni yechib olish", "Xavfsizlik uchun pul yechish bot chatida rasmiylashtiriladi (karta raqami faqat u yerda so'raladi). Botga o'tasizmi?", async () => goBot("wd"));
+    $$("[data-m]", el).forEach((b) => b.onclick = () => {
+      const k = b.dataset.m;
+      if (k === "channel") openLink("https://t.me/" + CONFIG.CHANNEL);
+      else if (k.startsWith("f_")) formSheet(k.slice(2)); else go(k);
+    });
+  };
+  function regScreen(title) {
+    const el = view('<span class="h1">' + title + '</span><div class="card warm col"><b>Avval ro\'yxatdan o\'ting</b><span class="small muted">Botga telefon raqamingizni bir marta yuboring — shundan keyin hamma narsa shu yerda.</span><button class="btn" id="rg">Botga o\'tish</button></div>' +
+      (DEMO ? '<div class="card small muted">Namuna rejimi: CONFIG to\'ldirilmagan.</div>' : ""));
+    $("#rg", el).onclick = () => goBot("start");
+  }
+
+  // ---------- 👤 Mening ma'lumotlarim ----------
+  SCREENS.profile = function () {
+    if (!me || !me.ok) return regScreen("Mening ma'lumotlarim");
+    const loy = me.loyalty || {};
+    const refLink = "https://t.me/" + CONFIG.BOT_USERNAME + "?start=r_" + me.user_code;
+    const el = view(head("Mening ma'lumotlarim") +
+      '<div class="list"><div class="col" style="align-items:stretch;gap:8px"><span class="small muted" style="font-weight:500">Ism</span><div class="row between" id="nm"><b style="font-size:16px">' + esc(me.name || "—") +
+      '</b><button class="btn ghost sm" id="ed" style="color:var(--accent)">Tahrirlash</button></div></div>' +
+      '<div class="col" style="align-items:stretch;gap:8px"><span class="small muted" style="font-weight:500">Telefon raqam</span><div class="row between"><b style="font-size:16px">' + maskPhone(me.phone) +
+      '</b><button class="btn ghost sm" id="ph" style="color:var(--accent)">Almashtirish</button></div><span class="tiny muted" style="font-weight:500">Faqat shu Telegram akkauntga ulangan raqam qabul qilinadi.</span></div>' +
+      '<div><span class="col" style="gap:2px"><span class="small muted" style="font-weight:500">Mijoz kodi</span><b style="letter-spacing:.04em">' + esc(me.user_code) + '</b></span><button class="btn ghost sm" id="cp">Nusxalash</button></div></div>' +
+      '<div class="card col"><b>' + (Number(loy.o_tier) ? "Doimiy mijoz · " + loy.o_tier + "-daraja (kunlik qismga −" + pct(loy.o_discount) + "%)" : "Oddiy mijoz") + '</b><span class="small muted">' + (loy.o_good || 0) + " ta yaxshi ijara" +
+      (loy.o_next_count ? " · yana " + (loy.o_next_count - loy.o_good) + " tasi — −" + pct(loy.o_next_discount) + "%" : "") + "</span>" +
+      (loy.o_next_count ? '<div class="bar"><i style="width:' + Math.min(100, (loy.o_good / loy.o_next_count) * 100) + '%"></i></div>' : "") + "</div>" +
+      '<div class="card col"><b>🤝 Do\'stlarni taklif qilish</b><span class="small muted">' + (me.friends || 0) + " ta do'st qo'shildi, " + (me.friends_counted || 0) + " tasi kitob oldi" +
+      (me.next_level ? ". Yana " + (me.next_level - (me.friends_counted || 0)) + " ta — bonusga +" + fmt(me.next_level_bonus) + " so'm" : "") + '</span><button class="btn" id="inv">Havolani ulashish</button></div>' +
+      '<div class="card warm tiny" style="color:#F4E3C4">Mijoz kodingizni saqlab qo\'ying: Telegram akkauntingiz o\'chsa, hisobni shu kod bilan tiklaymiz. Kodni hech kimga yubormang.</div>');
+    $("#ed", el).onclick = () => {
+      $("#nm", el).innerHTML = '<label class="row" style="flex:1"><span class="sr">Yangi ism</span><input class="field" id="ni" value="' + esc(me.name || "") + '" maxlength="100"></label><button class="btn sm" id="sv">Saqlash</button>';
+      $("#ni", el).focus();
+      $("#sv", el).onclick = async () => { const n = $("#ni", el).value.trim(); if (n.length < 2) { toast("Ism juda qisqa"); return; }
+        const r = await api("set_name", { name: n }); if (r.ok) { haptic("ok"); me.name = n; toast("✅ Saqlandi"); render(); } else toast(errText(r)); };
+    };
+    $("#ph", el).onclick = () => {
+      if (!tg || !tg.requestContact) { goBot("start"); return; }
+      tg.requestContact((ok) => { if (ok) { toast("✅ Raqam yuborildi, tekshirilmoqda…"); setTimeout(async () => { await refreshMe(); if (screen === "profile") render(); }, 3000); } });
+    };
+    $("#cp", el).onclick = () => { try { navigator.clipboard.writeText(me.user_code); toast("Nusxalandi"); } catch (e) { toast(me.user_code); } };
+    $("#inv", el).onclick = () => openLink("https://t.me/share/url?url=" + encodeURIComponent(refLink) + "&text=" + encodeURIComponent("📚 Kitob ijarasi — shu havola orqali qo'shiling!"));
+  };
+
+  // ---------- 💳 Balansni to'ldirish ----------
+  SCREENS.topup = function () {
+    if (!me || !me.ok) return regScreen("Balansni to'ldirish");
+    const vals = [10000, 20000, 50000, 100000];
+    let amount = param && param >= 1000 ? param : 50000;
+    const el = view(head("Balansni to'ldirish") +
+      '<div class="card col" style="align-items:center;gap:4px;padding:18px"><span class="small muted">To\'lanadigan summa</span><span style="font-size:36px;font-weight:800" id="am"></span></div>' +
+      '<div class="grid2">' + vals.map((v) => '<button class="chip" data-v="' + v + '" style="height:54px;border-radius:16px;font-size:16px;width:100%">' + fmt(v) + "</button>").join("") + "</div>" +
+      '<label class="col"><span class="small muted">Boshqa summa</span><input class="field" id="cu" inputmode="numeric" placeholder="masalan: 35 000"></label>' +
+      '<div class="card small col" style="color:var(--soft)"><span>To\'lov Telegram\'ning xavfsiz to\'lov oynasida ochiladi — karta ma\'lumotlari bizga kelmaydi.</span><span class="muted">Balansdagi pul keyingi kitob uchun garov bo\'lib ishlaydi. Do\'konda naqd to\'lash ham mumkin.</span></div>');
+    const draw = () => { $("#am").textContent = fmt(amount) + " so'm"; $$("[data-v]", el).forEach((b) => b.classList.toggle("on", +b.dataset.v === amount)); if ($("#pay")) $("#pay").textContent = fmt(amount) + " so'm to'lash"; };
+    $$("[data-v]", el).forEach((b) => b.onclick = () => { amount = +b.dataset.v; $("#cu").value = ""; draw(); });
+    $("#cu", el).oninput = (e) => { const n = parseInt(e.target.value.replace(/\D/g, ""), 10); if (n) { amount = n; draw(); } };
+    foot('<button class="btn" id="pay"></button>', () => { $("#pay").onclick = async () => {
+      if (amount < 1000) { toast("Eng kami 1 000 so'm"); return; }
+      $("#pay").disabled = true; const r = await api("topup", { amount }); $("#pay").disabled = false;
+      if (!r.ok) { toast(errText(r)); return; }
+      if (tg && tg.openInvoice) tg.openInvoice(r.link, (status) => {
+        if (status === "paid") { haptic("ok"); toast("🎉 To'lov qabul qilindi!"); setTimeout(async () => { await refreshMe(); back(); }, 1800); }
+        else if (status === "failed") toast("To'lov amalga oshmadi");
+      }); else window.open(r.link);
+    }; });
+    draw();
+  };
+
+  // ---------- 🆘 Yordam ----------
+  SCREENS.sos = function () {
+    if (!me || !me.ok) return regScreen("Yordam");
+    const el = view(head("Yordam", "Adminlarimiz tez orada javob beradi") +
+      '<div class="chips">' + ["Bron", "To'lov", "Qaytarish", "Boshqa"].map((t, i) => '<button class="chip' + (i === 0 ? " on" : "") + '" data-tp="' + t + '">' + t + "</button>").join("") + "</div>" +
+      '<div class="col" id="chat" style="gap:10px"><div class="skel" style="height:80px"></div></div><div style="height:70px"></div>');
+    let topic = "Bron";
+    $$("[data-tp]", el).forEach((b) => b.onclick = () => { topic = b.dataset.tp; $$("[data-tp]", el).forEach((x) => x.classList.toggle("on", x === b)); });
+    foot('<button class="iconbtn" id="att" aria-label="Rasm yuborish (bot chatida)" style="width:50px;height:50px;border-radius:16px">' + ic("clip") + '</button>' +
+      '<label style="flex:1;display:flex"><span class="sr">Xabar</span><input class="field" id="msg" placeholder="Savolingizni yozing…" style="height:50px"></label>' +
+      '<button class="btn" id="snd" aria-label="Yuborish" style="width:50px;padding:0;flex:0 0 50px">' + ic("send") + "</button>", () => {
+      $("#att").onclick = () => confirmSheet("Rasm yuborish", "Rasm yoki skrinshotni bot chatiga yuborasiz — u ham adminlarga yetadi. Botga o'tasizmi?", async () => goBot("sos"));
+      const send = async () => { const t = $("#msg").value.trim(); if (t.length < 2) return;
+        $("#snd").disabled = true; const r = await api("sos_send", { text: "[" + topic + "] " + t }); $("#snd").disabled = false;
+        if (r.ok) { $("#msg").value = ""; haptic("ok"); loadChat(); } else toast(errText(r)); };
+      $("#snd").onclick = send; $("#msg").onkeydown = (e) => { if (e.key === "Enter") send(); };
+    });
+    loadChat();
+    timers.push(setInterval(() => { if (screen === "sos") loadChat(true); }, 20000));
+  };
+  async function loadChat(quiet) {
+    const d = await api("sos_list"); const box = $("#chat"); if (!box) return;
+    if (!d.ok) { if (!quiet) box.innerHTML = '<div class="card muted">' + esc(errText(d)) + "</div>"; return; }
+    const items = d.items || [];
+    if (!items.length) { box.innerHTML = '<div class="empty">Savol, taklif yoki muammoingizni yozing — adminlarimiz javob beradi.</div>'; return; }
+    box.innerHTML = items.map((t) => '<div class="bubble me">' + esc(t.text) + '<div class="tiny" style="color:#BFAF96;margin-top:4px;text-align:right">' + dt(t.at, true) + "</div></div>" +
+      (t.answers || []).map((a) => '<div class="bubble them">' + esc(a.text) + (String(a.text || "").length >= 120 ? "…" : "") + '<div class="tiny muted" style="margin-top:4px">RentBooks · ' + esc(a.at || "") + "</div></div>").join("") +
+      ((t.answers || []).length && t.rating == null && !t.parent ? '<div class="card col" style="align-self:flex-start;gap:8px"><span class="small" style="color:var(--soft)">Javob yordam berdimi?</span><div class="row">' +
+        '<button class="btn ghost sm" data-rt="1" data-id="' + t.id + '">Ha, rahmat</button><button class="btn ghost sm" data-rt="-1" data-id="' + t.id + '">Yo\'q</button></div></div>' : "")).join("") +
+      '<span class="tiny muted" style="text-align:center">To\'liq javoblar bot chatiga ham keladi.</span>';
+    $$("[data-rt]", box).forEach((b) => b.onclick = async () => { const r = await api("sos_rate", { id: +b.dataset.id, rating: +b.dataset.rt }); if (r.ok) { toast("Rahmat!"); loadChat(); } });
+    if (!quiet) window.scrollTo(0, document.body.scrollHeight);
+  }
+
+  // ---------- 📜 Balans tarixi ----------
+  SCREENS.history = async function () {
+    if (!me || !me.ok) return regScreen("Balans tarixi");
+    view(head("Balans tarixi") + '<div id="hs"><div class="skel" style="height:200px"></div></div>');
+    const d = await api("history"); const box = $("#hs"); if (!box) return;
+    if (!d.ok) { box.innerHTML = '<div class="card muted">' + esc(errText(d)) + "</div>"; return; }
+    box.innerHTML = d.items.length ? '<div class="list">' + d.items.map((r) => { const a = Number(r.summa || 0), hl = Number(r.muzlatish || 0);
+      const v = a ? (a > 0 ? "+" : "−") + fmt(Math.abs(a)) : hl ? "🔒 " + (hl > 0 ? "+" : "−") + fmt(Math.abs(hl)) : "0";
+      return '<div><span class="col" style="gap:2px"><span style="font-size:13.5px">' + esc(r.turi) + '</span><span class="tiny muted" style="font-weight:500">' + dt(r.vaqt, true) + " · qoldiq " + fmt(r.balans_keyin) +
+        '</span></span><b style="color:' + (a > 0 ? "var(--ok)" : "var(--ink)") + '">' + v + "</b></div>"; }).join("") +
+      '</div><p class="tiny muted">🔒 — muzlatish: pul balansda qoladi, faqat band turadi.</p>' : '<div class="empty">Hozircha harakat yo\'q.</div>';
+  };
+
+  // ---------- 🪪 QR kod ----------
+  SCREENS.qr = function () {
+    if (!me || !me.ok) return regScreen("Mening QR kodim");
+    const el = view(head("Mening QR kodim") + '<div class="qrbox" id="qr"></div><div class="card col" style="text-align:center"><span class="small muted">Mijoz kodi</span><b style="font-size:22px;letter-spacing:.06em">' +
+      esc(me.user_code) + '</b></div><p class="small muted" style="margin:0;text-align:center">Do\'konda kitob olayotganda adminga ko\'rsating. Baribir tasdiqlash kodi sizning Telegram\'ingizga keladi — bu QR bilan boshqa odam kitob ololmaydi.</p>');
+    try { new QRCode($("#qr", el), { text: "https://t.me/" + CONFIG.BOT_USERNAME + "?start=u_" + me.user_code, width: 220, height: 220, correctLevel: QRCode.CorrectLevel.Q }); }
+    catch (e) { $("#qr", el).textContent = me.user_code; }
+  };
+
+  // ---------- 📦 To'plamlar ----------
+  SCREENS.sets = function () {
+    const el = view(head("To'plamlar", "Birga olsangiz arzonroq") + (sets.length ? sets.map((x) =>
+      '<button class="card col" data-set="' + x.id + '" style="text-align:left;color:var(--ink)"><div class="row between"><b>' + esc(x.name) + '</b><span class="tag">−' + pct(x.pct) + "%</span></div>" +
+      (x.description ? '<span class="small muted">' + esc(x.description) + "</span>" : "") + '<span class="small">' + (x.books || []).map((b) => esc(b.title)).join(" · ") + "</span>" +
+      (x.sale && x.sale.possible ? '<span class="small"><s class="muted">' + fmt(x.sale.full) + '</s> <b style="color:var(--accent)">' + fmt(x.sale.price) + " so'm</b></span>" : "") +
+      (x.cashback ? '<span class="tiny muted">Ijarada: hammasi o\'z vaqtida qaytarilsa ' + fmt(x.cashback) + " so'm keshbek (bonusga)</span>" : "") + "</button>").join("") : '<div class="empty">Hozircha to\'plamlar yo\'q.</div>'));
+    $$("[data-set]", el).forEach((b) => b.onclick = () => confirmSheet("To'plamni rasmiylashtirish", "To'plam xaridi va ijarasi hozircha bot chatida rasmiylashtiriladi. Botga o'tasizmi?", async () => goBot("t_" + b.dataset.set)));
+  };
+
+  // ---------- 🙋 so'rov / 📤 taklif ----------
+  function formSheet(kind, preset) {
+    if (needReg()) return;
+    const isReq = kind === "request";
+    sheet('<div class="h2">' + (isReq ? "🙋 Kitob so'rash" : "📤 Kitobingizni soting") + '</div><p class="small muted" style="margin:0">' +
+      (isReq ? "Katalogda yo'q kitobni yozing — topib kelsak, darhol xabar beramiz." : "O'qib bo'lgan kitobingizni do'konga bering: baholab, pulini balansingizga o'tkazamiz (ijara yoki xaridga ishlatasiz).") + "</p>" +
+      '<label class="col"><span class="small muted">' + (isReq ? "Kitob nomi va muallifi" : "Nomi, muallifi, nashr yili va holati") + '</span><textarea class="field" id="tx" placeholder="' +
+      (isReq ? "Masalan: Shaytanat, Tohir Malik" : "Masalan: O'tkan kunlar, Qodiriy, 2019, yangiday") + '">' + esc(preset || "") + '</textarea></label><button class="btn" id="sv">Yuborish</button>', (el) => {
+      $("#sv", el).onclick = async () => {
+        const t = $("#tx", el).value.trim(); if (t.length < 3) { toast("Biroz batafsilroq yozing"); return; }
+        $("#sv", el).disabled = true; const r = await api(isReq ? "request" : "offer", { text: t });
+        if (!r.ok) { $("#sv", el).disabled = false; toast(errText(r)); return; }
+        haptic("ok"); closeSheet(); myData = null;
+        if (isReq && r.found) { toast("📚 Bu kitob katalogda bor ekan!"); go("book", r.found.book_id); }
+        else toast(isReq ? "✅ So'rov yozildi! Kitob kelishi bilan xabar beramiz." : "✅ Taklif yuborildi! Narxni «Kitoblarim → Navbat»da ko'rasiz.");
+      };
+    });
+  }
+
+  // =====================================================================
+  //  YUKLASH
+  // =====================================================================
+  async function refreshMe() {
+    if (DEMO) return;
+    if (!INIT) { meErr = "nosign"; return; }
+    const d = await api("me");
+    if (d.ok && d.registered) { me = d; meErr = null; }
+    else { me = null; meErr = d.error || "NO_PHONE"; }
+    drawNav();
+  }
+  async function loadCatalog() {
+    if (DEMO) { books = DEMO_BOOKS; return; }
+    try { const d = await pub("app_katalog"); books = Array.isArray(d) ? d : []; } catch (e) { if (!books.length) toast("Katalog yuklanmadi — internetni tekshiring"); }
+  }
+  const DEMO_BOOKS = [
+    { id: 1, title: "O'tkan kunlar", author: "Abdulla Qodiriy", genre: "Roman", available: 2, price: 67150, full_price: 79000, rent_fee: 8000, rent_days: 30, aksiya_sale: 15, rent_30: 18, created_at: "2026-09-01", pages: 384, muqova: "Qattiq muqova" },
+    { id: 2, title: "Kecha va kunduz", author: "Cho'lpon", genre: "Roman", available: 1, price: 64000, rent_fee: 7000, rent_days: 25, rent_30: 4, created_at: new Date().toISOString() },
+    { id: 3, title: "Sariq devni minib", author: "Xudoyberdi To'xtaboyev", genre: "Bolalar", available: 3, price: 52000, rent_fee: 6000, rent_days: 20, rent_30: 9, created_at: "2026-10-10" },
+    { id: 4, title: "Ufq", author: "Said Ahmad", genre: "Roman", available: 0, price: null, rent_fee: null, rent_30: 12, created_at: "2026-08-01" }
   ];
-  load();
+
+  async function start() {
+    if (tg) {
+      tg.ready(); tg.expand();
+      try { tg.setHeaderColor("#13110F"); tg.setBackgroundColor("#13110F"); if (tg.setBottomBarColor) tg.setBottomBarColor("#13110F"); } catch (e) {}
+      if (tg.BackButton) tg.BackButton.onClick(back);
+      try { if (tg.disableVerticalSwipes) tg.disableVerticalSwipes(); } catch (e) {}
+    }
+    // boshlang'ich ekran: ?s=book&id=5 (bot tugmasi) yoki startapp=b_5 (havola)
+    const qs = new URLSearchParams(location.search);
+    let s0 = qs.get("s"), id0 = +qs.get("id") || null;
+    const sp = (tg && tg.initDataUnsafe && tg.initDataUnsafe.start_param) || "";
+    let m;
+    if ((m = sp.match(/^b_(\d+)/))) { s0 = "book"; id0 = +m[1]; }
+    else if (sp === "aksiya") { s0 = "catalog"; catState.filter = "aksiya"; }
+    else if (["my", "me", "topup", "sos", "qr", "catalog"].includes(sp)) s0 = sp;
+    screen = "home"; render();
+    await Promise.all([loadCatalog(), refreshMe(),
+      DEMO ? null : pub("app_aksiyalar").then((d) => { aksiyalar = Array.isArray(d) ? d : []; }).catch(() => {}),
+      DEMO ? null : pub("app_toplamlar").then((d) => { sets = Array.isArray(d) ? d : []; }).catch(() => {})]);
+    if (s0 === "request" || s0 === "offer") { render(); formSheet(s0); return; }
+    if (s0 && SCREENS[s0]) {
+      if (!ROOTS.includes(s0)) stack.push(["home", null, 0]);
+      screen = s0; param = id0;
+    }
+    render();
+  }
+  start();
 })();
 </script>
 </body>
