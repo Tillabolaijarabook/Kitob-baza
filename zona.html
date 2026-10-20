@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex">
 <title>Yetkazish hududlari — RentBooks admin</title>
-<!-- VERSIYA: v18 — 🗺 yetkazish hududlari (faqat superadmin; bot admin panelidan ochiladi) -->
+<!-- VERSIYA: v19 — 🗺 yetkazish hududlari (faqat superadmin; bot admin panelidan ochiladi) -->
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -58,6 +58,7 @@ label { display: flex; flex-direction: column; gap: 4px; font-size: 12.5px; colo
   </div>
 </div>
 <div class="toast" id="toast"></div>
+<div id="ver" class="small muted" style="text-align:center;padding:6px 0 14px"></div>
 <script>
 /* ⚙️ SOZLASH — javon.html dagi bilan bir xil 2 qator */
 const CONFIG = {
@@ -74,19 +75,30 @@ const CONFIG = {
   const fmt = (n) => String(Math.round(Number(n || 0))).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
   let tt; const toast = (m) => { const t = $("#toast"); t.textContent = m; t.style.display = "block"; clearTimeout(tt); tt = setTimeout(() => t.style.display = "none", 3500); };
   const BASE = CONFIG.SUPABASE_URL.replace(/\/$/, "");
+  const APP_VER = "v19";
+  const CFG_BAD = /SIZNING/.test(CONFIG.SUPABASE_URL) || /SIZNING/.test(CONFIG.SUPABASE_KEY);
   async function api(action, body) {
-    if (!tg || !tg.initData) return { ok: false, error: "Sahifani botdagi admin panel tugmasi orqali oching." };
+    if (CFG_BAD) return { ok: false, error: "CONFIG" };
+    if (!tg || !tg.initData) return { ok: false, error: "NO_TG" };
+    let r;
     try {
-      const r = await fetch(BASE + "/functions/v1/app", { method: "POST", headers: { "Content-Type": "application/json", "x-init-data": tg.initData, apikey: CONFIG.SUPABASE_KEY },
+      r = await fetch(BASE + "/functions/v1/app", { method: "POST", headers: { "Content-Type": "application/json", "x-init-data": tg.initData, apikey: CONFIG.SUPABASE_KEY },
         body: JSON.stringify(Object.assign({ action }, body || {})) });
-      return await r.json();
-    } catch (e) { return { ok: false, error: "Internet aloqasini tekshiring" }; }
+    } catch (e) { return { ok: false, error: navigator.onLine === false ? "OFFLINE" : "GATEWAY" }; }
+    try { return await r.json(); } catch (e) { return { ok: false, error: "HTTP_" + r.status }; }
   }
   const ERR = { RUXSAT_YOQ: "⛔ Faqat superadmin hududlarni o'zgartira oladi.", BAD_ZONE: "Chegara kamida 3 nuqtadan iborat bo'lishi kerak.",
-    NO_TITLE: "Hudud nomini yozing.", BAD_DAYS: "Kamida bitta kunni belgilang.", BAD_AMOUNT: "Narx noto'g'ri." };
+    NO_TITLE: "Hudud nomini yozing.", BAD_DAYS: "Kamida bitta kunni belgilang.", BAD_AMOUNT: "Narx noto'g'ri.",
+    CONFIG: "⚙️ zona.html ichidagi CONFIG to'ldirilmagan yoki fayl hali yangilanmagan — GitHub'ga yuklagach 2–3 daqiqa kutib, qayta oching.",
+    NO_TG: "Sahifani botdagi admin panel → «🗺 Hududlarni ochish» tugmasi orqali oching.",
+    OFFLINE: "📶 Internet aloqasi yo'q.",
+    GATEWAY: "🔌 Darvozaga ulanib bo'lmadi. Tekshiring: 1) Supabase → Edge Functions → app → «Verify JWT» O'CHIQ; 2) CONFIG'dagi SUPABASE_URL to'g'ri (oxirida /rest/v1 yo'q).",
+    UNKNOWN_ACTION: "🔄 Darvoza eski: Supabase → Edge Functions → app ga v19 index.ts ni qayta joylang (Deploy).",
+    BAD_SIGN: "🔐 Imzo tekshirilmadi: Supabase Secrets'dagi TELEGRAM_BOT_TOKEN botniki bilan bir xilmi?", SIGN_EXPIRED: "Sahifani yopib, qayta oching." };
   const errText = (r) => ERR[r && r.error] || (r && r.error) || "Xatolik";
 
   // xarita
+  $("#ver").textContent = APP_VER + (CFG_BAD ? " · ⚙️ CONFIG to'ldirilmagan" : "");
   const map = L.map("map"); L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap" }).addTo(map);
   map.setView([41.55, 60.63], 12);
   let zonesAll = [], cur = null, rings = [], sel = -1, drawing = false;
@@ -123,9 +135,21 @@ const CONFIG = {
   }
   function fit() { const g = L.featureGroup(rings.filter((r) => r.length > 2).map((r) => L.polygon(r))); if (g.getLayers().length) map.fitBounds(g.getBounds(), { padding: [12, 12] }); }
 
+  function inRing(lat, lon, ring) {
+    let ins = false;
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const yi = ring[i][0], xi = ring[i][1], yj = ring[j][0], xj = ring[j][1];
+      if ((yi > lat) !== (yj > lat) && lon < (xj - xi) * (lat - yi) / ((yj - yi) || 1e-12) + xi) ins = !ins;
+    }
+    return ins;
+  }
+  const overlaps = (a, b) => (a.rings || []).some((r) => r.some((p) => (b.rings || []).some((q) => inRing(p[0], p[1], q))))
+    || (b.rings || []).some((r) => r.some((p) => (a.rings || []).some((q) => inRing(p[0], p[1], q))));
   function list() {
     $("#list").innerHTML = zonesAll.length ? zonesAll.map((z) => '<button data-id="' + z.id + '" class="' + (cur && cur.id === z.id ? "on" : "") + '">' +
-      (z.active ? "🟢" : "⚪") + " " + esc(z.name) + ' — <b>' + fmt(z.price) + " so'm</b>" + '<br><span class="small muted">' + z.orders + " ta yetkazildi · " + fmt(z.revenue) + " so'm</span></button>").join("")
+      (z.active ? "🟢" : "⚪") + " " + esc(z.name) + ' — <b>' + fmt(z.price) + " so'm</b>" + '<br><span class="small muted">' + z.orders + " ta yetkazildi · " + fmt(z.revenue) + " so'm" +
+      (() => { const o = zonesAll.filter((x) => x.id !== z.id && overlaps(x, z)); return o.length ? "<br>↔️ Ustma-ust: " + o.map((x) => esc(x.name) + " (" + fmt(x.price) + ")").join(", ") + " — u yerda arzoni olinadi" : ""; })() +
+      "</span></button>").join("")
       : '<span class="muted small">Hali hudud yo\'q. «➕ Yangi hudud» bilan qo\'shing.</span>';
     document.querySelectorAll("#list [data-id]").forEach((b) => b.onclick = () => open(zonesAll.find((z) => z.id === +b.dataset.id)));
   }
