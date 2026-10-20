@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex">
 <title>RentBooks</title>
-<!-- VERSIYA: v17 — to'liq mijoz kabineti -->
+<!-- VERSIYA: v18 — to'liq mijoz kabineti -->
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script>
   // 🌗 Mavzu: Telegram tungi rejimda bo'lsa — qora, kunduzgi rejimda — oq (Telegram'siz: qurilma sozlamasi)
@@ -96,6 +96,8 @@ a { color: var(--accent-text); text-decoration: none; }
 .tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; padding: 4px; border-radius: 16px; background: var(--card); border: 1px solid var(--line); }
 .tabs button { height: 38px; border-radius: 12px; border: 0; background: none; color: var(--muted); font-weight: 700; font-size: 12.5px; }
 .tabs .on { background: var(--ink); color: var(--bg); }
+.tabs button { position: relative; }
+.tabs .cnt { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 5px; margin-left: 5px; border-radius: 9px; background: var(--accent); color: var(--accent-ink); font-size: 10.5px; font-weight: 800; vertical-align: 1px; }
 .bar { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; } .bar i { display: block; height: 100%; background: var(--accent-text); }
 .list { display: flex; flex-direction: column; border-radius: 18px; background: var(--card); border: 1px solid var(--line); overflow: hidden; }
 .list > * { min-height: 52px; padding: 12px 14px; border: 0; border-bottom: 1px solid var(--line); background: none; text-align: left; display: flex; align-items: center; justify-content: space-between; gap: 10px; font-weight: 700; font-size: 14px; color: var(--ink); }
@@ -135,7 +137,7 @@ textarea.field { height: 110px; padding: 12px 14px; resize: vertical; }
    ===================================================================== */
 const CONFIG = {
   SUPABASE_URL: "https://cyvrjjqzevyqcvxadjay.supabase.co",        // Supabase → Project Settings → Data API → Project URL
-  SUPABASE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN5dnJqanF6ZXZ5cWN2eGFkamF5Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MTE2MjQ1MywiZXhwIjoyMTA2NzM4NDUzfQ.1RbTusjUq40wvMsRoZfwelcm6MQ-DWI5XoD9yHK_VKY",         // Supabase → API Keys → Publishable key (OCHIQ kalit! secret EMAS)
+  SUPABASE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN5dnJqanF6ZXZ5cWN2eGFkamF5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTExNjI0NTMsImV4cCI6MjEwNjczODQ1M30.cps7FKgc_8btkPswlpRbrGHLtlQOIf7GC2XZlpacLC0",         // Supabase → API Keys → Publishable key (OCHIQ kalit! secret EMAS)
   BOT_USERNAME: "Kitobijarabot",                               // @ belgisisiz
   BRAND_NAME:   "RentBooks",
   LOGO_URL:     "logo.png",
@@ -170,19 +172,62 @@ const CONFIG = {
     return '<div class="cov' + (u ? " img" : "") + '" style="height:' + (h || 210) + 'px;background-color:' + colorOf(b.title) +
       (u ? ";background-image:url('" + u.replace(/'/g, "%27") + "')" : "") + '"><b>' + esc(b.title) + '</b><small>' + esc(b.author || "") + '</small></div>';
   };
+  // Xato matnlari (botdagi bilan bir xil). Ro'yxatda yo'q kod bo'lsa — umumiy o'zbekcha matn chiqadi, kod hech qachon ko'rsatilmaydi
   const ERR = {
-    BALANCE: "Balansingizda bo'sh summa yetmaydi.", DEBT: "Avval qarzni yoping.", BUSY: "Bu nusxa hozirgina band bo'ldi. Boshqasini tanlang.",
-    NO_PHONE: "Avval botda telefon raqamingizni yuboring.", NOT_REGISTERED: "Avval botda ro'yxatdan o'ting.", BANNED: "Hisobingiz bloklangan. Yordamga yozing.",
-    TOO_MANY: "Juda tez-tez so'rov. Bir daqiqadan keyin urinib ko'ring.", NOTE_REQUIRED: "Biroz batafsilroq yozing.", PROMO_INVALID: "Promokod topilmadi.",
-    PROMO_USED: "Bu promokod ishlatilgan.", PROMO_EXPIRED: "Promokod muddati tugagan.", PROMO_NOT_NEW: "Sotuvda promokod faqat yangi nusxaga.",
-    NO_PAYMENTS: "Onlayn to'lov hali ulanmagan. Do'konda naqd to'lashingiz mumkin.", PUL_TOXTATILGAN: "Pul amallari vaqtincha to'xtatilgan.",
-    MODE_RENT_ONLY: "Bu kitob faqat ijaraga beriladi.", MODE_SALE_ONLY: "Bu kitob faqat sotiladi.", ALREADY: "Bu amal allaqachon bajarilgan.",
-    PREORDER_FREE: "Hozir bo'sh nusxa bor — oddiy bron qiling.", LIMIT: "Bir vaqtda olish mumkin bo'lgan kitoblar soni to'lgan.",
-    SERVER: "Serverda xatolik. Birozdan keyin urinib ko'ring.", DB: "Bazada xatolik. Birozdan keyin urinib ko'ring.", NETWORK: "Internet aloqasini tekshiring.",
-    BAD_SIGN: "Mini App'ni bot orqali qayta oching.", REVIEW_SHORT: "Sharh juda qisqa.", BAD_AMOUNT: "Summa noto'g'ri.", PAY_LINK: "To'lov oynasini ochib bo'lmadi.",
-    DEMO: "Namuna rejimi: CONFIG to'ldirilmagan.", NOT_FOUND: "Topilmadi."
+    ALREADY: "Bu amal allaqachon bajarilgan.",
+    CASH_BOOKING: "💵 Naqd yoki qisman naqd to'lanadigan bronni uzaytirib bo'lmaydi. Kitobni belgilangan muddatda olib keting.",
+    EXTEND_OFF: "⚠️ Bron muddatini uzaytirish hozir o'chirilgan.",
+    BAD_PHOTO: "📷 Rasmni yuborib bo'lmadi. Kichikroq rasm tanlang yoki qayta urinib ko'ring.",
+    BAD_AMOUNT: "⚠️ Summa noto'g'ri.",
+    BAD_DAYS: "⚠️ Kunlar soni noto'g'ri.",
+    BAD_SIGN: "Mini App'ni bot orqali qayta oching.",
+    BALANCE: "Balansingizda bo'sh summa yetmaydi.",
+    BANNED: "⛔ Hisobingiz cheklangan. SOS orqali murojaat qiling.",
+    BUSY: "Bu nusxa hozirgina band bo'ldi. Boshqasini tanlang.",
+    CODE_EXPIRED: "⌛ Kodning muddati tugadi. Yangi kod yuboring.",
+    DAILY_LIMIT: "⚠️ Bugungi pul yechish chegarasiga yetdingiz.",
+    DB: "Bazada xatolik. Birozdan keyin urinib ko'ring.",
+    DEBT: "Avval qarzni yoping.",
+    DELIVERY_EXISTS: "🚚 Sizda faol yetkazish so'rovi bor.",
+    NO_ADDRESS: "📍 Manzilni to'liqroq yozing (ko'cha, uy, mo'ljal).",
+    NO_BOOKINGS: "Yetkazish uchun avval kitob bron qiling.",
+    OUT_OF_ZONE: "📍 Bu manzil yetkazish hududidan tashqarida. Xaritadagi rangli hudud ichidan belgilang.",
+    ZONE_CLOSED: "🗓 Bu hududga bugun yetkazilmaydi. Hudud ish kunlarini xaritada ko'ring.",
+    DELIVERY_OFF: "🚚 Yetkazib berish xizmati hozir o'chiq.",
+    DEMO: "Namuna rejimi: CONFIG to'ldirilmagan.",
+    LIMIT: "Bir vaqtda olish mumkin bo'lgan kitoblar soni to'lgan.",
+    MODE_RENT_ONLY: "📖 Bu kitob faqat IJARADA — sotilmaydi.",
+    MODE_SALE_ONLY: "🛒 Bu kitob faqat SOTUVDA — ijaraga berilmaydi.",
+    NETWORK: "Internet aloqasini tekshiring.",
+    NOTE_REQUIRED: "⚠️ Izoh (sabab) yozish majburiy.",
+    NOT_ACTIVE: "⚠️ Bu ijara hozir faol emas.",
+    NOT_FOUND: "Topilmadi.",
+    NOT_REGISTERED: "Avval botda ro'yxatdan o'ting.",
+    NOT_SELLABLE: "⛔ Bu nusxani hozir sotib bo'lmaydi.",
+    NO_PAYMENTS: "Onlayn to'lov hali ulanmagan. Do'konda naqd to'lashingiz mumkin.",
+    NO_PHONE: "Avval botda telefon raqamingizni yuboring.",
+    PAY_LINK: "To'lov oynasini ochib bo'lmadi.",
+    PHONE_TAKEN: "⚠️ Bu raqam boshqa mijozga tegishli.",
+    PREORDER_EXISTS: "⏳ Bu kitobga oldindan buyurtmangiz bor.",
+    PREORDER_FREE: "Hozir bo'sh nusxa bor — oddiy bron qiling.",
+    PROMO_BAD_CODE: "⚠️ Promokod: 3–24 belgi, faqat lotin harflari, raqam, - va _.",
+    PROMO_EXPIRED: "🏷 Promokod muddati tugagan (yoki hali boshlanmagan).",
+    PROMO_INVALID: "Promokod topilmadi.",
+    PROMO_KIND: "🏷 Bu promokod bu turdagi xaridga ishlamaydi (faqat ijara yoki faqat sotuv uchun).",
+    PROMO_LIMIT: "🏷 Promokod ishlatish chegarasi tugagan.",
+    PROMO_NEW_ONLY: "🏷 Bu promokod faqat yangi mijozlar uchun (birinchi xarid).",
+    PROMO_NOT_FOUND: "🏷 Bunday promokod topilmadi yoki o'chirilgan.",
+    PROMO_NOT_NEW: "🏷 Sotuvda promokod faqat YANGI nusxaga ishlaydi — bu nusxa ilgari ijarada bo'lgan.",
+    PROMO_USED: "🏷 Siz bu promokodni allaqachon ishlatgansiz.",
+    PUL_TOXTATILGAN: "Pul amallari vaqtincha to'xtatilgan.",
+    REVIEW_SHORT: "✍️ Sharh juda qisqa.",
+    SALE_ONLY: "🛒 Bu nusxa faqat sotuvda bor (zararlangan). Uni sotib olishingiz mumkin.",
+    SERVER: "Serverda xatolik. Birozdan keyin urinib ko'ring.",
+    TOO_LATE: "⌛ Bekor qilish muddati o'tib ketgan.",
+    TOO_MANY: "Juda tez-tez so'rov. Bir daqiqadan keyin urinib ko'ring.",
+    WAITLIST: "⚠️ Bu kitobni boshqa mijoz navbatda kutmoqda, shuning uchun uzaytirib bo'lmaydi."
   };
-  const errText = (r) => (r && (ERR[r.error] || r.error)) || "Xatolik";
+  const errText = (r) => (r && ERR[r.error]) || "⚠️ Amalni bajarib bo'lmadi. Qayta urinib ko'ring yoki «Yordam» bo'limiga yozing.";
 
   let toastT;
   function toast(msg) {
@@ -226,7 +271,7 @@ const CONFIG = {
   };
 
   // ---------- holat ----------
-  let books = [], sets = [], aksiyalar = [], me = null, meErr = null, hideMoney = true;
+  let books = [], sets = [], aksiyalar = [], zones = [], me = null, meErr = null, hideMoney = true;
   const stack = [];
   let screen = "home", param = null, timers = [];
 
@@ -592,7 +637,7 @@ const CONFIG = {
       (sp.partial ? '<span class="tiny muted">Aksiya limitingizdan faqat bir qismi qolgani uchun chegirma kitobning bir qismiga qo\'llandi.</span>' : "") +
       '<span class="tiny muted">Summa balansingizda muzlatiladi va kitobni olganingizda yechiladi. Bonus xaridda ishlatilmaydi.</span></div>' +
       (promoCode ? '<div class="small">🏷 Promokod: <b>' + esc(promoCode) + "</b> (aksiyadan foydali bo'lsa qo'llanadi)</div>" : "") +
-      '<div class="small muted">📲 Fiskal chek beriladi — Soliq ilovasida skanerlab keshbek olishingiz mumkin.</div>' +
+      '<div class="small muted">' + (me && me.fiscal_enabled ? "📲 Fiskal chek beriladi — Soliq ilovasida skanerlab keshbek olishingiz mumkin." : "🧾 Kitobni olganingizda chek bot chatiga yuboriladi.") + "</div>" +
       '<button class="btn" id="ok">Bron qilish</button>', (el) => { $("#ok", el).onclick = () => doBook("buy", { copy_id: c.id, promo: promoCode }, b); });
   }
   async function doBook(action, body, b, q) {
@@ -621,7 +666,7 @@ const CONFIG = {
     const cash = Number(r.cash_due || 0);
     const held = r.held_amount != null ? Number(r.held_amount) : Number(action === "rent" ? r.deposit : r.total);
     sheet('<div style="font-size:44px;text-align:center">✅</div><div class="h2" style="text-align:center">Bron qilindi!</div><div class="card col">' +
-      '<div class="kv"><span>Kitob</span><b>' + esc(r.title || b.title) + "</b></div>" +
+      '<div class="kv"><span>' + (r.count ? "To'plam" : "Kitob") + '</span><b>' + esc(r.title || r.name || b.title) + (r.count ? " (" + r.count + " ta)" : "") + "</b></div>" +
       (held ? '<div class="kv"><span>Muzlatildi</span><b>' + fmt(held) + " so'm</b></div>" : "") +
       (cash ? '<div class="kv"><span>Do\'konda naqd</span><b>' + fmt(cash) + " so'm</b></div>" : "") +
       '<div class="kv"><span>Olib ketish muddati</span><b>' + dt(r.pickup_deadline, true) + "</b></div></div>" +
@@ -642,19 +687,34 @@ const CONFIG = {
   }
 
   // ---------- 📖 Mening kitoblarim ----------
-  let myTab = 0, myData = null;
+  let myTab = 0, myData = null, myAuto = true;
+  function myCounts(d) {
+    if (!d) return [0, 0, 0, 0];
+    const act = d.rentals.filter((r) => r.status !== "kutilmoqda").length, pend = d.rentals.length - act + d.sales.length;
+    const nav = (d.preorders || []).length + (d.waitlist || []).length + (d.offers || []).filter((o) => o.status === "taklif").length;
+    return [act, pend, nav, 0];
+  }
   SCREENS.my = async function () {
     if (!me || !me.ok) return regScreen("Mening kitoblarim");
-    const tabs = ["Hozirgi", "Bronlar", "Navbat", "Tarix"];
-    const el = view('<span class="h1">Mening kitoblarim</span><div class="tabs">' + tabs.map((t, i) => '<button data-t="' + i + '" class="' + (myTab === i ? "on" : "") + '">' + t + "</button>").join("") +
-      '</div><div id="mb">' + (myData ? "" : '<div class="skel" style="height:120px"></div>') + "</div>");
-    $$("[data-t]", el).forEach((b) => b.onclick = () => { myTab = +b.dataset.t; render(); });
+    view('<span class="h1">Mening kitoblarim</span><div class="tabs" id="tabs"></div><div id="mb">' + (myData ? "" : '<div class="skel" style="height:120px"></div>') + "</div>");
+    drawTabs();
     if (myData) drawMy();
     const d = await api("my");
     if (screen !== "my") return;
     if (!d.ok) { if ($("#mb")) $("#mb").innerHTML = '<div class="card muted">' + esc(errText(d)) + "</div>"; return; }
-    myData = d; drawMy();
+    myData = d;
+    // qo'lda kitob yo'q, lekin bron bor bo'lsa — darhol «Bronlar»ni ochamiz
+    const c = myCounts(d);
+    if (myAuto && myTab === 0 && !c[0]) myTab = c[1] ? 1 : c[2] ? 2 : 0;
+    drawTabs(); drawMy();
   };
+  function drawTabs() {
+    const box = $("#tabs"); if (!box) return;
+    const tabs = ["Hozirgi", "Bronlar", "Navbat", "Tarix"], cnt = myCounts(myData);
+    box.innerHTML = tabs.map((t, i) => '<button data-t="' + i + '" class="' + (myTab === i ? "on" : "") + '">' + t +
+      (cnt[i] ? '<span class="cnt">' + cnt[i] + "</span>" : "") + "</button>").join("");
+    $$("[data-t]", box).forEach((b) => b.onclick = () => { myTab = +b.dataset.t; myAuto = false; drawTabs(); drawMy(); });
+  }
   function drawMy() {
     const d = myData, box = $("#mb"); if (!box || !d) return;
     const act = d.rentals.filter((r) => r.status !== "kutilmoqda"), pend = d.rentals.filter((r) => r.status === "kutilmoqda");
@@ -671,12 +731,13 @@ const CONFIG = {
         '<div class="bar"><i style="width:' + Math.min(100, ((m.done || 0) / Math.max(m.goal || 1, 1)) * 100) + '%"></i></div></div>';
       if (d.bundles && d.bundles.length) h += '<div class="card col"><b>📦 To\'plamlar</b>' + d.bundles.map((x) => '<span class="small muted">' + esc(x.name || x.bundle_name || "To'plam") + (x.status ? " — " + esc(x.status) : "") + "</span>").join("") + "</div>";
     } else if (myTab === 1) {
+      h += dlvBlock(d, pend.length + d.sales.length);
       h += pend.map((r) => '<div class="card col"><div class="row between"><b>' + esc(r.title) + '</b><span class="tag">IJARA</span></div><span class="small muted">Olib ketish: ' + dt(r.deadline, true) + " gacha</span>" +
-        (Number(r.cash_due) ? '<span class="small" style="color:var(--soft)">💵 Olishda naqd: ' + fmt(r.cash_due) + " so'm</span>" : "") +
-        '<div class="row"><button class="btn ghost sm" data-go="qr">🪪 QR kod</button><button class="btn danger sm" data-cr="' + r.id + '">Bronni bekor qilish</button></div></div>').join("");
+        (Number(r.cash_due) ? '<span class="small" style="color:var(--soft)">💵 Olishda naqd: ' + fmt(r.cash_due) + " so'm</span>" : "") + extNote(r) +
+        '<div class="row" style="flex-wrap:wrap"><button class="btn ghost sm" data-go="qr">🪪 QR kod</button>' + extBtn("ijara", r) + dlvBtn(d) + '<button class="btn danger sm" data-cr="' + r.id + '">Bronni bekor qilish</button></div></div>').join("");
       h += d.sales.map((s) => '<div class="card col"><div class="row between"><b>' + esc(s.title) + '</b><span class="tag w">XARID</span></div><span class="small muted">' + fmt(s.total) + " so'm · " + dt(s.deadline, true) + " gacha</span>" +
-        (Number(s.cash_due) ? '<span class="small" style="color:var(--soft)">💵 Olishda naqd: ' + fmt(s.cash_due) + " so'm</span>" : "") +
-        '<div class="row"><button class="btn ghost sm" data-go="qr">🪪 QR kod</button><button class="btn danger sm" data-cs="' + s.id + '">Bronni bekor qilish</button></div></div>').join("");
+        (Number(s.cash_due) ? '<span class="small" style="color:var(--soft)">💵 Olishda naqd: ' + fmt(s.cash_due) + " so'm</span>" : "") + extNote(s) +
+        '<div class="row" style="flex-wrap:wrap"><button class="btn ghost sm" data-go="qr">🪪 QR kod</button>' + extBtn("sotuv", s) + dlvBtn(d) + '<button class="btn danger sm" data-cs="' + s.id + '">Bronni bekor qilish</button></div></div>').join("");
       if (!pend.length && !d.sales.length) h += '<div class="empty">Bronlar yo\'q.</div>';
     } else if (myTab === 2) {
       h += (d.preorders || []).map((p) => '<div class="card col"><b>' + esc(p.title) + '</b><span class="small muted">Oldindan to\'langan navbat (' + (p.kind === "ijara" ? "ijara" : "xarid") + ") · " + p.position + "-o'rin · 🔒 " + fmt(p.amount) + " so'm</span>" +
@@ -708,6 +769,121 @@ const CONFIG = {
       const accept = !!b.dataset.oa; const r = await api("offer_answer", { id: +(b.dataset.oa || b.dataset.od), accept });
       toast(r.ok ? (accept ? "✅ Kelishdik! Kitobni do'konga olib keling va QR kodingizni ko'rsating." : "Mayli, rahmat!") : errText(r)); afterChange(); });
     $$("[data-rate]", box).forEach((b) => b.onclick = () => rateSheet(+b.dataset.rate, b.dataset.tt));
+    $$("[data-dlv]", box).forEach((b) => b.onclick = () => dlvSheet(d));
+    $$("[data-px]", box).forEach((b) => b.onclick = () => confirmSheet("Bron muddatini uzaytirish", "Kitobni olib ketish muddati <b>24 soatga</b> uzayadi. Buni faqat bir marta qilish mumkin.", async () => {
+      const [kind, id] = b.dataset.px.split("_");
+      const r = await api("extend_pickup", { kind, id: +id });
+      toast(r.ok ? "✅ Uzaytirildi: " + dt(r.deadline, true) + " gacha" : r.error === "ALREADY" ? "Bu bron allaqachon bir marta uzaytirilgan." : errText(r));
+      if (r.ok) haptic("ok"); afterChange(); }));
+  }
+  // ⏳ bron muddatini +24 soat: faqat pul to'liq balansda muzlatilgan va hali uzaytirilmagan bronga
+  const extBtn = (kind, x) => !Number(x.cash_due) && !x.extended ? '<button class="btn ghost sm" data-px="' + kind + "_" + x.id + '">⏳ +24 soat</button>' : "";
+  const extNote = (x) => x.extended ? '<span class="tiny muted">⏳ Muddat bir marta uzaytirilgan.</span>'
+    : Number(x.cash_due) ? '<span class="tiny muted">Naqd to\'lovli bronni uzaytirib bo\'lmaydi.</span>' : "";
+  // 🚚 Yetkazib berish: bron qilingan kitoblarni istalgan payt uyga yetkazishni so'rash (24 soat kutmasdan)
+  const DLV_ST = { kutilmoqda: "⏳ So'rov qabul qilindi — kuryer tayinlanmoqda", kuryerda: "🚚 Kuryer yo'lda" };
+  const dlvOn = (d) => zones.length > 0 || Number(d.delivery_price) > 0;
+  const dlvPrice = (d) => zones.length ? (zones.length > 1 ? fmt(Math.min(...zones.map((z) => +z.price))) + " so'mdan" : fmt(zones[0].price) + " so'm") : fmt(d.delivery_price) + " so'm";
+  const dlvBtn = (d) => !d.delivery && dlvOn(d) ? '<button class="btn ghost sm" data-dlv>🚚 Yetkazish</button>' : "";
+  function dlvBlock(d, n) {
+    if (d.delivery) {
+      const x = d.delivery;
+      return '<div class="card warm col"><b>' + (DLV_ST[x.status] || "🚚 Yetkazish") + '</b><span class="small" style="color:var(--soft)">📍 ' + esc(x.address) + "</span>" +
+        '<span class="small muted">📚 ' + (x.items || []).length + " ta kitob · yetkazish " + fmt(x.fee) + " so'm (" + (x.fee_paid === "balans" ? "balansdan to'langan" : "kuryerga naqd") + ")</span>" +
+        (Number(x.cash_total) ? '<span class="small">💵 Kuryerga jami naqd: <b>' + fmt(x.cash_total) + " so'm</b></span>" : "") +
+        '<span class="tiny muted">Kitobni olishda kuryerga 🔐 tasdiqlash kodini ko\'rsatasiz (kod bot chatiga keladi). Bekor qilish yoki manzilni o\'zgartirish uchun — «Yordam».</span></div>';
+    }
+    if (!n || !dlvOn(d)) return "";
+    return '<button class="card col" data-dlv style="text-align:left;color:var(--ink)"><div class="row between"><b>🚚 Uyga yetkazib beraylikmi?</b><span class="tag">' + dlvPrice(d) + "</span></div>" +
+      '<span class="small muted">Do\'konga borishga vaqtingiz yo\'qmi? Bron qilingan ' + n + " ta kitobni kuryer olib boradi" +
+      (zones.length ? " — manzilni xaritada belgilaysiz." : ".") + "</span></button>";
+  }
+  // 🗺 Xarita (Leaflet + OpenStreetMap, kalit kerak emas) — faqat kerak bo'lganda yuklanadi
+  let leafletP = null;
+  function loadLeaflet() {
+    if (window.L) return Promise.resolve();
+    if (leafletP) return leafletP;
+    leafletP = new Promise((ok, no) => {
+      const css = document.createElement("link"); css.rel = "stylesheet"; css.href = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"; document.head.appendChild(css);
+      const js = document.createElement("script"); js.src = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"; js.onload = ok; js.onerror = no; document.head.appendChild(js);
+    });
+    return leafletP;
+  }
+  function inRing(lat, lon, ring) {
+    let ins = false;
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const yi = ring[i][0], xi = ring[i][1], yj = ring[j][0], xj = ring[j][1];
+      if ((yi > lat) !== (yj > lat) && lon < (xj - xi) * (lat - yi) / ((yj - yi) || 1e-12) + xi) ins = !ins;
+    }
+    return ins;
+  }
+  const zoneAt = (lat, lon) => zones.filter((z) => (z.rings || []).some((r) => inRing(lat, lon, r))).sort((a, b) => a.price - b.price)[0];
+  const DAYS = ["", "Du", "Se", "Ch", "Pa", "Ju", "Sh", "Ya"];
+  async function dlvMapSheet(d) {
+    const n = d.rentals.filter((r) => r.status === "kutilmoqda").length + d.sales.length;
+    sheet('<div class="h2">🚚 Yetkazib berish</div><p class="small muted" style="margin:0">' + n + " ta bron qilingan kitobingiz birga yetkaziladi. Uyingizni xaritada bosib belgilang yoki «📍 Joylashuvim»ni bosing.</p>" +
+      '<div id="map" style="height:300px;border-radius:16px;overflow:hidden;border:1px solid var(--line);background:var(--card)"></div>' +
+      '<button class="btn ghost sm" id="geo" style="align-self:flex-start">📍 Joylashuvim</button><div id="zst" class="card small muted">Nuqta hali belgilanmagan.</div>' +
+      '<label class="col"><span class="small muted">Uy, xonadon, podyezd, mo\'ljal</span><input class="field" id="nt" placeholder="Masalan: 12-uy, 5-xonadon, 2-podyezd"></label>' +
+      '<label class="col"><span class="small muted">Telefon (bo\'sh qoldirsangiz — ro\'yxatdagi raqamingiz)</span><input class="field" id="ph" inputmode="tel"></label>' +
+      '<button class="btn" id="ok" disabled>So\'rov yuborish</button>', async (el) => {
+      try { await loadLeaflet(); } catch (e) { $("#map", el).innerHTML = '<div class="empty">Xarita yuklanmadi — internetni tekshiring.</div>'; return; }
+      const L = window.L, map = L.map($("#map", el), { zoomControl: true, attributionControl: true });
+      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap" }).addTo(map);
+      const group = L.featureGroup().addTo(map);
+      zones.forEach((z) => (z.rings || []).forEach((r) => L.polygon(r, { color: "#E0A030", weight: 2, fillColor: "#F0B54A", fillOpacity: .15 })
+        .bindTooltip(esc(z.name) + " — " + fmt(z.price) + " so'm").addTo(group)));
+      if (group.getLayers().length) map.fitBounds(group.getBounds(), { padding: [10, 10] }); else map.setView([41.55, 60.63], 12);
+      let marker = null, point = null;
+      const setPoint = (lat, lon) => {
+        point = [lat, lon];
+        if (marker) marker.setLatLng(point); else marker = L.marker(point).addTo(map);
+        const z = zoneAt(lat, lon), dow = ((new Date().getDay() + 6) % 7) + 1;
+        if (!z) { $("#zst", el).innerHTML = '<b style="color:var(--red)">❌ Hududdan tashqarida.</b> Rangli hudud ichidan belgilang.'; $("#ok", el).disabled = true; return; }
+        const open = String(z.days || "1234567").includes(String(dow));
+        $("#zst", el).innerHTML = (open ? '<b style="color:var(--ok)">✅ Yetkazib beramiz</b>' : '<b style="color:var(--red)">🗓 Bugun bu hududga yetkazilmaydi</b>') +
+          " · " + esc(z.name) + "<br>Narxi: <b>" + fmt(z.price) + " so'm</b>" + (Number(z.free_from) ? " (bronlaringiz " + fmt(z.free_from) + " so'mdan oshsa — bepul)" : "") +
+          (String(z.days) !== "1234567" ? "<br>Kunlar: " + String(z.days).split("").map((x) => DAYS[+x]).join(", ") : "") +
+          (z.note ? "<br>" + esc(z.note) : "");
+        $("#ok", el).disabled = !open;
+      };
+      map.on("click", (e) => setPoint(e.latlng.lat, e.latlng.lng));
+      $("#geo", el).onclick = () => {
+        if (!navigator.geolocation) { toast("Joylashuvni aniqlab bo'lmadi"); return; }
+        $("#geo", el).disabled = true;
+        navigator.geolocation.getCurrentPosition((p) => { $("#geo", el).disabled = false; setPoint(p.coords.latitude, p.coords.longitude); map.setView(point, 16); },
+          () => { $("#geo", el).disabled = false; toast("📍 Joylashuvga ruxsat berilmadi — xaritada bosib belgilang"); }, { enableHighAccuracy: true, timeout: 10000 });
+      };
+      $("#ok", el).onclick = async () => {
+        if (!point) return;
+        $("#ok", el).disabled = true;
+        const r = await api("delivery_geo", { lat: point[0], lon: point[1], note: $("#nt", el).value.trim(), phone: $("#ph", el).value.trim() });
+        if (!r.ok) { $("#ok", el).disabled = false; toast(errText(r)); return; }
+        haptic("ok"); closeSheet(); toast("🚚 So'rov qabul qilindi! Kuryer yo'lga chiqqanda xabar beramiz."); afterChange();
+      };
+      setTimeout(() => map.invalidateSize(), 200);
+    });
+  }
+  function dlvSheet(d) {
+    if (zones.length) return dlvMapSheet(d);
+    const n = d.rentals.filter((r) => r.status === "kutilmoqda").length + d.sales.length;
+    const free = me && Number(me.available) >= Number(d.delivery_price);
+    sheet('<div class="h2">🚚 Yetkazib berish</div><div class="card col">' +
+      '<div class="kv"><span>Kitoblar</span><b>' + n + " ta (barcha bronlaringiz)</b></div>" +
+      '<div class="kv"><span>Yetkazish narxi</span><b>' + fmt(d.delivery_price) + " so'm</b></div>" +
+      '<span class="tiny muted">' + (free ? "Yetkazish haqi balansingizdan olinadi." : "Balansda yetarli pul bo'lmagani uchun yetkazish haqi kuryerga naqd to'lanadi.") +
+      " Naqd to'lanadigan bronlar puli ham kuryerga beriladi. Faqat Urganch shahri bo'yicha.</span></div>" +
+      '<label class="col"><span class="small muted">Manzil (ko\'cha, uy, xonadon, mo\'ljal)</span><textarea class="field" id="ad" placeholder="Masalan: Al-Xorazmiy ko\'chasi 12-uy, 5-xonadon, maktab yonida"></textarea></label>' +
+      '<label class="col"><span class="small muted">Telefon (bo\'sh qoldirsangiz — ro\'yxatdagi raqamingiz)</span><input class="field" id="ph" inputmode="tel" placeholder="' + esc(maskPhone(me && me.phone)) + '"></label>' +
+      '<button class="btn" id="ok">So\'rov yuborish</button>', (el) => {
+      $("#ok", el).onclick = async () => {
+        const address = $("#ad", el).value.trim(); if (address.length < 5) { toast(ERR.NO_ADDRESS); return; }
+        $("#ok", el).disabled = true;
+        const r = await api("delivery", { address, phone: $("#ph", el).value.trim() });
+        if (!r.ok) { $("#ok", el).disabled = false; toast(errText(r)); return; }
+        haptic("ok"); closeSheet(); toast("🚚 So'rov qabul qilindi! Kuryer yo'lga chiqqanda xabar beramiz."); afterChange();
+      };
+    });
   }
   function afterChange() { myData = null; refreshMe(); if (screen === "my") render(); }
 
@@ -901,10 +1077,25 @@ const CONFIG = {
       '<div class="col" id="chat" style="gap:10px"><div class="skel" style="height:80px"></div></div><div style="height:70px"></div>');
     let topic = "Bron";
     $$("[data-tp]", el).forEach((b) => b.onclick = () => { topic = b.dataset.tp; $$("[data-tp]", el).forEach((x) => x.classList.toggle("on", x === b)); });
-    foot('<button class="iconbtn" id="att" aria-label="Rasm yuborish (bot chatida)" style="width:50px;height:50px;border-radius:16px">' + ic("clip") + '</button>' +
+    foot('<button class="iconbtn" id="att" aria-label="Rasm yuborish" style="width:50px;height:50px;border-radius:16px">' + ic("clip") + '</button>' +
       '<label style="flex:1;display:flex"><span class="sr">Xabar</span><input class="field" id="msg" placeholder="Savolingizni yozing…" style="height:50px"></label>' +
       '<button class="btn" id="snd" aria-label="Yuborish" style="width:50px;padding:0;flex:0 0 50px">' + ic("send") + "</button>", () => {
-      $("#att").onclick = () => confirmSheet("Rasm yuborish", "Rasm yoki skrinshotni bot chatiga yuborasiz — u ham adminlarga yetadi. Botga o'tasizmi?", async () => goBot("sos"));
+      // 📷 rasm/skrinshot — shu yerning o'zidan (siqilib, 1600 px gacha kichraytiriladi)
+      const fi = document.createElement("input"); fi.type = "file"; fi.accept = "image/*"; fi.style.display = "none"; document.body.appendChild(fi);
+      $("#att").onclick = () => fi.click();
+      fi.onchange = async () => {
+        const f = fi.files && fi.files[0]; fi.value = ""; if (!f) return;
+        toast("📷 Rasm yuborilmoqda…");
+        try {
+          const img = await new Promise((ok, no) => { const im = new Image(); im.onload = () => ok(im); im.onerror = no; im.src = URL.createObjectURL(f); });
+          const k = Math.min(1, 1600 / Math.max(img.width, img.height)), cv = document.createElement("canvas");
+          cv.width = Math.round(img.width * k); cv.height = Math.round(img.height * k);
+          cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height);
+          const data = cv.toDataURL("image/jpeg", 0.82);
+          const r = await api("sos_photo", { image: data, text: $("#msg").value.trim() ? "[" + topic + "] " + $("#msg").value.trim() : "[" + topic + "] rasm" });
+          if (r.ok) { $("#msg").value = ""; haptic("ok"); toast("✅ Rasm yuborildi"); loadChat(); } else toast(errText(r));
+        } catch (e) { toast("Rasmni o'qib bo'lmadi"); }
+      };
       const send = async () => { const t = $("#msg").value.trim(); if (t.length < 2) return;
         $("#snd").disabled = true; const r = await api("sos_send", { text: "[" + topic + "] " + t }); $("#snd").disabled = false;
         if (r.ok) { $("#msg").value = ""; haptic("ok"); loadChat(); } else toast(errText(r)); };
@@ -919,7 +1110,7 @@ const CONFIG = {
     const items = d.items || [];
     if (!items.length) { box.innerHTML = '<div class="empty">Savol, taklif yoki muammoingizni yozing — adminlarimiz javob beradi.</div>'; return; }
     box.innerHTML = items.map((t) => '<div class="bubble me">' + esc(t.text) + '<div class="tiny" style="color:var(--muted);margin-top:4px;text-align:right">' + dt(t.at, true) + "</div></div>" +
-      (t.answers || []).map((a) => '<div class="bubble them">' + esc(a.text) + (String(a.text || "").length >= 120 ? "…" : "") + '<div class="tiny muted" style="margin-top:4px">RentBooks · ' + esc(a.at || "") + "</div></div>").join("") +
+      (t.photo ? '<div class="tiny" style="align-self:flex-end;color:var(--muted)">📷 rasm biriktirilgan</div>' : "") + (t.answers || []).map((a) => '<div class="bubble them">' + esc(a.text) + (String(a.text || "").length >= 120 ? "…" : "") + '<div class="tiny muted" style="margin-top:4px">RentBooks · ' + esc(a.at || "") + "</div></div>").join("") +
       ((t.answers || []).length && t.rating == null && !t.parent ? '<div class="card col" style="align-self:flex-start;gap:8px"><span class="small" style="color:var(--soft)">Javob yordam berdimi?</span><div class="row">' +
         '<button class="btn ghost sm" data-rt="1" data-id="' + t.id + '">Ha, rahmat</button><button class="btn ghost sm" data-rt="-1" data-id="' + t.id + '">Yo\'q</button></div></div>' : "")).join("") +
       '<span class="tiny muted" style="text-align:center">To\'liq javoblar bot chatiga ham keladi.</span>';
@@ -956,8 +1147,43 @@ const CONFIG = {
       (x.description ? '<span class="small muted">' + esc(x.description) + "</span>" : "") + '<span class="small">' + (x.books || []).map((b) => esc(b.title)).join(" · ") + "</span>" +
       (x.sale && x.sale.possible ? '<span class="small"><s class="muted">' + fmt(x.sale.full) + '</s> <b style="color:var(--accent-text)">' + fmt(x.sale.price) + " so'm</b></span>" : "") +
       (x.cashback ? '<span class="tiny muted">Ijarada: hammasi o\'z vaqtida qaytarilsa ' + fmt(x.cashback) + " so'm keshbek (bonusga)</span>" : "") + "</button>").join("") : '<div class="empty">Hozircha to\'plamlar yo\'q.</div>'));
-    $$("[data-set]", el).forEach((b) => b.onclick = () => confirmSheet("To'plamni rasmiylashtirish", "To'plam xaridi va ijarasi hozircha bot chatida rasmiylashtiriladi. Botga o'tasizmi?", async () => goBot("t_" + b.dataset.set)));
+    $$("[data-set]", el).forEach((b) => b.onclick = () => { if (!needReg()) bundleSheet(+b.dataset.set); });
   };
+  // 📦 To'plam: sotib olish (sovg'a qadog'i bilan ham) yoki bo'sh kitoblarni ijaraga bron qilish — Mini App ichida
+  async function bundleSheet(id) {
+    sheet('<div class="skel" style="height:220px"></div>');
+    const i = await api("bundle", { id });
+    if (!i.ok || !i.active) { closeSheet(); toast("📦 To'plam topilmadi yoki vaqtincha yopilgan."); return; }
+    const sale = i.sale || {}, rent = i.rent || {}, gp = Number(i.gift_price || 0);
+    let gift = false;
+    const draw = () => '<div class="row between"><div class="h2">📦 ' + esc(i.name) + '</div><span class="tag">−' + pct(i.pct) + "%</span></div>" +
+      (i.description ? '<p class="small muted" style="margin:0">' + esc(i.description) + "</p>" : "") +
+      '<div class="list">' + (i.books || []).map((b) => '<button data-book="' + b.book_id + '"><span>' + esc(b.title) + '</span><span class="small muted" style="font-weight:600">' +
+        (b.new_price != null ? fmt(b.new_price) : "") + (b.rent_copy_id ? " · 📖 bo'sh" : "") + "</span></button>").join("") + "</div>" +
+      (sale.possible ? '<div class="card col"><div class="kv"><span>Alohida olsangiz</span><s class="muted">' + fmt(sale.full) + ' so\'m</s></div><div class="kv"><b>To\'plam narxi</b><b style="color:var(--accent-text)">' +
+        fmt(sale.price) + " so'm</b></div>" + (gp ? '<label class="row small" style="gap:10px"><input type="checkbox" id="gf"' + (gift ? " checked" : "") +
+        ' style="width:20px;height:20px;accent-color:#F0B54A">🎁 Sovg\'a qadog\'ida (+' + fmt(gp) + " so'm) — tabrik yozuvi bilan</label>" +
+        (gift ? '<textarea class="field" id="gn" placeholder="Tabrik yozuvi (ixtiyoriy)" style="height:80px"></textarea>' : "") : "") +
+        '<span class="tiny muted">Hamma kitob yangi nusxa. Summa balansda muzlatiladi va kitoblarni olganingizda yechiladi.</span>' +
+        '<button class="btn" id="bb">🛒 To\'plamni sotib olish</button></div>'
+        : '<div class="card small muted">🛒 Sotuv uchun hozir to\'plamning hamma kitobidan yangi nusxa yo\'q.</div>') +
+      (rent.possible && Number(rent.available_now) ? '<div class="card col"><b>📖 Ijaraga</b><span class="small muted">Hozir ' + rent.available_now + " ta kitob bo'sh · garov " + fmt(rent.deposit_now) +
+        " so'm" + (i.cashback ? " · hammasi o'z vaqtida qaytsa " + fmt(i.cashback) + " so'm keshbek (bonusga)" : "") + '</span><button class="btn ghost" id="br">📖 Bo\'sh kitoblarni bron qilish</button></div>' : "");
+    const bind = (el) => {
+      bindCommon(el);
+      if ($("#gf", el)) $("#gf", el).onchange = (e) => { gift = e.target.checked; el.innerHTML = draw(); bind(el); };
+      if ($("#bb", el)) $("#bb", el).onclick = () => doBook("bundle_buy", { id, gift, note: $("#gn", el) ? $("#gn", el).value.trim() : "" }, { title: i.name });
+      if ($("#br", el)) $("#br", el).onclick = async () => {
+        $("#br", el).disabled = true;
+        const r = await api("bundle_rent", { id });
+        if (r.error === "BALANCE") { topupOffer(r.need); return; }
+        if (!r.ok) { $("#br", el).disabled = false; toast(errText(r)); return; }
+        haptic("ok"); closeSheet(); myData = null; refreshMe();
+        toast("✅ Bron qilindi: " + r.booked.length + " ta" + (r.failed.length ? " · bo'lmadi: " + r.failed.map((x) => x.title).join(", ") : ""));
+      };
+    };
+    $(".sheet").innerHTML = draw(); bind($(".sheet"));
+  }
 
   // ---------- 🙋 so'rov / 📤 taklif ----------
   function formSheet(kind, preset) {
@@ -1028,7 +1254,8 @@ const CONFIG = {
     screen = "home"; render();
     await Promise.all([loadCatalog(), refreshMe(),
       DEMO ? null : pub("app_aksiyalar").then((d) => { aksiyalar = Array.isArray(d) ? d : []; }).catch(() => {}),
-      DEMO ? null : pub("app_toplamlar").then((d) => { sets = Array.isArray(d) ? d : []; }).catch(() => {})]);
+      DEMO ? null : pub("app_toplamlar").then((d) => { sets = Array.isArray(d) ? d : []; }).catch(() => {}),
+      DEMO ? null : pub("app_zones").then((d) => { zones = Array.isArray(d) ? d : []; }).catch(() => {})]);
     if (s0 === "request" || s0 === "offer") { render(); formSheet(s0); return; }
     if (s0 && SCREENS[s0]) {
       if (!ROOTS.includes(s0)) stack.push(["home", null, 0]);

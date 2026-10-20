@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Yetkazish hududlari — RentBooks admin</title>
+<!-- VERSIYA: v18 — 🗺 yetkazish hududlari (faqat superadmin; bot admin panelidan ochiladi) -->
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+:root { --bg:#F7F3EC; --card:#fff; --line:#E6DDD0; --ink:#1F1A14; --muted:#6B6155; --accent:#F0B54A; --red:#B03A26; --ok:#2C7A45; color-scheme: light; }
+:root[data-theme="dark"] { --bg:#13110F; --card:#1E1B18; --line:#2E2A25; --ink:#F4EFE6; --muted:#A89F92; --red:#F2B8A8; --ok:#9FD3A8; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 500 14.5px/1.45 -apple-system, "Segoe UI", Roboto, sans-serif; }
+.wrap { max-width: 720px; margin: 0 auto; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+h1 { font-size: 20px; margin: 0; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.btn { height: 42px; padding: 0 14px; border-radius: 12px; border: 0; background: var(--accent); color: #1A1408; font-weight: 800; cursor: pointer; }
+.btn.g { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+.btn.r { background: transparent; color: var(--red); border: 1px solid var(--red); }
+.btn:disabled { opacity: .5; }
+input, textarea { height: 42px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--card); color: var(--ink); font: inherit; min-width: 0; }
+label { display: flex; flex-direction: column; gap: 4px; font-size: 12.5px; color: var(--muted); flex: 1; }
+#map { height: 52vh; min-height: 320px; border-radius: 16px; border: 1px solid var(--line); }
+.zl button { width: 100%; text-align: left; background: none; border: 0; border-bottom: 1px solid var(--line); padding: 10px 4px; color: var(--ink); font: inherit; cursor: pointer; }
+.zl button.on { font-weight: 800; color: #9A6208; }
+.muted { color: var(--muted); } .small { font-size: 12.5px; }
+.days label { flex: 0 0 auto; flex-direction: row; align-items: center; gap: 4px; color: var(--ink); font-size: 13px; }
+.vx { width: 14px; height: 14px; border-radius: 7px; background: #fff; border: 3px solid #E0A030; }
+.toast { position: fixed; left: 12px; right: 12px; bottom: 16px; max-width: 600px; margin: 0 auto; background: var(--ink); color: var(--bg); padding: 12px; border-radius: 12px; font-weight: 700; display: none; z-index: 2000; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🗺 Yetkazish hududlari</h1>
+  <div class="small muted">Har bir hudud — xaritadagi chegara, narx va ish kunlari. Mijoz uyi qaysi hududga tushsa, o'sha narx olinadi; hech biriga tushmasa — "hududdan tashqari".</div>
+  <div class="card"><div class="zl" id="list"><span class="muted small">Yuklanmoqda…</span></div><button class="btn g" id="new">➕ Yangi hudud</button></div>
+  <div class="card" id="ed" style="display:none">
+    <div class="row"><label>Hudud nomi<input id="nm" placeholder="Masalan: Urganch shahri"></label>
+      <button class="btn g" id="osm" style="align-self:flex-end">⬇️ Chegarani yuklash</button></div>
+    <div class="small muted">«Chegarani yuklash» — nom bo'yicha rasmiy chegarani OpenStreetMap'dan oladi (shahar, tuman, mahalla). Keyin nuqtalarni surib to'g'rilashingiz mumkin.</div>
+    <div id="map"></div>
+    <div class="row">
+      <button class="btn g" id="draw">✏️ Yangi bo'lak chizish</button>
+      <button class="btn g" id="undo">↩️ Oxirgi nuqta</button>
+      <button class="btn r" id="delring">🗑 Tanlangan bo'lak</button>
+    </div>
+    <div class="small muted" id="hint">Bo'lakni tanlash uchun uni bosing. Nuqtani surish — sudrang. «Chizish» rejimida xaritani bosib nuqta qo'shasiz.</div>
+    <div class="row"><label>Yetkazish narxi (so'm)<input id="pr" inputmode="numeric" value="10000"></label>
+      <label>Bepul — bronlar summasi shundan oshsa (0 = yo'q)<input id="ff" inputmode="numeric" value="0"></label></div>
+    <div class="row days" id="days"></div>
+    <div class="row"><label style="flex-direction:row;align-items:center;gap:8px;color:var(--ink)"><input type="checkbox" id="ac" checked style="width:20px;height:20px"> Faol (mijozlar ko'radi)</label></div>
+    <label>Izoh mijozlar uchun (ixtiyoriy)<input id="nt" placeholder="Masalan: shanba kunlari 14:00–19:00"></label>
+    <div class="row"><button class="btn" id="save">💾 Saqlash</button><button class="btn r" id="del">O'chirish</button><button class="btn g" id="cancel">Yopish</button></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+/* ⚙️ SOZLASH — javon.html dagi bilan bir xil 2 qator */
+const CONFIG = {
+  SUPABASE_URL: "https://SIZNING-LOYIHA.supabase.co",
+  SUPABASE_KEY: "sb_publishable_SIZNING_OCHIQ_KALIT"
+};
+(function () {
+  "use strict";
+  const tg = window.Telegram && window.Telegram.WebApp;
+  if (tg) { tg.ready(); tg.expand(); }
+  document.documentElement.setAttribute("data-theme", tg && tg.colorScheme === "dark" ? "dark" : "light");
+  const $ = (s) => document.querySelector(s);
+  const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+  const fmt = (n) => String(Math.round(Number(n || 0))).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+  let tt; const toast = (m) => { const t = $("#toast"); t.textContent = m; t.style.display = "block"; clearTimeout(tt); tt = setTimeout(() => t.style.display = "none", 3500); };
+  const BASE = CONFIG.SUPABASE_URL.replace(/\/$/, "");
+  async function api(action, body) {
+    if (!tg || !tg.initData) return { ok: false, error: "Sahifani botdagi admin panel tugmasi orqali oching." };
+    try {
+      const r = await fetch(BASE + "/functions/v1/app", { method: "POST", headers: { "Content-Type": "application/json", "x-init-data": tg.initData, apikey: CONFIG.SUPABASE_KEY },
+        body: JSON.stringify(Object.assign({ action }, body || {})) });
+      return await r.json();
+    } catch (e) { return { ok: false, error: "Internet aloqasini tekshiring" }; }
+  }
+  const ERR = { RUXSAT_YOQ: "⛔ Faqat superadmin hududlarni o'zgartira oladi.", BAD_ZONE: "Chegara kamida 3 nuqtadan iborat bo'lishi kerak.",
+    NO_TITLE: "Hudud nomini yozing.", BAD_DAYS: "Kamida bitta kunni belgilang.", BAD_AMOUNT: "Narx noto'g'ri." };
+  const errText = (r) => ERR[r && r.error] || (r && r.error) || "Xatolik";
+
+  // xarita
+  const map = L.map("map"); L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap" }).addTo(map);
+  map.setView([41.55, 60.63], 12);
+  let zonesAll = [], cur = null, rings = [], sel = -1, drawing = false;
+  const layer = L.layerGroup().addTo(map), others = L.layerGroup().addTo(map);
+  const DN = ["Du", "Se", "Ch", "Pa", "Ju", "Sh", "Ya"];
+  $("#days").innerHTML = DN.map((d, i) => '<label><input type="checkbox" value="' + (i + 1) + '" checked> ' + d + "</label>").join("");
+
+  function simplify(ring, max) {           // juda ko'p nuqta bo'lsa — tekis qisqartirish (tahrir qulay bo'lsin)
+    if (ring.length <= max) return ring;
+    const step = ring.length / max, out = [];
+    for (let i = 0; i < ring.length; i += step) out.push(ring[Math.floor(i)]);
+    return out;
+  }
+  function redraw() {
+    layer.clearLayers();
+    rings.forEach((r, i) => {
+      const pg = L.polygon(r, { color: i === sel ? "#C77800" : "#E0A030", weight: i === sel ? 3 : 2, fillColor: "#F0B54A", fillOpacity: .18 }).addTo(layer);
+      pg.on("click", (e) => { if (drawing) return; L.DomEvent.stopPropagation(e); sel = i; redraw(); });
+      if (i === sel && r.length <= 250) r.forEach((p, k) => {
+        const m = L.marker(p, { draggable: true, icon: L.divIcon({ className: "", html: '<div class="vx"></div>', iconSize: [14, 14] }) }).addTo(layer);
+        m.on("dragend", () => { const ll = m.getLatLng(); r[k] = [+ll.lat.toFixed(6), +ll.lng.toFixed(6)]; redraw(); });
+      });
+    });
+  }
+  map.on("click", (e) => {
+    if (!drawing) return;
+    if (sel < 0 || !rings[sel]) { rings.push([]); sel = rings.length - 1; }
+    rings[sel].push([+e.latlng.lat.toFixed(6), +e.latlng.lng.toFixed(6)]); redraw();
+  });
+  function drawOthers() {
+    others.clearLayers();
+    zonesAll.filter((z) => !cur || z.id !== cur.id).forEach((z) => (z.rings || []).forEach((r) =>
+      L.polygon(r, { color: "#888", weight: 1, fillOpacity: .05, interactive: false }).addTo(others)));
+  }
+  function fit() { const g = L.featureGroup(rings.filter((r) => r.length > 2).map((r) => L.polygon(r))); if (g.getLayers().length) map.fitBounds(g.getBounds(), { padding: [12, 12] }); }
+
+  function list() {
+    $("#list").innerHTML = zonesAll.length ? zonesAll.map((z) => '<button data-id="' + z.id + '" class="' + (cur && cur.id === z.id ? "on" : "") + '">' +
+      (z.active ? "🟢" : "⚪") + " " + esc(z.name) + ' — <b>' + fmt(z.price) + " so'm</b>" + '<br><span class="small muted">' + z.orders + " ta yetkazildi · " + fmt(z.revenue) + " so'm</span></button>").join("")
+      : '<span class="muted small">Hali hudud yo\'q. «➕ Yangi hudud» bilan qo\'shing.</span>';
+    document.querySelectorAll("#list [data-id]").forEach((b) => b.onclick = () => open(zonesAll.find((z) => z.id === +b.dataset.id)));
+  }
+  function open(z) {
+    cur = z || null; rings = z ? JSON.parse(JSON.stringify(z.rings || [])) : []; sel = rings.length ? 0 : -1; drawing = false;
+    $("#ed").style.display = "flex"; $("#nm").value = z ? z.name : ""; $("#pr").value = z ? z.price : 10000; $("#ff").value = z ? z.free_from : 0;
+    $("#ac").checked = z ? z.active : true; $("#nt").value = z ? (z.note || "") : "";
+    document.querySelectorAll("#days input").forEach((c) => c.checked = !z || String(z.days).includes(c.value));
+    $("#del").style.display = z ? "" : "none"; $("#draw").textContent = "✏️ Yangi bo'lak chizish";
+    list(); drawOthers(); redraw(); setTimeout(() => { map.invalidateSize(); fit(); }, 150);
+    $("#ed").scrollIntoView({ behavior: "smooth" });
+  }
+  async function load() {
+    const r = await api("admin_zones");
+    if (!r.ok) { $("#list").innerHTML = '<span class="small" style="color:var(--red)">' + esc(errText(r)) + "</span>"; return; }
+    zonesAll = r.items || []; list(); drawOthers();
+  }
+  $("#new").onclick = () => open(null);
+  $("#cancel").onclick = () => { $("#ed").style.display = "none"; cur = null; list(); };
+  $("#draw").onclick = () => {
+    drawing = !drawing;
+    if (drawing) { rings.push([]); sel = rings.length - 1; }
+    else if (rings[sel] && rings[sel].length < 3) { rings.splice(sel, 1); sel = rings.length - 1; }
+    $("#draw").textContent = drawing ? "✅ Chizishni tugatish" : "✏️ Yangi bo'lak chizish"; redraw();
+  };
+  $("#undo").onclick = () => { if (sel >= 0 && rings[sel] && rings[sel].length) { rings[sel].pop(); redraw(); } };
+  $("#delring").onclick = () => { if (sel >= 0) { rings.splice(sel, 1); sel = rings.length - 1; redraw(); } };
+  $("#osm").onclick = async () => {
+    const q = $("#nm").value.trim(); if (q.length < 3) { toast("Avval hudud nomini yozing"); return; }
+    $("#osm").disabled = true; toast("OpenStreetMap'dan qidirilmoqda…");
+    try {
+      const url = "https://nominatim.openstreetmap.org/search?format=json&polygon_geojson=1&polygon_threshold=0.0003&limit=5&accept-language=uz&q=" + encodeURIComponent(q + ", Xorazm");
+      const res = await (await fetch(url)).json();
+      const hit = res.find((x) => x.geojson && /Polygon/.test(x.geojson.type));
+      if (!hit) { toast("Chegara topilmadi — qo'lda chizing yoki nomni boshqacha yozing"); return; }
+      const polys = hit.geojson.type === "Polygon" ? [hit.geojson.coordinates] : hit.geojson.coordinates;
+      rings = polys.map((p) => simplify(p[0].map((c) => [+c[1].toFixed(6), +c[0].toFixed(6)]), 160));
+      sel = 0; redraw(); fit(); toast("✅ Yuklandi: " + hit.display_name.split(",").slice(0, 2).join(","));
+    } catch (e) { toast("Yuklab bo'lmadi — internetni tekshiring"); }
+    finally { $("#osm").disabled = false; }
+  };
+  $("#save").onclick = async () => {
+    const days = [...document.querySelectorAll("#days input:checked")].map((c) => c.value).join("");
+    const body = { id: cur && cur.id, name: $("#nm").value.trim(), rings: rings.filter((r) => r.length >= 3),
+      price: +$("#pr").value.replace(/\D/g, "") || 0, free_from: +$("#ff").value.replace(/\D/g, "") || 0, days, active: $("#ac").checked, note: $("#nt").value.trim() };
+    $("#save").disabled = true; const r = await api("admin_zone_save", body); $("#save").disabled = false;
+    if (!r.ok) { toast(errText(r)); return; }
+    toast("✅ Saqlandi"); await load(); open(zonesAll.find((z) => z.id === r.id));
+  };
+  $("#del").onclick = async () => {
+    if (!cur || !confirm("«" + cur.name + "» hududini o'chirasizmi?")) return;
+    const r = await api("admin_zone_delete", { id: cur.id }); if (!r.ok) { toast(errText(r)); return; }
+    toast("O'chirildi"); $("#ed").style.display = "none"; cur = null; load();
+  };
+  load();
+})();
+</script>
+</body>
+</html>
