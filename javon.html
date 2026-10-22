@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex">
 <title>RentBooks</title>
-<!-- VERSIYA: v19 — to'liq mijoz kabineti -->
+<!-- VERSIYA: v20 — to'liq mijoz kabineti -->
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script>
   // 🌗 Mavzu: Telegram tungi rejimda bo'lsa — qora, kunduzgi rejimda — oq (Telegram'siz: qurilma sozlamasi)
@@ -136,8 +136,8 @@ textarea.field { height: 110px; padding: 12px 14px; resize: vertical; }
    ⚙️ SOZLASH — faqat shu qatorlarni to'ldiring
    ===================================================================== */
 const CONFIG = {
-  SUPABASE_URL: "https://cyvrjjqzevyqcvxadjay.supabase.co",        // Supabase → Project Settings → Data API → Project URL
-  SUPABASE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN5dnJqanF6ZXZ5cWN2eGFkamF5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTExNjI0NTMsImV4cCI6MjEwNjczODQ1M30.cps7FKgc_8btkPswlpRbrGHLtlQOIf7GC2XZlpacLC0",         // Supabase → API Keys → Publishable key (OCHIQ kalit! secret EMAS)
+  SUPABASE_URL: "https://SIZNING-LOYIHA.supabase.co",        // Supabase → Project Settings → Data API → Project URL
+  SUPABASE_KEY: "sb_publishable_SIZNING_OCHIQ_KALIT",         // Supabase → API Keys → Publishable key (OCHIQ kalit! secret EMAS)
   BOT_USERNAME: "Kitobijarabot",                               // @ belgisisiz
   BRAND_NAME:   "RentBooks",
   LOGO_URL:     "logo.png",
@@ -153,7 +153,7 @@ const CONFIG = {
   const $$ = (s, r) => [...(r || document).querySelectorAll(s)];
   const BASE = CONFIG.SUPABASE_URL.replace(/\/$/, "");
   const DEMO = BASE.includes("SIZNING");
-  const APP_VER = "v19";
+  const APP_VER = "v20";
   const INIT = (tg && tg.initData) || "";
 
   // ---------- yordamchilar ----------
@@ -190,6 +190,8 @@ const CONFIG = {
     DB: "Bazada xatolik. Birozdan keyin urinib ko'ring.",
     DEBT: "Avval qarzni yoping.",
     DELIVERY_EXISTS: "🚚 Sizda faol yetkazish so'rovi bor.",
+    IN_DELIVERY: "🛵 Kitob kuryerda — yo'lda. Hozir bekor qilib bo'lmaydi. Olmasangiz, kuryerga ayting.",
+    ADMIN_BLOK: "⛔ Hisobingiz (PIN) bloklangan. Superadminga murojaat qiling.",
     NO_ADDRESS: "📍 Manzilni to'liqroq yozing (ko'cha, uy, mo'ljal).",
     NO_BOOKINGS: "Yetkazish uchun avval kitob bron qiling.",
     NO_COURIER: "🛵 Hozir faol kuryer yo'q — kitobni do'kondan olib ketishingiz mumkin.",
@@ -401,7 +403,8 @@ const CONFIG = {
       '<span class="serif" style="font-size:19px">' + esc(CONFIG.BRAND_NAME) + '</span><span class="small muted">' + (name ? "Assalomu alaykum, " + esc(name) : "Kitob tanlang") + "</span></div></div>" +
       (me && me.ok ? '<button class="pill" data-money aria-label="Balansni ko\'rsatish">' + ic("eye", 16, "#F0B54A") + money(me.available) + " so'm</button>" : "") + "</div>" +
       '<label class="search">' + ic("search", 18, "#A89F92") + '<span class="sr">Qidiruv</span><input id="q" type="search" placeholder="Kitob yoki muallif nomi…" enterkeyhint="search"></label>' +
-      (meErr && meErr !== "nosign" ? '<div class="card warm col"><b>Kabinet uchun ro\'yxatdan o\'ting</b><span class="small muted">Botga telefon raqamingizni bir marta yuboring.</span><button class="btn sm" id="regbtn" style="align-self:flex-start">Botga o\'tish</button></div>' : "") +
+      (meErr === "NO_PHONE" || meErr === "NOT_REGISTERED" ? '<div class="card warm col"><b>Kabinet uchun ro\'yxatdan o\'ting</b><span class="small muted">Botga telefon raqamingizni bir marta yuboring.</span><button class="btn sm" id="regbtn" style="align-self:flex-start">Botga o\'tish</button></div>'
+        : meErr && meErr !== "nosign" ? '<div class="card col"><b>📶 Aloqa yo\'q</b><span class="small muted">Kabinet ma\'lumotini olib bo\'lmadi. Internetni tekshirib, qayta urining.</span><button class="btn ghost sm" id="retrybtn" style="align-self:flex-start">🔄 Qayta urinish</button></div>' : "") +
       (ak ? '<button type="button" class="card warm row between" id="akbtn" style="text-align:left;padding:18px;border-radius:22px;color:var(--ink)"><div class="col" style="gap:5px">' +
         '<span class="tag" style="align-self:flex-start">AKSIYA · ' + ({ sotuv: "SOTUV", ijara: "IJARA", ikkalasi: "SOTUV VA IJARA" }[ak.kind] || "") + '</span><span class="serif" style="font-size:22px;line-height:1.1">' + akTitle + '</span><span class="small" style="color:var(--soft)">' +
         (ak.active ? dt(ak.start) + " – " + dt(ak.until) + " · yana " + Math.max(daysLeft(ak.until), 1) + " kun" : dt(ak.start) + " dan boshlanadi") + "</span>" +
@@ -420,6 +423,7 @@ const CONFIG = {
     logoImg();
     $("#q", el).onkeydown = (e) => { if (e.key === "Enter") { catState.q = e.target.value; go("catalog"); } };
     if ($("#regbtn", el)) $("#regbtn", el).onclick = () => goBot("start");
+    if ($("#retrybtn", el)) $("#retrybtn", el).onclick = async () => { await refreshMe(); if (screen === "home") render(); };
     if ($("#akbtn", el)) $("#akbtn", el).onclick = () => { catState.filter = "aksiya"; go("catalog"); };
     $$("[data-sec]", el).forEach((b) => b.onclick = () => {
       const k = b.dataset.sec;
@@ -491,6 +495,7 @@ const CONFIG = {
   let promoCode = "";
   SCREENS.book = async function () {
     const id = param;
+    if (meP) { try { await meP; } catch (e) {} }
     const b = books.find((x) => x.id === id) || { id, title: "…" };
     const el = view('<div style="margin:-16px -16px 0;height:260px;background:var(--cover-bg);position:relative;display:flex;align-items:center;justify-content:center">' +
       '<button class="iconbtn" data-back aria-label="Orqaga" style="position:absolute;top:14px;left:14px;background:var(--bg)">' + ic("back") + "</button>" +
@@ -660,8 +665,13 @@ const CONFIG = {
       (r.cash_allowed ? '<button class="btn ghost" id="pn">💵 Hammasini do\'konda naqd: ' + fmt(r.cash_full) + " so'm</button>" +
         '<span class="tiny muted">Naqd summa 1000 so\'mga yaxlitlanadi, ortgani balansingizga tushadi.</span>' : '<span class="small muted">' + esc(ERR[r.cash_reason] || "") + "</span>"), (el) => {
       $("#tp", el).onclick = () => { closeSheet(); go("topup", Math.max(1000, Math.ceil((r.need - r.available) / 1000) * 1000)); };
-      if ($("#pq", el)) $("#pq", el).onclick = () => doBook(action, Object.assign({}, body, { pay: "qisman" }), b, q);
-      if ($("#pn", el)) $("#pn", el).onclick = () => doBook(action, Object.assign({}, body, { pay: "naqd" }), b, q);
+      const once = (pay) => async () => {                           // v20: bir bosishda bir bron
+        const all = $$("button", el); all.forEach((x) => { x.disabled = true; });
+        await doBook(action, Object.assign({}, body, { pay }), b, q);
+        all.forEach((x) => { x.disabled = false; });
+      };
+      if ($("#pq", el)) $("#pq", el).onclick = once("qisman");
+      if ($("#pn", el)) $("#pn", el).onclick = once("naqd");
     });
   }
   function doneSheet(action, r, b) {
@@ -742,7 +752,9 @@ const CONFIG = {
         (Number(x.cash_due) ? '<span class="small" style="color:var(--soft)">💵 ' + (dl ? "Kuryerga naqd: " : "Olishda naqd: ") + fmt(x.cash_due) + " so'm</span>" : "") +
         (dl ? "" : extNote(x)) +
         '<div class="row" style="flex-wrap:wrap">' + (dl ? "" : '<button class="btn ghost sm" data-go="qr">🪪 QR kod</button>' + extBtn(kind, x) + dlvBtn(d)) +
-        '<button class="btn danger sm" data-' + (kind === "ijara" ? "cr" : "cs") + '="' + x.id + '">Bronni bekor qilish</button></div></div>';
+        // v20: kitob kuryer qo'lida bo'lsa bekor qilib bo'lmaydi (tugma yashiriladi)
+        (dl && dl.status === "kuryerda" ? '<span class="tiny muted">🛵 Kitob kuryerda — bekor qilib bo\'lmaydi</span>'
+          : '<button class="btn danger sm" data-' + (kind === "ijara" ? "cr" : "cs") + '="' + x.id + '">Bronni bekor qilish</button>') + "</div></div>";
       h += pend.map((r) => bronCard(r, "ijara", '<span class="tag">IJARA</span>')).join("");
       h += d.sales.map((x) => bronCard(x, "sotuv", '<span class="tag w">XARID</span>')).join("");
       if (!pend.length && !d.sales.length) h += '<div class="empty">Bronlar yo\'q.</div>';
@@ -791,7 +803,7 @@ const CONFIG = {
   const extNote = (x) => x.extended ? '<span class="tiny muted">⏳ Muddat bir marta uzaytirilgan.</span>'
     : Number(x.cash_due) ? '<span class="tiny muted">Naqd to\'lovli bronni uzaytirib bo\'lmaydi.</span>' : "";
   // 🚚 Yetkazib berish (v19): manzil FAQAT lokatsiya/xarita; narx hududdan; so'rov kuryerlarga o'zi boradi
-  const DLV_ST = { kutilmoqda: "⏳ So'rov yuborildi — kuryer qabul qilishi kutilmoqda", kuryerda: "🚚 Kuryer yo'lda" };
+  const DLV_ST = { kutilmoqda: "⏳ So'rov yuborildi — kuryer qabul qilishi kutilmoqda", kuryerda: "📦 Kitoblaringiz kuryerda" };
   const ZCOL = ["#E0A030", "#3A7BD5", "#2C9A5A", "#B0479A", "#D0543A", "#2E9AA8"];
   const zoneColor = (z) => ZCOL[zones.findIndex((x) => x.id === z.id) % ZCOL.length];
   const dlvOn = (d) => zones.length > 0 && Number(d.couriers) > 0;
@@ -800,10 +812,14 @@ const CONFIG = {
   function dlvBlock(d, n) {
     if (d.delivery && Number(d.delivery.pending) > 0) {
       const x = d.delivery;
-      const st = x.status === "kutilmoqda" && x.courier_tg ? "🛵 Kuryer tayinlandi: " + esc(x.courier_name || "") : (DLV_ST[x.status] || "🚚 Yetkazish");
+      const going = x.status === "kuryerda" && x.going_sent;
+      const st = going ? "🛵 Kuryer sizga qarab yo'lda" + (x.courier_name ? ": " + esc(x.courier_name) : "")
+        : x.status === "kutilmoqda" && x.courier_tg ? "🛵 Kuryer tayinlandi: " + esc(x.courier_name || "") : (DLV_ST[x.status] || "🚚 Yetkazish");
       return '<div class="card warm col"><b>' + st + '</b>' +
-        (x.eta ? '<span class="small">⏰ Taxminiy muddat: <b>' + dt(x.eta, true) + " gacha</b></span>" : "") +
-        '<span class="small" style="color:var(--soft)">🗺 ' + esc(x.zone || "") + (x.note ? " · 🏠 " + esc(x.note) : "") + "</span>" +
+        (going && Number(x.going_eta_min) ? '<span class="small">⏱ Taxminan <b>' + x.going_eta_min + " daqiqada</b> yetib keladi</span>" : "") +
+        (!going && x.eta ? '<span class="small">⏰ Taxminiy muddat: <b>' + dt(x.eta, true) + " gacha</b></span>" : "") +
+        (x.geo_address ? '<span class="small" style="color:var(--soft)">📍 ' + esc(x.geo_address) + "</span>" : "") +
+        '<span class="small" style="color:var(--soft)">🗺 ' + esc(x.zone || "") + (x.note ? " · 📝 " + esc(x.note) : "") + "</span>" +
         '<span class="small muted">📚 ' + x.pending + " ta kitob · yetkazish " + fmt(x.fee) + " so'm (" + (x.fee_paid === "balans" ? "balansdan to'langan" : "kuryerga naqd") + ")</span>" +
         (Number(x.cash_total) ? '<span class="small">💵 Kuryerga jami naqd: <b>' + fmt(x.cash_total) + " so'm</b></span>" : "") +
         '<span class="tiny muted">Kitobni olishda kuryerga 🔐 tasdiqlash kodini ko\'rsatasiz (kod bot chatiga keladi). Hamma bronni bekor qilsangiz — yetkazish ham bekor bo\'ladi va to\'langan haq qaytadi.</span></div>';
@@ -854,10 +870,10 @@ const CONFIG = {
         const z = zoneAt(lat, lon), dow = ((new Date().getDay() + 6) % 7) + 1;
         if (!z) { $("#zst", el).innerHTML = '<b style="color:var(--red)">❌ Bu joy yetkazish hududidan tashqarida.</b> Rangli hudud ichidan belgilang.'; $("#ok", el).disabled = true; return; }
         const open = String(z.days || "1234567").includes(String(dow));
-        $("#zst", el).innerHTML = (open ? '<b style="color:var(--ok)">✅ Yetkazib beramiz</b>' : '<b style="color:var(--red)">🗓 Bugun bu hududga yetkazilmaydi</b>') +
+        $("#zst", el).innerHTML = (open ? '<b style="color:var(--ok)">✅ Yetkazib beramiz</b>' : '<b style="color:var(--accent-text)">✅ Yetkazib beramiz</b> — bugun bu hududga yetkazilmaydi, keyingi ish kuni olib boriladi') +
           " · " + esc(z.name) + "<br>Narxi: <b>" + fmt(z.price) + " so'm</b>" + (Number(z.free_from) ? " (bronlaringiz " + fmt(z.free_from) + " so'mdan oshsa — bepul)" : "") +
           (String(z.days) !== "1234567" ? "<br>Kunlar: " + String(z.days).split("").map((x) => DAYS[+x]).join(", ") : "") + (z.note ? "<br>" + esc(z.note) : "");
-        $("#ok", el).disabled = !open;
+        $("#ok", el).disabled = false;
       };
       const pickSaved = (i) => {
         $$("#sv [data-a]", el).forEach((b) => b.classList.toggle("on", b.dataset.a === String(i)));
@@ -881,7 +897,11 @@ const CONFIG = {
         if (!point) return;
         $("#ok", el).disabled = true;
         const body = { lat: point[0], lon: point[1], note: $("#nt", el).value.trim() };
-        if ($("#sv1", el).checked) body.save_name = saveName; else if (addrId) { body.address_id = addrId; body.save_name = (saved.find((a) => a.id === addrId) || {}).name; }
+        if ($("#sv1", el).checked) {
+          body.save_name = saveName;
+          const same = saved.find((a) => a.name === saveName);       // v20: «🏠 Uy» qayta-qayta qo'shilmaydi — o'sha manzil yangilanadi
+          if (same) body.address_id = same.id;
+        } else if (addrId) { body.address_id = addrId; body.save_name = (saved.find((a) => a.id === addrId) || {}).name; }
         const r = await api("delivery_geo", body);
         if (!r.ok) { $("#ok", el).disabled = false; toast(errText(r)); return; }
         haptic("ok"); closeSheet(); toast("🚚 So'rov yuborildi! Kuryer qabul qilganda xabar beramiz."); afterChange();
@@ -1096,7 +1116,12 @@ const CONFIG = {
       $("#pay").disabled = true; const r = await api("topup", { amount }); $("#pay").disabled = false;
       if (!r.ok) { toast(errText(r)); return; }
       if (tg && tg.openInvoice) tg.openInvoice(r.link, (status) => {
-        if (status === "paid") { haptic("ok"); toast("🎉 To'lov qabul qilindi!"); setTimeout(async () => { await refreshMe(); back(); }, 1800); }
+        if (status === "paid") {
+          haptic("ok"); toast("🎉 To'lov qabul qilindi!");
+          const was = me ? Number(me.balance) : null;              // v20: bot to'lovni yozguncha bir necha marta tekshiramiz
+          (async () => { for (let i = 0; i < 6; i++) { await new Promise((r) => setTimeout(r, 1500)); await refreshMe();
+            if (!me || was === null || Number(me.balance) !== was) break; } back(); })();
+        }
         else if (status === "failed") toast("To'lov amalga oshmadi");
       }); else window.open(r.link);
     }; });
@@ -1115,7 +1140,9 @@ const CONFIG = {
       '<label style="flex:1;display:flex"><span class="sr">Xabar</span><input class="field" id="msg" placeholder="Savolingizni yozing…" style="height:50px"></label>' +
       '<button class="btn" id="snd" aria-label="Yuborish" style="width:50px;padding:0;flex:0 0 50px">' + ic("send") + "</button>", () => {
       // 📷 rasm tanlanganda DARHOL yuborilmaydi: tepada kichik ko'rinishi chiqadi, matn yoziladi, «Yuborish» — ikkalasi birga
-      const fi = document.createElement("input"); fi.type = "file"; fi.accept = "image/*"; fi.style.display = "none"; document.body.appendChild(fi);
+      let fi = document.getElementById("sosfi");                    // v20: har ochilganda yangisi qo'shilmaydi
+      if (fi) fi.remove();
+      fi = document.createElement("input"); fi.id = "sosfi"; fi.type = "file"; fi.accept = "image/*"; fi.style.display = "none"; document.body.appendChild(fi);
       let photo = null;
       const prev = document.createElement("div"); prev.style.cssText = "display:none;max-width:560px;margin:0 auto 8px;align-items:center;gap:10px";
       $(".foot").insertBefore(prev, $(".foot .in"));
@@ -1226,7 +1253,8 @@ const CONFIG = {
         toast("✅ Bron qilindi: " + r.booked.length + " ta" + (r.failed.length ? " · bo'lmadi: " + r.failed.map((x) => x.title).join(", ") : ""));
       };
     };
-    $(".sheet").innerHTML = draw(); bind($(".sheet"));
+    const sh = $(".sheet"); if (!sh) return;                       // v20: oyna yopilib bo'lgan bo'lsa
+    sh.innerHTML = draw(); bind(sh);
   }
 
   // ---------- 🙋 so'rov / 📤 taklif ----------
@@ -1251,13 +1279,18 @@ const CONFIG = {
   // =====================================================================
   //  YUKLASH
   // =====================================================================
-  async function refreshMe() {
-    if (DEMO) return;
-    if (!INIT) { meErr = "nosign"; return; }
-    const d = await api("me");
-    if (d.ok && d.registered) { me = d; meErr = null; }
-    else { me = null; meErr = d.error || "NO_PHONE"; }
-    drawNav();
+  let meP = null;                                  // v20: kitob sahifasi kabinet yuklanishini kutadi
+  function refreshMe() {
+    meP = (async () => {
+      if (DEMO) return;
+      if (!INIT) { meErr = "nosign"; return; }
+      const d = await api("me");
+      if (d.ok && d.registered) { me = d; meErr = null; }
+      else if (d.ok || d.error === "NOT_REGISTERED" || d.error === "NO_PHONE") { me = null; meErr = d.error === "NOT_REGISTERED" ? "NOT_REGISTERED" : "NO_PHONE"; }
+      else { meErr = d.error || "NETWORK"; }   // internet/server xatosi — avvalgi kabinet ma'lumoti saqlanadi
+      drawNav();
+    })();
+    return meP;
   }
   async function loadCatalog() {
     if (DEMO) { books = DEMO_BOOKS; return; }
@@ -1296,8 +1329,10 @@ const CONFIG = {
     else if (sp === "aksiya") { s0 = "catalog"; catState.filter = "aksiya"; }
     else if (["my", "me", "topup", "sos", "qr", "catalog"].includes(sp)) s0 = sp;
     screen = "home"; render();
-    const vb = document.createElement("div"); vb.textContent = APP_VER + (DEMO ? " · ⚙️ CONFIG to'ldirilmagan" : "");
-    vb.style.cssText = "text-align:center;font-size:10.5px;color:var(--muted);padding:4px 0 " + (DEMO ? "8px" : "0"); document.body.appendChild(vb);
+    if (DEMO) {                                   // v20: versiya yozuvi mijozga ko'rinmaydi — faqat sozlash xatosida
+      const vb = document.createElement("div"); vb.textContent = APP_VER + " · ⚙️ CONFIG to'ldirilmagan";
+      vb.style.cssText = "text-align:center;font-size:10.5px;color:var(--muted);padding:4px 0 8px"; document.body.appendChild(vb);
+    }
     if (DEMO && INIT) toast("⚙️ CONFIG to'ldirilmagan yoki fayl hali yangilanmagan — 2–3 daqiqa kutib, qayta oching");
     await Promise.all([loadCatalog(), refreshMe(),
       DEMO ? null : pub("app_aksiyalar").then((d) => { aksiyalar = Array.isArray(d) ? d : []; }).catch(() => {}),

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex">
 <title>Yetkazish hududlari — RentBooks admin</title>
-<!-- VERSIYA: v19 — 🗺 yetkazish hududlari (faqat superadmin; bot admin panelidan ochiladi) -->
+<!-- VERSIYA: v20 — 🗺 yetkazish hududlari (faqat superadmin; bot admin panelidan ochiladi) -->
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -62,8 +62,8 @@ label { display: flex; flex-direction: column; gap: 4px; font-size: 12.5px; colo
 <script>
 /* ⚙️ SOZLASH — javon.html dagi bilan bir xil 2 qator */
 const CONFIG = {
-  SUPABASE_URL: "https://cyvrjjqzevyqcvxadjay.supabase.co",
-  SUPABASE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN5dnJqanF6ZXZ5cWN2eGFkamF5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTExNjI0NTMsImV4cCI6MjEwNjczODQ1M30.cps7FKgc_8btkPswlpRbrGHLtlQOIf7GC2XZlpacLC0"
+  SUPABASE_URL: "https://SIZNING-LOYIHA.supabase.co",
+  SUPABASE_KEY: "sb_publishable_SIZNING_OCHIQ_KALIT"
 };
 (function () {
   "use strict";
@@ -75,7 +75,7 @@ const CONFIG = {
   const fmt = (n) => String(Math.round(Number(n || 0))).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
   let tt; const toast = (m) => { const t = $("#toast"); t.textContent = m; t.style.display = "block"; clearTimeout(tt); tt = setTimeout(() => t.style.display = "none", 3500); };
   const BASE = CONFIG.SUPABASE_URL.replace(/\/$/, "");
-  const APP_VER = "v19";
+  const APP_VER = "v20";
   const CFG_BAD = /SIZNING/.test(CONFIG.SUPABASE_URL) || /SIZNING/.test(CONFIG.SUPABASE_KEY);
   async function api(action, body) {
     if (CFG_BAD) return { ok: false, error: "CONFIG" };
@@ -87,13 +87,14 @@ const CONFIG = {
     } catch (e) { return { ok: false, error: navigator.onLine === false ? "OFFLINE" : "GATEWAY" }; }
     try { return await r.json(); } catch (e) { return { ok: false, error: "HTTP_" + r.status }; }
   }
-  const ERR = { RUXSAT_YOQ: "⛔ Faqat superadmin hududlarni o'zgartira oladi.", BAD_ZONE: "Chegara kamida 3 nuqtadan iborat bo'lishi kerak.",
+  const ERR = { RUXSAT_YOQ: "⛔ Faqat superadmin hududlarni o'zgartira oladi.", ADMIN_BLOK: "⛔ Siz bloklangansiz (PIN). Superadminga murojaat qiling.",
+    NO_TITLE: "Hudud nomini yozing (kamida 2 belgi).", BAD_AMOUNT: "Narx noto'g'ri.", BAD_DAYS: "Kamida bitta kunni belgilang.", BAD_ZONE: "Chegara kamida 3 nuqtadan iborat bo'lishi kerak.",
     NO_TITLE: "Hudud nomini yozing.", BAD_DAYS: "Kamida bitta kunni belgilang.", BAD_AMOUNT: "Narx noto'g'ri.",
     CONFIG: "⚙️ zona.html ichidagi CONFIG to'ldirilmagan yoki fayl hali yangilanmagan — GitHub'ga yuklagach 2–3 daqiqa kutib, qayta oching.",
     NO_TG: "Sahifani botdagi admin panel → «🗺 Hududlarni ochish» tugmasi orqali oching.",
     OFFLINE: "📶 Internet aloqasi yo'q.",
     GATEWAY: "🔌 Darvozaga ulanib bo'lmadi. Tekshiring: 1) Supabase → Edge Functions → app → «Verify JWT» O'CHIQ; 2) CONFIG'dagi SUPABASE_URL to'g'ri (oxirida /rest/v1 yo'q).",
-    UNKNOWN_ACTION: "🔄 Darvoza eski: Supabase → Edge Functions → app ga v19 index.ts ni qayta joylang (Deploy).",
+    UNKNOWN_ACTION: "🔄 Darvoza eski: Supabase → Edge Functions → app ga v20 index.ts ni qayta joylang (Deploy).",
     BAD_SIGN: "🔐 Imzo tekshirilmadi: Supabase Secrets'dagi TELEGRAM_BOT_TOKEN botniki bilan bir xilmi?", SIGN_EXPIRED: "Sahifani yopib, qayta oching." };
   const errText = (r) => ERR[r && r.error] || (r && r.error) || "Xatolik";
 
@@ -191,8 +192,17 @@ const CONFIG = {
     } catch (e) { toast("Yuklab bo'lmadi — internetni tekshiring"); }
     finally { $("#osm").disabled = false; }
   };
+  // v20: Telegram'ning o'z tasdiq oynasi (ba'zi telefonlarda brauzer confirm() chiqmaydi)
+  const ask = (text) => new Promise((res) => {
+    if (tg && tg.showConfirm) { try { tg.showConfirm(text, (ok) => res(!!ok)); return; } catch (e) {} }
+    res(window.confirm(text));
+  });
   $("#save").onclick = async () => {
     const days = [...document.querySelectorAll("#days input:checked")].map((c) => c.value).join("");
+    const priceRaw = $("#pr").value.replace(/\D/g, "");
+    if (!priceRaw || +priceRaw === 0) {                // v20: bo'sh narx jimgina «bepul» bo'lib qolmasin
+      if (!(await ask("Narx 0 so'm — bu hududga yetkazish BEPUL bo'ladi. Shundaymi?"))) return;
+    }
     const body = { id: cur && cur.id, name: $("#nm").value.trim(), rings: rings.filter((r) => r.length >= 3),
       price: +$("#pr").value.replace(/\D/g, "") || 0, free_from: +$("#ff").value.replace(/\D/g, "") || 0, days, active: $("#ac").checked, note: $("#nt").value.trim() };
     $("#save").disabled = true; const r = await api("admin_zone_save", body); $("#save").disabled = false;
@@ -200,7 +210,7 @@ const CONFIG = {
     toast("✅ Saqlandi"); await load(); open(zonesAll.find((z) => z.id === r.id));
   };
   $("#del").onclick = async () => {
-    if (!cur || !confirm("«" + cur.name + "» hududini o'chirasizmi?")) return;
+    if (!cur || !(await ask("«" + cur.name + "» hududini o'chirasizmi?"))) return;
     const r = await api("admin_zone_delete", { id: cur.id }); if (!r.ok) { toast(errText(r)); return; }
     toast("O'chirildi"); $("#ed").style.display = "none"; cur = null; load();
   };

@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Kuryer xaritasi — RentBooks</title>
+<!-- VERSIYA: v20 — 🛵 kuryer xaritasi (faqat kuryer; bot «🚚 Mening yetkazishlarim» dan ochiladi) -->
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+:root { --bg:#F7F3EC; --card:#fff; --line:#E6DDD0; --ink:#1F1A14; --muted:#6B6155; --accent:#F0B54A; --accent-ink:#2A1E08;
+        --blue:#2F6FD0; --red:#B03A26; --ok:#2C7A45; color-scheme: light; }
+:root[data-theme="dark"] { --bg:#13110F; --card:#1E1B18; --line:#2E2A25; --ink:#F4EFE6; --muted:#A89F92; --blue:#7FAEF5;
+                           --red:#F2B8A8; --ok:#9FD3A8; color-scheme: dark; }
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--ink); font: 500 14.5px/1.45 -apple-system, "Segoe UI", Roboto, sans-serif; }
+body { padding-bottom: env(safe-area-inset-bottom, 0px); }
+.wrap { max-width: 720px; margin: 0 auto; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+h1 { font-size: 19px; margin: 0; }
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.between { justify-content: space-between; }
+.small { font-size: 12.5px; } .muted { color: var(--muted); }
+#map { height: 46vh; min-height: 280px; border-radius: 16px; border: 1px solid var(--line); overflow: hidden; }
+.btn { border: 0; border-radius: 12px; padding: 10px 14px; font: inherit; font-weight: 700; background: var(--accent); color: var(--accent-ink); cursor: pointer; }
+.btn.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+.btn.sm { padding: 7px 11px; font-size: 13px; }
+.btn:disabled { opacity: .5; }
+.sum { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; font-weight: 700; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 12px; display: flex; flex-direction: column; gap: 6px; }
+.card.sel { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent) inset; }
+.num { min-width: 30px; height: 30px; border-radius: 15px; background: var(--accent); color: var(--accent-ink); display: inline-flex;
+       align-items: center; justify-content: center; font-weight: 800; }
+.leg { color: var(--blue); font-weight: 700; font-size: 12.5px; }
+a { color: var(--blue); }
+.pin { background: var(--accent); color: var(--accent-ink); border: 2px solid #fff; border-radius: 50%; width: 30px; height: 30px;
+       display: flex; align-items: center; justify-content: center; font-weight: 800; box-shadow: 0 2px 6px rgba(0,0,0,.35); }
+.pin.go { background: var(--ok); color: #fff; }
+.toast { position: fixed; left: 12px; right: 12px; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); background: #222; color: #fff;
+         padding: 12px 14px; border-radius: 14px; display: none; z-index: 2000; max-width: 696px; margin: 0 auto; }
+.toast button { margin-left: 8px; }
+.empty { text-align: center; padding: 26px 10px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="row between"><h1>🛵 Mening yetkazishlarim</h1><button class="btn ghost sm" id="reload">🔄</button></div>
+  <div id="map"></div>
+  <div class="row">
+    <button class="btn" id="best">🧭 Eng yaxshi yo'nalish</button>
+    <button class="btn ghost" id="me">📍 Men qayerdaman</button>
+  </div>
+  <div class="sum" id="sum" style="display:none"></div>
+  <div id="list" class="col"></div>
+  <div class="small muted" style="text-align:center">Mijozni tanlab «🧭 Yo'nalish» ni bossangiz, unga 2 daqiqadan keyin «Kuryer yo'lda» xabari o'zi boradi.</div>
+</div>
+<div class="toast" id="toast"></div>
+<div id="ver" class="small muted" style="text-align:center;padding:4px 0 14px"></div>
+<script>
+/* ⚙️ SOZLASH — javon.html va zona.html dagi bilan bir xil 2 qator */
+const CONFIG = {
+  SUPABASE_URL: "https://SIZNING-LOYIHA.supabase.co",
+  SUPABASE_KEY: "sb_publishable_SIZNING_OCHIQ_KALIT"
+};
+(function () {
+  "use strict";
+  const tg = window.Telegram && window.Telegram.WebApp;
+  if (tg) { tg.ready(); tg.expand(); }
+  document.documentElement.setAttribute("data-theme", tg && tg.colorScheme === "dark" ? "dark" : "light");
+  const $ = (s) => document.querySelector(s);
+  const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+  const fmt = (n) => String(Math.round(Number(n || 0))).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+  const km = (m) => (Number(m) / 1000).toFixed(1).replace(".", ",") + " km";
+  const mins = (s) => Math.max(1, Math.round(Number(s) / 60)) + " daq";
+  const BASE = CONFIG.SUPABASE_URL.replace(/\/$/, "");
+  const APP_VER = "v20";
+  const CFG_BAD = /SIZNING/.test(CONFIG.SUPABASE_URL) || /SIZNING/.test(CONFIG.SUPABASE_KEY);
+  const OSRM = "https://router.project-osrm.org";
+  const ERR = { NOT_COURIER: "⛔ Bu sahifa faqat faol kuryerlar uchun.", NOT_YOURS: "🔒 Bu yetkazish sizga biriktirilmagan.",
+    ALREADY: "ℹ️ Yetkazish yopilgan yoki o'zgargan — ro'yxatni yangilang.", CONFIG: "⚙️ kuryer.html ichidagi CONFIG to'ldirilmagan.",
+    NO_TG: "Sahifani botdagi «🚚 Mening yetkazishlarim» → «🗺 Hammasini xaritada ko'rish» orqali oching.",
+    OFFLINE: "📶 Internet aloqasi yo'q.", GATEWAY: "🔌 Darvozaga ulanib bo'lmadi.", TOO_MANY: "⏳ Juda tez — bir oz kuting.",
+    UNKNOWN_ACTION: "🔄 Darvoza eski: Supabase → Edge Functions → app ga v20 index.ts ni joylang (Deploy).",
+    BAD_SIGN: "🔐 Imzo tekshirilmadi. Sahifani bot orqali qayta oching.", SIGN_EXPIRED: "Sahifani yopib, qayta oching.",
+    ADMIN_BLOK: "⛔ Siz bloklangansiz (PIN). Superadminga murojaat qiling." };
+  const errText = (r) => ERR[r && r.error] || (r && r.error) || "Xatolik";
+  let tt;
+  function toast(html, ms) {
+    const t = $("#toast"); t.innerHTML = html; t.style.display = "block"; clearTimeout(tt);
+    if (ms !== 0) tt = setTimeout(() => { t.style.display = "none"; }, ms || 3500);
+  }
+  async function api(action, body) {
+    if (CFG_BAD) return { ok: false, error: "CONFIG" };
+    if (!tg || !tg.initData) return { ok: false, error: "NO_TG" };
+    let r;
+    try {
+      r = await fetch(BASE + "/functions/v1/app", { method: "POST",
+        headers: { "Content-Type": "application/json", "x-init-data": tg.initData, apikey: CONFIG.SUPABASE_KEY },
+        body: JSON.stringify(Object.assign({ action }, body || {})) });
+    } catch (e) { return { ok: false, error: navigator.onLine === false ? "OFFLINE" : "GATEWAY" }; }
+    try { return await r.json(); } catch (e) { return { ok: false, error: "HTTP_" + r.status }; }
+  }
+  const openLink = (u) => { if (tg && tg.openLink) tg.openLink(u); else window.open(u, "_blank"); };
+  const yandexRoute = (x) => "https://yandex.uz/maps/?rtext=" + (here ? here[0] + "," + here[1] : "") + "~" + x.lat + "," + x.lon + "&rtt=auto";
+  function haversine(a, b) {
+    const R = 6371000, r = Math.PI / 180, dLat = (b[0] - a[0]) * r, dLon = (b[1] - a[1]) * r;
+    const h = Math.sin(dLat / 2) ** 2 + Math.cos(a[0] * r) * Math.cos(b[0] * r) * Math.sin(dLon / 2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(h));
+  }
+  function decodePolyline(str) {          // Google polyline (aniqlik 5) — ORS optimization geometriyasi
+    let i = 0, lat = 0, lon = 0; const out = [];
+    while (i < str.length) {
+      for (const k of [0, 1]) {
+        let b, shift = 0, res = 0;
+        do { b = str.charCodeAt(i++) - 63; res |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
+        const d = (res & 1) ? ~(res >> 1) : (res >> 1);
+        if (k === 0) lat += d; else lon += d;
+      }
+      out.push([lat / 1e5, lon / 1e5]);
+    }
+    return out;
+  }
+
+  // ---------- xarita ----------
+  $("#ver").textContent = APP_VER + (CFG_BAD ? " · ⚙️ CONFIG to'ldirilmagan" : "");
+  const map = L.map("map", { zoomControl: true });
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap" }).addTo(map);
+  map.setView([41.55, 60.63], 12);
+  const pins = L.layerGroup().addTo(map), routeLayer = L.layerGroup().addTo(map);
+  let items = [], here = null, hereMarker = null, order = null, legs = {}, selected = null;
+
+  function pinIcon(n, going) {
+    return L.divIcon({ className: "", html: '<div class="pin' + (going ? " go" : "") + '">' + n + "</div>", iconSize: [30, 30], iconAnchor: [15, 15] });
+  }
+  function listOrder() {                  // eng yaxshi tartib bo'lsa — o'sha; aks holda menga eng yaqin birinchi
+    if (order) return order.map((id) => items.find((x) => x.id === id)).filter(Boolean)
+      .concat(items.filter((x) => !order.includes(x.id)));
+    if (here) return items.slice().sort((a, b) => haversine(here, [a.lat, a.lon]) - haversine(here, [b.lat, b.lon]));
+    return items.slice();
+  }
+  function draw() {
+    pins.clearLayers();
+    const arr = listOrder();
+    arr.forEach((x, i) => {
+      const m = L.marker([x.lat, x.lon], { icon: pinIcon(i + 1, x.going) }).addTo(pins);
+      m.on("click", () => select(x.id, true));
+    });
+    if (!arr.length) { $("#list").innerHTML = '<div class="empty">Hozir sizda yetkaziladigan buyurtma yo\'q.<br>Do\'kondan kitob olgach, mijozlar shu yerda chiqadi.</div>'; return; }
+    $("#list").innerHTML = arr.map((x, i) => {
+      const leg = legs[x.id];
+      const dist = !leg && here ? "📏 to'g'ri chiziq bo'yicha ~" + km(haversine(here, [x.lat, x.lon])) : "";
+      return '<div class="card' + (selected === x.id ? " sel" : "") + '" data-id="' + x.id + '">' +
+        '<div class="row between"><div class="row"><span class="num">' + (i + 1) + "</span><b>" + esc(x.name) + "</b></div>" +
+        (x.going_sent ? '<span class="small" style="color:var(--ok)">🛵 xabar ketgan</span>' : x.going ? '<span class="small muted">⏳ xabar ketmoqda</span>' : "") + "</div>" +
+        (x.address ? '<span>📍 ' + esc(x.address) + ' <span class="small muted">(taxminiy)</span></span>' : "") +
+        (x.note ? '<span>📝 ' + esc(x.note) + "</span>" : "") +
+        (x.phone ? '<span>📞 <a href="tel:' + esc(String(x.phone).replace(/[^\d+]/g, "")) + '">' + esc(x.phone) + "</a></span>" : "") +
+        '<span class="small">📚 ' + x.books + " ta kitob · " + (Number(x.cash) ? "💵 olinadi: <b>" + fmt(x.cash) + " so'm</b>" : "💳 to'langan") + "</span>" +
+        (leg ? '<span class="leg">' + (leg.d != null ? "🛣 " + km(leg.d) + " · " : "") + "⏱ " + mins(leg.t) + (leg.from ? " (oldingi nuqtadan)" : " (sizdan)") + "</span>" : dist ? '<span class="small muted">' + dist + "</span>" : "") +
+        '<div class="row"><button class="btn sm" data-go="' + x.id + '">🧭 Yo\'nalish</button>' +
+        '<button class="btn ghost sm" data-ya="' + x.id + '">📱 Yandex\'da</button></div></div>';
+    }).join("");
+    document.querySelectorAll("[data-id]").forEach((c) => c.onclick = (e) => { if (!e.target.closest("button,a")) select(+c.dataset.id, false); });
+    document.querySelectorAll("[data-go]").forEach((b) => b.onclick = () => routeTo(+b.dataset.go));
+    document.querySelectorAll("[data-ya]").forEach((b) => b.onclick = () => { const x = items.find((y) => y.id === +b.dataset.ya); if (x) openLink(yandexRoute(x)); });
+  }
+  function select(id, scroll) {
+    selected = id; const x = items.find((y) => y.id === id); draw();
+    if (x) map.setView([x.lat, x.lon], Math.max(map.getZoom(), 15));
+    if (scroll) { const c = document.querySelector('[data-id="' + id + '"]'); if (c) c.scrollIntoView({ behavior: "smooth", block: "center" }); }
+  }
+  function fitAll() {
+    const pts = items.map((x) => [x.lat, x.lon]).concat(here ? [here] : []);
+    if (pts.length) map.fitBounds(pts, { padding: [30, 30], maxZoom: 16 });
+  }
+
+  // ---------- 📍 joylashuv ----------
+  function locate(cb) {
+    if (!navigator.geolocation) { toast("📍 Telefon joylashuvni bermayapti — yo'nalish uchun kerak."); return; }
+    navigator.geolocation.getCurrentPosition((p) => {
+      here = [p.coords.latitude, p.coords.longitude];
+      if (hereMarker) hereMarker.setLatLng(here);
+      else hereMarker = L.circleMarker(here, { radius: 9, color: "#fff", weight: 3, fillColor: "#2F6FD0", fillOpacity: 1 }).addTo(map);
+      if (cb) cb(); else { draw(); fitAll(); }
+    }, () => toast("📍 Joylashuvga ruxsat bering (Telegram sozlamalari) — yo'nalish shundan hisoblanadi."),
+    { enableHighAccuracy: true, timeout: 12000, maximumAge: 20000 });
+  }
+  const needHere = (fn) => here ? fn() : locate(fn);
+
+  // ---------- 🧭 bitta mijozga yo'nalish (+ «kuryer yo'lda» xabari) ----------
+  async function routeTo(id) {
+    const x = items.find((y) => y.id === id); if (!x) return;
+    needHere(async () => {
+      toast("🧭 Yo'nalish hisoblanmoqda…", 0);
+      let line = null, dist = 0, dur = 0;
+      const r = await api("admin_route", { from: here, to: [x.lat, x.lon] });
+      if (r && r.ok) { line = r.line; dist = r.distance; dur = r.duration; }
+      else {
+        try {                              // kalit yo'q / xizmat javob bermadi — kalitsiz OSRM
+          const j = await (await fetch(OSRM + "/route/v1/driving/" + here[1] + "," + here[0] + ";" + x.lon + "," + x.lat + "?overview=full&geometries=geojson")).json();
+          const rt = j.routes && j.routes[0];
+          if (rt) { line = rt.geometry.coordinates.map((c) => [c[1], c[0]]); dist = rt.distance; dur = rt.duration; }
+        } catch (e) {}
+      }
+      routeLayer.clearLayers();
+      if (line) {
+        L.polyline(line, { color: "#2F6FD0", weight: 6, opacity: .85 }).addTo(routeLayer);
+        map.fitBounds(line, { padding: [30, 30] });
+        legs = {}; legs[x.id] = { d: dist, t: dur, from: false }; order = null;
+      } else {
+        dist = haversine(here, [x.lat, x.lon]); dur = dist / 8;      // ~30 km/soat — taxminiy
+        legs = {}; legs[x.id] = { d: dist, t: dur, from: false };
+        toast("ℹ️ Yo'nalish xizmati javob bermadi — to'g'ri chiziq bo'yicha taxminiy masofa ko'rsatildi.");
+      }
+      selected = x.id; draw();
+      // 🛵 mijozga «Kuryer yo'lda» (bir marta; 2 daqiqa ichida bekor qilish mumkin)
+      if (!x.going_sent) {
+        const g = await api("admin_courier_go", { id: x.id, eta_min: Math.round(dur / 60) });
+        if (g && g.ok && !g.sent) {
+          x.going = true; draw();
+          const sec = Number(g.send_in_sec) || 120;
+          toast("🛵 " + Math.round(sec / 60) + " daqiqadan keyin <b>" + esc(x.name) + "</b> ga «Kuryer yo'lda» xabari ketadi." +
+                ' <button class="btn sm" id="undo">↩️ Ketmasin</button>', sec * 1000);
+          const u = $("#undo");
+          if (u) u.onclick = async () => {
+            const c = await api("admin_courier_go_cancel", { id: x.id });
+            x.going = false; draw(); toast(c && c.ok ? "↩️ Bekor qilindi — xabar ketmaydi." : "ℹ️ Xabar allaqachon ketgan.");
+          };
+        } else if (g && !g.ok) toast(errText(g));
+        else $("#toast").style.display = "none";
+      } else $("#toast").style.display = "none";
+    });
+  }
+
+  // ---------- 🧭 eng yaxshi tartib (oxirgi mijozda tugaydi) ----------
+  async function best() {
+    if (items.length < 1) return;
+    needHere(async () => {
+      $("#best").disabled = true; toast("🧭 Eng yaxshi tartib hisoblanmoqda…", 0);
+      let ids = null, line = null, total = 0, totalD = null, legMap = {};
+      const r = await api("admin_route_best", { from: here, stops: items.map((x) => ({ id: x.id, lat: x.lat, lon: x.lon })) });
+      if (r && r.ok && r.order && r.order.length) {
+        ids = r.order.map((s) => +s.id); total = r.duration; totalD = r.distance;
+        let prevT = 0, prevD = 0;
+        r.order.forEach((s, i) => {
+          const d = s.distance != null ? s.distance - prevD : null;
+          legMap[+s.id] = { d: d, t: s.arrival - prevT, from: i > 0 };
+          prevT = s.arrival; if (s.distance != null) prevD = s.distance;
+        });
+        if (r.geometry) line = decodePolyline(r.geometry);
+      } else {
+        try {                              // kalitsiz OSRM trip
+          const coords = [here].concat(items.map((x) => [x.lat, x.lon])).map((p) => p[1] + "," + p[0]).join(";");
+          const j = await (await fetch(OSRM + "/trip/v1/driving/" + coords + "?source=first&roundtrip=false&overview=full&geometries=geojson")).json();
+          const t = j.trips && j.trips[0];
+          if (t) {
+            const pos = j.waypoints.map((w, i) => ({ i, k: w.waypoint_index })).sort((a, b) => a.k - b.k);
+            ids = pos.filter((p) => p.i > 0).map((p) => items[p.i - 1].id);
+            ids.forEach((id, n) => { const lg = t.legs[n]; if (lg) legMap[id] = { d: lg.distance, t: lg.duration, from: n > 0 }; });
+            total = t.duration; totalD = t.distance; line = t.geometry.coordinates.map((c) => [c[1], c[0]]);
+          }
+        } catch (e) {}
+      }
+      $("#best").disabled = false;
+      if (!ids) {                          // ikkalasi ham ishlamadi — yaqinlik bo'yicha
+        order = null; legs = {}; routeLayer.clearLayers(); draw();
+        toast("ℹ️ Yo'nalish xizmati javob bermadi — ro'yxat sizga eng yaqin mijozdan boshlab tartiblandi.");
+        return;
+      }
+      order = ids; legs = legMap; routeLayer.clearLayers();
+      if (line) { L.polyline(line, { color: "#2F6FD0", weight: 6, opacity: .8 }).addTo(routeLayer); map.fitBounds(line, { padding: [30, 30] }); }
+      $("#sum").style.display = "block";
+      $("#sum").textContent = "🛣 " + (totalD != null ? km(totalD) + " · " : "") + "⏱ " + mins(total) + " · " + ids.length + " ta mijoz (tirbandliksiz, taxminiy)";
+      $("#toast").style.display = "none"; draw();
+    });
+  }
+
+  // ---------- yuklash ----------
+  async function load() {
+    const r = await api("admin_courier_map");
+    if (!r || !r.ok) { $("#list").innerHTML = '<div class="empty">' + esc(errText(r)) + "</div>"; return; }
+    items = (r.items || []).map((x) => Object.assign({}, x, { lat: +x.lat, lon: +x.lon }));
+    order = null; legs = {}; routeLayer.clearLayers(); $("#sum").style.display = "none";
+    draw(); fitAll();
+  }
+  $("#reload").onclick = () => load();
+  $("#me").onclick = () => locate();
+  $("#best").onclick = () => best();
+  load().then(() => locate());
+})();
+</script>
+</body>
+</html>
