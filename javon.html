@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex">
 <title>RentBooks</title>
-<!-- VERSIYA: v20 — to'liq mijoz kabineti -->
+<!-- VERSIYA: v21 — to'liq mijoz kabineti -->
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script>
   // 🌗 Mavzu: Telegram tungi rejimda bo'lsa — qora, kunduzgi rejimda — oq (Telegram'siz: qurilma sozlamasi)
@@ -136,8 +136,8 @@ textarea.field { height: 110px; padding: 12px 14px; resize: vertical; }
    ⚙️ SOZLASH — faqat shu qatorlarni to'ldiring
    ===================================================================== */
 const CONFIG = {
-  SUPABASE_URL: "https://cyvrjjqzevyqcvxadjay.supabase.co",        // Supabase → Project Settings → Data API → Project URL
-  SUPABASE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN5dnJqanF6ZXZ5cWN2eGFkamF5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTExNjI0NTMsImV4cCI6MjEwNjczODQ1M30.cps7FKgc_8btkPswlpRbrGHLtlQOIf7GC2XZlpacLC0",         // Supabase → API Keys → Publishable key (OCHIQ kalit! secret EMAS)
+  SUPABASE_URL: "https://SIZNING-LOYIHA.supabase.co",        // Supabase → Project Settings → Data API → Project URL
+  SUPABASE_KEY: "sb_publishable_SIZNING_OCHIQ_KALIT",         // Supabase → API Keys → Publishable key (OCHIQ kalit! secret EMAS)
   BOT_USERNAME: "Kitobijarabot",                               // @ belgisisiz
   BRAND_NAME:   "RentBooks",
   LOGO_URL:     "logo.png",
@@ -153,7 +153,7 @@ const CONFIG = {
   const $$ = (s, r) => [...(r || document).querySelectorAll(s)];
   const BASE = CONFIG.SUPABASE_URL.replace(/\/$/, "");
   const DEMO = BASE.includes("SIZNING");
-  const APP_VER = "v20";
+  const APP_VER = "v21";
   const INIT = (tg && tg.initData) || "";
 
   // ---------- yordamchilar ----------
@@ -175,6 +175,7 @@ const CONFIG = {
   };
   // Xato matnlari (botdagi bilan bir xil). Ro'yxatda yo'q kod bo'lsa — umumiy o'zbekcha matn chiqadi, kod hech qachon ko'rsatilmaydi
   const ERR = {
+    NO_COUPON: "🎟 Bu kitob uchun amaldagi kuponingiz yo'q (muddati o'tgan yoki kitob narxi kupon chegarasidan yuqori).",
     ALREADY: "Bu amal allaqachon bajarilgan.",
     CASH_BOOKING: "💵 Naqd yoki qisman naqd to'lanadigan bronni uzaytirib bo'lmaydi. Kitobni belgilangan muddatda olib keting.",
     EXTEND_OFF: "⚠️ Bron muddatini uzaytirish hozir o'chirilgan.",
@@ -556,6 +557,7 @@ const CONFIG = {
         (canRent ? '<button type="button" id="tbl" style="width:100%;height:46px;border:0;border-top:1px solid var(--line);background:none;font-weight:700;font-size:13px;display:flex;justify-content:space-between;align-items:center;padding:0 14px">' +
           '<span>Batafsil hisob — qaytarish kuniga qarab</span><span style="color:var(--accent-text)" id="tbla">Ochish ▾</span></button><div id="tblb" class="col" style="display:none;padding:4px 14px 14px">' + priceTable(q) + "</div>" : "") + "</div>";
       if (sp && Number(sp.limit) > 0) html += '<div class="card warm row small" style="color:var(--warm-ink)">' + ic("tagi", 16, "#F0B54A") + "<span>Aksiya limitingizdan <b>" + fmt(sp.left_after != null ? sp.left_after : sp.left) + " so'm</b> qoladi (har mijozga " + fmt(sp.limit) + " so'm)</span></div>";
+      if (q && q.coupon && canRent) html += '<div class="card warm small" style="color:var(--warm-ink)">🎟 Sizda <b>tekin ijara kuponi</b> bor — bu kitobni ' + (q.coupon.covers_all ? "butun muddat" : "<b>" + q.coupon.days + " kun</b>") + " tekin o'qing. Garov odatdagidek, qaytarganingizda to'liq qaytadi.</div>";
       if (q && Number(q.free_available) > 0) html += '<div class="card small">🎁 Sizda <b>' + q.free_available + " tekin kun</b> bor — ijaraga olishda ishlatishingiz yoki uzaytirish uchun saqlashingiz mumkin.</div>";
       if (dmgC && !canBuy && d.mode !== "faqat_ijara") html += '<div class="card small">🔧 Zararlangan nusxa sotuvda: <b>' + fmt(dmgC.sale.price) + " so'm</b></div>";
       html += '<button type="button" class="btn ghost sm" id="promo" style="align-self:flex-start">' + ic("tagi", 16) + " " + (promoCode ? "Promokod: " + esc(promoCode) : "Promokodim bor") + "</button>";
@@ -582,6 +584,14 @@ const CONFIG = {
       if ($("#rent")) $("#rent").onclick = () => rentSheet(b, d, q);
       if ($("#buy")) $("#buy").onclick = () => buySheet(b, buyC || dmgC);
     });
+  }
+  // 🎟 v21: tekin ijara kuponlari (profil)
+  function couponsCard(list) {
+    if (!Array.isArray(list) || !list.length) return "";
+    return '<div class="card warm col" style="gap:6px"><b>🎟 Tekin ijara kuponlari: ' + list.length + " ta</b>" + list.map((k) =>
+      '<span class="small" style="color:var(--warm-ink)">' + k.days + " kun tekin" + (Number(k.max_price) ? " · " + fmt(k.max_price) + " so'mgacha kitob" : "") +
+      (k.status === "band" ? " · 📖 bronda ishlatilgan" : k.expires_at ? " · " + dt(k.expires_at, false) + " gacha" : "") + (k.note ? " — " + esc(k.note) : "") + "</span>").join("") +
+      '<span class="tiny muted">Kitob sahifasida «Ijaraga olish» ni bosing — kupon o\'zi taklif qilinadi. Garov odatdagidek olinadi va kitob qaytsa to\'liq qaytadi.</span></div>';
   }
   function foot(html, bind) { $("#view").insertAdjacentHTML("beforeend", '<div class="foot"><div class="in">' + html + "</div></div>"); if (bind) bind(); }
 
@@ -614,24 +624,29 @@ const CONFIG = {
 
   // ---------- bron oynalari ----------
   function rentSheet(b, d, q) {
-    const free = Number(q.free_available) > 0;
-    let uf = false;
+    const free = Number(q.free_available) > 0, cp = q.coupon || null;
+    let uf = false, uc = !!cp;                                   // 🎟 v21: kupon bo'lsa — oldindan tanlangan
     const body = () => {
-      const pay = uf ? rentNF(q, q.max_charge_free) : rentNF(q, q.fee_total);
+      const pay = uc ? 0 : uf ? rentNF(q, q.max_charge_free) : rentNF(q, q.fee_total);
       return '<div class="h2">📖 Ijaraga olish</div><div class="card col">' +
         '<div class="kv"><span>Kitob</span><b>' + esc(b.title) + "</b></div>" +
-        '<div class="kv"><span>Ijara haqi (' + q.rental_days + " kun, muddat oxirigacha)</span><b>" + fmt(pay) + " so'm</b></div>" +
+        (uc ? '<div class="kv"><span>Ijara haqi</span><b style="color:var(--ok)">🎟 ' + (cp.covers_all ? q.rental_days : cp.days) + " kun tekin</b></div>" +
+          (cp.covers_all ? "" : '<span class="tiny muted">' + cp.days + "-kundan keyingi har kun: " + fmt(cp.day_price) + " so'm</span>")
+          : '<div class="kv"><span>Ijara haqi (' + q.rental_days + " kun, muddat oxirigacha)</span><b>" + fmt(pay) + " so'm</b></div>") +
         '<div class="kv"><span>Garov (qaytariladi)</span><b>' + (me.premium ? "yo'q ⭐" : fmt(Math.max(q.deposit - pay, 0)) + " so'm") + "</b></div>" +
-        '<div class="kv" style="border-top:1px solid var(--line);padding-top:8px"><span>Hozir muzlatiladi</span><b style="color:var(--accent-text)">' + fmt(me.premium ? pay : q.deposit) + " so'm</b></div>" +
+        '<div class="kv" style="border-top:1px solid var(--line);padding-top:8px"><span>Hozir muzlatiladi</span><b style="color:var(--accent-text)">' + fmt(me.premium ? (uc ? q.fee_total : pay) : q.deposit) + " so'm</b></div>" +
         '<span class="tiny muted">Pul balansingizda faqat band turadi. Qaytarganingizda ijara haqi ayirilib, qolgani balansga qaytadi. Erta qaytarsangiz arzonroq.</span></div>' +
-        (free ? '<label class="card row" style="gap:12px"><input type="checkbox" id="uf"' + (uf ? " checked" : "") + ' style="width:22px;height:22px;accent-color:#F0B54A"><span class="small">🎁 ' + q.free_use + " tekin kunni ishlatish (sizda " + q.free_available + " kun)</span></label>" : "") +
-        (promoCode ? '<div class="small">🏷 Promokod: <b>' + esc(promoCode) + "</b></div>" : "") +
+        (cp ? '<label class="card row" style="gap:12px"><input type="checkbox" id="uc"' + (uc ? " checked" : "") + ' style="width:22px;height:22px;accent-color:#F0B54A"><span class="small">🎟 Tekin ijara kuponini ishlatish' + (Number(q.coupons_total) > 1 ? " (sizda " + q.coupons_total + " ta)" : "") + "</span></label>" : "") +
+        (free && !uc ? '<label class="card row" style="gap:12px"><input type="checkbox" id="uf"' + (uf ? " checked" : "") + ' style="width:22px;height:22px;accent-color:#F0B54A"><span class="small">🎁 ' + q.free_use + " tekin kunni ishlatish (sizda " + q.free_available + " kun)</span></label>" : "") +
+        (promoCode && !uc ? '<div class="small">🏷 Promokod: <b>' + esc(promoCode) + "</b></div>" : "") +
+        (uc && (free || promoCode) ? '<span class="tiny muted">Kupon tekin kunlar va promokod bilan qo\'shilmaydi.</span>' : "") +
         '<div class="small muted">⏳ Kitobni ' + Math.round(q.pickup_hours || 48) + " soat ichida do'kondan olib ketasiz.</div>" +
         '<button class="btn" id="ok">Bron qilish</button>';
     };
     const bind = (el) => {
       if ($("#uf", el)) $("#uf", el).onchange = (e) => { uf = e.target.checked; el.innerHTML = body(); bind(el); };
-      $("#ok", el).onclick = () => doBook("rent", { copy_id: d.rent_copy, use_free: uf, promo: promoCode }, b, q);
+      if ($("#uc", el)) $("#uc", el).onchange = (e) => { uc = e.target.checked; if (uc) uf = false; el.innerHTML = body(); bind(el); };
+      $("#ok", el).onclick = () => doBook("rent", uc ? { copy_id: d.rent_copy, coupon: true } : { copy_id: d.rent_copy, use_free: uf, promo: promoCode }, b, q);
     };
     sheet(body(), bind);
   }
@@ -656,7 +671,7 @@ const CONFIG = {
     toast(errText(r));
   }
   function cashSheet(action, body, b, r, q) {
-    const fee = q ? Math.min(rentNF(q, body.use_free ? q.max_charge_free : q.fee_total), +r.need) : null;
+    const fee = q ? (body.coupon ? 0 : Math.min(rentNF(q, body.use_free ? q.max_charge_free : q.fee_total), +r.need)) : null;
     sheet('<div class="h2">Balans yetmaydi</div><div class="card col">' +
       (fee != null ? '<div class="kv"><span>Ijara narxi</span><b>' + fmt(fee) + " so'm</b></div>" + '<div class="kv"><span>Garov (qaytariladi)</span><b>' + fmt(r.need - fee) + " so'm</b></div>" : "") +
       '<div class="kv"><span>Kerak</span><b>' + fmt(r.need) + " so'm</b></div>" + '<div class="kv"><span>Bo\'sh balans</span><b>' + fmt(r.available) + " so'm</b></div></div>" +
@@ -681,6 +696,7 @@ const CONFIG = {
       '<div class="kv"><span>' + (r.count ? "To'plam" : "Kitob") + '</span><b>' + esc(r.title || r.name || b.title) + (r.count ? " (" + r.count + " ta)" : "") + "</b></div>" +
       (held ? '<div class="kv"><span>Muzlatildi</span><b>' + fmt(held) + " so'm</b></div>" : "") +
       (cash ? '<div class="kv"><span>Do\'konda naqd</span><b>' + fmt(cash) + " so'm</b></div>" : "") +
+      (r.coupon_used ? '<div class="kv"><span>🎟 Kupon</span><b>' + r.coupon_days + " kun tekin</b></div>" : "") +
       '<div class="kv"><span>Olib ketish muddati</span><b>' + dt(r.pickup_deadline, true) + "</b></div></div>" +
       '<p class="small muted" style="margin:0">Do\'konda <b>🪪 QR kodingizni</b> ko\'rsating. Manzil va xarita bot chatiga yuborildi.</p>' +
       '<div class="row"><button class="btn ghost" id="qrb">🪪 QR kodim</button><button class="btn" id="myb">Kitoblarim</button></div>', (el) => {
@@ -1032,6 +1048,7 @@ const CONFIG = {
       '<div class="card col" style="gap:2px;padding:12px"><b style="font-size:16px">' + fmt(me.bonus) + '</b><span class="tiny muted">Bonus · faqat ijaraga</span></div>' +
       '<div class="card col" style="gap:2px;padding:12px"><b style="font-size:16px">' + (free.o_available || 0) + ' kun</b><span class="tiny muted">Tekin kunlar</span></div>' +
       '<div class="card col" style="gap:2px;padding:12px"><b style="font-size:16px">' + (me.friends || 0) + ' ta</b><span class="tiny muted">Do\'stlar</span></div></div>' +
+      couponsCard(me.coupons) +
       '<div class="list">' + [["profile", "Mening ma'lumotlarim"], ["qr", "🪪 Mening QR kodim"], ["history", "📜 Balans tarixi"], ["sos", "🆘 Yordam (SOS)"],
         ["f_request", "🙋 Kitob so'rash"], ["f_offer", "📤 Kitobingizni soting"], ["sets", "📦 To'plamlar"], ["channel", "📢 Telegram kanalimiz"], ["insta", "📸 Instagram sahifamiz"]].map(([k, t]) =>
         '<button data-m="' + k + '"><span>' + t + '</span><span class="muted">›</span></button>').join("") + "</div>" +

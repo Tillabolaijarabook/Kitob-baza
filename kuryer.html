@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex">
 <title>Kuryer xaritasi — RentBooks</title>
-<!-- VERSIYA: v20 — 🛵 kuryer xaritasi (faqat kuryer; bot «🚚 Mening yetkazishlarim» dan ochiladi) -->
+<!-- VERSIYA: v21 — 🛵 kuryer xaritasi (faqat kuryer; bot «🚚 Mening yetkazishlarim» dan ochiladi) -->
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -60,8 +60,8 @@ a { color: var(--blue); }
 <script>
 /* ⚙️ SOZLASH — javon.html va zona.html dagi bilan bir xil 2 qator */
 const CONFIG = {
-  SUPABASE_URL: "https://cyvrjjqzevyqcvxadjay.supabase.co",
-  SUPABASE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN5dnJqanF6ZXZ5cWN2eGFkamF5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTExNjI0NTMsImV4cCI6MjEwNjczODQ1M30.cps7FKgc_8btkPswlpRbrGHLtlQOIf7GC2XZlpacLC0"
+  SUPABASE_URL: "https://SIZNING-LOYIHA.supabase.co",
+  SUPABASE_KEY: "sb_publishable_SIZNING_OCHIQ_KALIT"
 };
 (function () {
   "use strict";
@@ -74,7 +74,7 @@ const CONFIG = {
   const km = (m) => (Number(m) / 1000).toFixed(1).replace(".", ",") + " km";
   const mins = (s) => Math.max(1, Math.round(Number(s) / 60)) + " daq";
   const BASE = CONFIG.SUPABASE_URL.replace(/\/$/, "");
-  const APP_VER = "v20";
+  const APP_VER = "v21";
   const CFG_BAD = /SIZNING/.test(CONFIG.SUPABASE_URL) || /SIZNING/.test(CONFIG.SUPABASE_KEY);
   const OSRM = "https://router.project-osrm.org";
   const ERR = { NOT_COURIER: "⛔ Bu sahifa faqat faol kuryerlar uchun.", NOT_YOURS: "🔒 Bu yetkazish sizga biriktirilmagan.",
