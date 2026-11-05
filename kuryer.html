@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex">
 <title>Kuryer xaritasi — RentBooks</title>
-<!-- VERSIYA: v21 — 🛵 kuryer xaritasi (faqat kuryer; bot «🚚 Mening yetkazishlarim» dan ochiladi) -->
+<!-- VERSIYA: v22 — 🛵 kuryer xaritasi (faqat kuryer; bot «🚚 Mening yetkazishlarim» dan ochiladi) -->
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -41,6 +41,11 @@ a { color: var(--blue); }
          padding: 12px 14px; border-radius: 14px; display: none; z-index: 2000; max-width: 696px; margin: 0 auto; }
 .toast button { margin-left: 8px; }
 .empty { text-align: center; padding: 26px 10px; color: var(--muted); }
+.chk { display: flex; gap: 8px; align-items: center; font-size: 13px; font-weight: 600; }
+.chk input { width: 20px; height: 20px; accent-color: var(--accent); }
+.live { font-size: 12px; font-weight: 700; color: var(--muted); }
+.live.on { color: var(--ok); }
+.next { background: var(--card); border: 2px solid var(--ok); border-radius: 16px; padding: 12px; display: flex; flex-direction: column; gap: 6px; }
 </style>
 </head>
 <body>
@@ -50,7 +55,10 @@ a { color: var(--blue); }
   <div class="row">
     <button class="btn" id="best">🧭 Eng yaxshi yo'nalish</button>
     <button class="btn ghost" id="me">📍 Men qayerdaman</button>
+    <span class="live" id="live">📡 joylashuv: kutilmoqda</span>
   </div>
+  <label class="chk" id="backw" style="display:none"><input type="checkbox" id="back"> 🏪 Oxirida do'konga qaytish</label>
+  <div id="next"></div>
   <div class="sum" id="sum" style="display:none"></div>
   <div id="list" class="col"></div>
   <div class="small muted" style="text-align:center">Mijozni tanlab «🧭 Yo'nalish» ni bossangiz, unga 2 daqiqadan keyin «Kuryer yo'lda» xabari o'zi boradi.</div>
@@ -60,8 +68,8 @@ a { color: var(--blue); }
 <script>
 /* ⚙️ SOZLASH — javon.html va zona.html dagi bilan bir xil 2 qator */
 const CONFIG = {
-  SUPABASE_URL: "https://cyvrjjqzevyqcvxadjay.supabase.co",
-  SUPABASE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN5dnJqanF6ZXZ5cWN2eGFkamF5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTExNjI0NTMsImV4cCI6MjEwNjczODQ1M30.cps7FKgc_8btkPswlpRbrGHLtlQOIf7GC2XZlpacLC0"
+  SUPABASE_URL: "https://SIZNING-LOYIHA.supabase.co",
+  SUPABASE_KEY: "sb_publishable_SIZNING_OCHIQ_KALIT"
 };
 (function () {
   "use strict";
@@ -74,7 +82,7 @@ const CONFIG = {
   const km = (m) => (Number(m) / 1000).toFixed(1).replace(".", ",") + " km";
   const mins = (s) => Math.max(1, Math.round(Number(s) / 60)) + " daq";
   const BASE = CONFIG.SUPABASE_URL.replace(/\/$/, "");
-  const APP_VER = "v21";
+  const APP_VER = "v22";
   const CFG_BAD = /SIZNING/.test(CONFIG.SUPABASE_URL) || /SIZNING/.test(CONFIG.SUPABASE_KEY);
   const OSRM = "https://router.project-osrm.org";
   const ERR = { NOT_COURIER: "⛔ Bu sahifa faqat faol kuryerlar uchun.", NOT_YOURS: "🔒 Bu yetkazish sizga biriktirilmagan.",
@@ -129,6 +137,12 @@ const CONFIG = {
   map.setView([41.55, 60.63], 12);
   const pins = L.layerGroup().addTo(map), routeLayer = L.layerGroup().addTo(map);
   let items = [], here = null, hereMarker = null, order = null, legs = {}, selected = null;
+  let stores = [], storeMarker = null;                   // 🏬 v22: do'kon nuqtasi (oxirida qaytish uchun)
+  const storeFor = () => {                               // kuryerga eng yaqin faol do'kon
+    if (!stores.length) return null;
+    if (!here) return stores[0];
+    return stores.slice().sort((a, b) => haversine(here, [a.lat, a.lon]) - haversine(here, [b.lat, b.lon]))[0];
+  };
 
   function pinIcon(n, going) {
     return L.divIcon({ className: "", html: '<div class="pin' + (going ? " go" : "") + '">' + n + "</div>", iconSize: [30, 30], iconAnchor: [15, 15] });
@@ -139,9 +153,27 @@ const CONFIG = {
     if (here) return items.slice().sort((a, b) => haversine(here, [a.lat, a.lon]) - haversine(here, [b.lat, b.lon]));
     return items.slice();
   }
+  // ▶️ v22: navbatdagi mijoz — eng yaxshi tartib bo'lsa undagi birinchisi, aks holda eng yaqini
+  function drawNext(arr) {
+    const el = $("#next");
+    if (!arr.length) {
+      const st = storeFor();
+      el.innerHTML = st && items.length === 0 && loaded ? '<div class="next"><b>✅ Hamma yetkazildi</b><div class="row">' +
+        '<button class="btn sm" id="gostore">🏪 ' + esc(st.name) + "ga yo'l</button></div></div>" : "";
+      const g = $("#gostore"); if (g) g.onclick = () => needHere(() => drawRoute({ id: -1, lat: st.lat, lon: st.lon }, false));
+      return;
+    }
+    const x = arr[0];
+    el.innerHTML = '<div class="next"><span class="small muted">▶️ Navbatdagi mijoz</span><b>' + esc(x.name) + "</b>" +
+      (x.address ? '<span class="small">📍 ' + esc(x.address) + "</span>" : "") +
+      '<div class="row"><button class="btn sm" id="nx_go">🧭 Yo\'nalish</button>' +
+      (x.phone ? '<a class="btn ghost sm" href="tel:' + esc(String(x.phone).replace(/[^\d+]/g, "")) + '">📞 Qo\'ng\'iroq</a>' : "") + "</div></div>";
+    $("#nx_go").onclick = () => routeTo(x.id);
+  }
   function draw() {
     pins.clearLayers();
     const arr = listOrder();
+    drawNext(arr);
     arr.forEach((x, i) => {
       const m = L.marker([x.lat, x.lon], { icon: pinIcon(i + 1, x.going) }).addTo(pins);
       m.on("click", () => select(x.id, true));
@@ -175,24 +207,71 @@ const CONFIG = {
     if (pts.length) map.fitBounds(pts, { padding: [30, 30], maxZoom: 16 });
   }
 
-  // ---------- 📍 joylashuv ----------
+  // ---------- 📍 joylashuv (v22: Telegram LocationManager + doimiy kuzatish) ----------
+  //   1) brauzer watchPosition — kuryer yurganda ko'k nuqta o'zi siljiydi;
+  //   2) ishlamasa — Telegram LocationManager (Bot API 8.0+) har 15 soniyada so'raladi.
+  let watchId = null, lmTimer = null, lastFix = 0, lastDraw = 0;
+  const LM = tg && tg.LocationManager;
+  function setHere(lat, lon) {
+    here = [lat, lon]; lastFix = Date.now();
+    if (hereMarker) hereMarker.setLatLng(here);
+    else hereMarker = L.circleMarker(here, { radius: 9, color: "#fff", weight: 3, fillColor: "#2F6FD0", fillOpacity: 1 }).addTo(map);
+    $("#live").textContent = "📡 joylashuv: jonli"; $("#live").className = "live on";
+    if (Date.now() - lastDraw > 15000 && !order) { lastDraw = Date.now(); draw(); }   // yaqinlik tartibi yangilanadi
+    follow();
+  }
+  function lmAsk(cb, quiet) {
+    if (!LM) return cb && cb(false);
+    const get = () => LM.getLocation((loc) => {
+      if (loc && Number.isFinite(loc.latitude)) { setHere(loc.latitude, loc.longitude); cb && cb(true); }
+      else {
+        if (!quiet) toast("📍 Joylashuvga ruxsat bering: " + '<button class="btn sm" id="lmset">Sozlamalar</button>', 8000);
+        const b = $("#lmset"); if (b) b.onclick = () => { try { LM.openSettings(); } catch (e) {} };
+        cb && cb(false);
+      }
+    });
+    if (LM.isInited) get(); else LM.init(get);
+  }
+  function startWatch() {
+    if (navigator.geolocation && watchId == null) {
+      watchId = navigator.geolocation.watchPosition((p) => setHere(p.coords.latitude, p.coords.longitude),
+        () => { if (watchId != null) { navigator.geolocation.clearWatch(watchId); watchId = null; } startLm(); },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 });
+    } else startLm();
+  }
+  function startLm() {
+    if (!LM || lmTimer) return;
+    lmTimer = setInterval(() => lmAsk(null, true), 15000);
+  }
+  setInterval(() => {                                   // 1 daqiqadan beri yangi nuqta yo'q — belgi xira
+    if (lastFix && Date.now() - lastFix > 60000) { $("#live").textContent = "📡 joylashuv: eskirgan"; $("#live").className = "live"; }
+  }, 20000);
   function locate(cb) {
-    if (!navigator.geolocation) { toast("📍 Telefon joylashuvni bermayapti — yo'nalish uchun kerak."); return; }
-    navigator.geolocation.getCurrentPosition((p) => {
-      here = [p.coords.latitude, p.coords.longitude];
-      if (hereMarker) hereMarker.setLatLng(here);
-      else hereMarker = L.circleMarker(here, { radius: 9, color: "#fff", weight: 3, fillColor: "#2F6FD0", fillOpacity: 1 }).addTo(map);
-      if (cb) cb(); else { draw(); fitAll(); }
-    }, () => toast("📍 Joylashuvga ruxsat bering (Telegram sozlamalari) — yo'nalish shundan hisoblanadi."),
-    { enableHighAccuracy: true, timeout: 12000, maximumAge: 20000 });
+    const done = () => { if (cb) cb(); else { draw(); fitAll(); } };
+    let finished = false;
+    const fin = () => { if (!finished) { finished = true; done(); } };
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition((p) => { setHere(p.coords.latitude, p.coords.longitude); fin(); },
+        () => lmAsk((ok) => { if (ok) fin(); else if (!LM) toast("📍 Joylashuvga ruxsat bering (Telegram sozlamalari) — yo'nalish shundan hisoblanadi."); }),
+        { enableHighAccuracy: true, timeout: 12000, maximumAge: 20000 });
+    } else lmAsk((ok) => { if (ok) fin(); else toast("📍 Telefon joylashuvni bermayapti — yo'nalish uchun kerak."); });
+    startWatch();
   }
   const needHere = (fn) => here ? fn() : locate(fn);
 
+  // 🧭 v22: tanlangan mijozga yo'l — kuryer 150 m dan ko'p siljisa, ko'pi bilan 45 soniyada bir qayta chiziladi
+  let target = null, targetAt = 0, targetFrom = null;
+  function follow() {
+    if (!target || !here || !targetFrom) return;
+    if (Date.now() - targetAt < 45000 || haversine(here, targetFrom) < 150) return;
+    const x = items.find((y) => y.id === target); if (!x) { target = null; return; }
+    drawRoute(x, true);
+  }
+
   // ---------- 🧭 bitta mijozga yo'nalish (+ «kuryer yo'lda» xabari) ----------
-  async function routeTo(id) {
-    const x = items.find((y) => y.id === id); if (!x) return;
-    needHere(async () => {
-      toast("🧭 Yo'nalish hisoblanmoqda…", 0);
+  async function drawRoute(x, quiet) {
+      target = x.id; targetAt = Date.now(); targetFrom = here.slice();
+      if (!quiet) toast("🧭 Yo'nalish hisoblanmoqda…", 0);
       let line = null, dist = 0, dur = 0;
       const r = await api("admin_route", { from: here, to: [x.lat, x.lon] });
       if (r && r.ok) { line = r.line; dist = r.distance; dur = r.duration; }
@@ -206,14 +285,22 @@ const CONFIG = {
       routeLayer.clearLayers();
       if (line) {
         L.polyline(line, { color: "#2F6FD0", weight: 6, opacity: .85 }).addTo(routeLayer);
-        map.fitBounds(line, { padding: [30, 30] });
-        legs = {}; legs[x.id] = { d: dist, t: dur, from: false }; order = null;
+        if (!quiet) map.fitBounds(line, { padding: [30, 30] });
+        legs = {}; legs[x.id] = { d: dist, t: dur, from: false }; if (!quiet) order = null;
       } else {
         dist = haversine(here, [x.lat, x.lon]); dur = dist / 8;      // ~30 km/soat — taxminiy
         legs = {}; legs[x.id] = { d: dist, t: dur, from: false };
-        toast("ℹ️ Yo'nalish xizmati javob bermadi — to'g'ri chiziq bo'yicha taxminiy masofa ko'rsatildi.");
+        if (!quiet) toast("ℹ️ Yo'nalish xizmati javob bermadi — to'g'ri chiziq bo'yicha taxminiy masofa ko'rsatildi.");
       }
       selected = x.id; draw();
+      if (quiet) return dur;
+      if (line) $("#toast").style.display = "none";
+      return dur;
+  }
+  async function routeTo(id) {
+    const x = items.find((y) => y.id === id); if (!x) return;
+    needHere(async () => {
+      const dur = await drawRoute(x, false);
       // 🛵 mijozga «Kuryer yo'lda» (bir marta; 2 daqiqa ichida bekor qilish mumkin)
       if (!x.going_sent) {
         const g = await api("admin_courier_go", { id: x.id, eta_min: Math.round(dur / 60) });
@@ -239,7 +326,9 @@ const CONFIG = {
     needHere(async () => {
       $("#best").disabled = true; toast("🧭 Eng yaxshi tartib hisoblanmoqda…", 0);
       let ids = null, line = null, total = 0, totalD = null, legMap = {};
-      const r = await api("admin_route_best", { from: here, stops: items.map((x) => ({ id: x.id, lat: x.lat, lon: x.lon })) });
+      const st = $("#back") && $("#back").checked ? storeFor() : null;
+      const r = await api("admin_route_best", { from: here, stops: items.map((x) => ({ id: x.id, lat: x.lat, lon: x.lon })),
+                                                end: st ? [st.lat, st.lon] : null });
       if (r && r.ok && r.order && r.order.length) {
         ids = r.order.map((s) => +s.id); total = r.duration; totalD = r.distance;
         let prevT = 0, prevD = 0;
@@ -251,12 +340,14 @@ const CONFIG = {
         if (r.geometry) line = decodePolyline(r.geometry);
       } else {
         try {                              // kalitsiz OSRM trip
-          const coords = [here].concat(items.map((x) => [x.lat, x.lon])).map((p) => p[1] + "," + p[0]).join(";");
-          const j = await (await fetch(OSRM + "/trip/v1/driving/" + coords + "?source=first&roundtrip=false&overview=full&geometries=geojson")).json();
+          const pts = [here].concat(items.map((x) => [x.lat, x.lon])).concat(st ? [[st.lat, st.lon]] : []);
+          const coords = pts.map((p) => p[1] + "," + p[0]).join(";");
+          const j = await (await fetch(OSRM + "/trip/v1/driving/" + coords + "?source=first" + (st ? "&destination=last" : "") +
+                                       "&roundtrip=false&overview=full&geometries=geojson")).json();
           const t = j.trips && j.trips[0];
           if (t) {
             const pos = j.waypoints.map((w, i) => ({ i, k: w.waypoint_index })).sort((a, b) => a.k - b.k);
-            ids = pos.filter((p) => p.i > 0).map((p) => items[p.i - 1].id);
+            ids = pos.filter((p) => p.i > 0 && p.i <= items.length).map((p) => items[p.i - 1].id);
             ids.forEach((id, n) => { const lg = t.legs[n]; if (lg) legMap[id] = { d: lg.distance, t: lg.duration, from: n > 0 }; });
             total = t.duration; totalD = t.distance; line = t.geometry.coordinates.map((c) => [c[1], c[0]]);
           }
@@ -271,19 +362,37 @@ const CONFIG = {
       order = ids; legs = legMap; routeLayer.clearLayers();
       if (line) { L.polyline(line, { color: "#2F6FD0", weight: 6, opacity: .8 }).addTo(routeLayer); map.fitBounds(line, { padding: [30, 30] }); }
       $("#sum").style.display = "block";
-      $("#sum").textContent = "🛣 " + (totalD != null ? km(totalD) + " · " : "") + "⏱ " + mins(total) + " · " + ids.length + " ta mijoz (tirbandliksiz, taxminiy)";
+      $("#sum").textContent = "🛣 " + (totalD != null ? km(totalD) + " · " : "") + "⏱ " + mins(total) + " · " + ids.length + " ta mijoz" +
+        (st ? " + 🏪 " + st.name : "") + " (tirbandliksiz, taxminiy)";
       $("#toast").style.display = "none"; draw();
     });
   }
 
   // ---------- yuklash ----------
-  async function load() {
+  let loaded = false;
+  async function load(keep) {
     const r = await api("admin_courier_map");
-    if (!r || !r.ok) { $("#list").innerHTML = '<div class="empty">' + esc(errText(r)) + "</div>"; return; }
+    if (!r || !r.ok) { if (!keep) $("#list").innerHTML = '<div class="empty">' + esc(errText(r)) + "</div>"; return; }
+    const before = items.map((x) => x.id).join(",");
     items = (r.items || []).map((x) => Object.assign({}, x, { lat: +x.lat, lon: +x.lon }));
-    order = null; legs = {}; routeLayer.clearLayers(); $("#sum").style.display = "none";
+    stores = (r.stores || []).map((x) => Object.assign({}, x, { lat: +x.lat, lon: +x.lon }));
+    $("#backw").style.display = stores.length ? "flex" : "none";
+    if (storeMarker) { map.removeLayer(storeMarker); storeMarker = null; }
+    if (stores.length) {
+      storeMarker = L.layerGroup(stores.map((st) => L.marker([st.lat, st.lon], { icon: L.divIcon({ className: "", iconSize: [30, 30], iconAnchor: [15, 15],
+        html: '<div class="pin" style="background:#fff">🏪</div>' }) }).bindTooltip(esc(st.name)))).addTo(map);
+    }
+    loaded = true;
+    if (keep && before === items.map((x) => x.id).join(",")) return;     // o'zgarish yo'q — chiziq va tartib saqlanadi
+    if (keep && order) {                                  // yetkazilganlar tartibdan chiqadi, qolganlari o'z o'rnida
+      order = order.filter((id) => items.some((x) => x.id === id));
+      if (target && !items.some((x) => x.id === target)) { target = null; routeLayer.clearLayers(); }
+      draw(); return;
+    }
+    order = null; legs = {}; target = null; routeLayer.clearLayers(); $("#sum").style.display = "none";
     draw(); fitAll();
   }
+  setInterval(() => { if (document.visibilityState === "visible") load(true); }, 60000);   // har daqiqada ro'yxat yangilanadi
   $("#reload").onclick = () => load();
   $("#me").onclick = () => locate();
   $("#best").onclick = () => best();
