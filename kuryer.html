@@ -57,6 +57,12 @@ a { color: var(--blue); }
     <button class="btn ghost" id="me">📍 Men qayerdaman</button>
     <span class="live" id="live">📡 joylashuv: kutilmoqda</span>
   </div>
+  <div class="row" style="gap:6px">
+    <select id="prof" class="btn ghost" style="flex:1;min-width:150px">
+      <option value="car">🚗 Mashina</option><option value="moto">🛵 Skuter / mototsikl</option>
+      <option value="bike">🚲 Velosiped</option><option value="foot">🚶 Piyoda</option>
+    </select>
+  </div>
   <label class="chk" id="backw" style="display:none"><input type="checkbox" id="back"> 🏪 Oxirida do'konga qaytish</label>
   <div id="next"></div>
   <div class="sum" id="sum" style="display:none"></div>
@@ -68,8 +74,8 @@ a { color: var(--blue); }
 <script>
 /* ⚙️ SOZLASH — javon.html va zona.html dagi bilan bir xil 2 qator */
 const CONFIG = {
-  SUPABASE_URL: "https://cyvrjjqzevyqcvxadjay.supabase.co",
-  SUPABASE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN5dnJqanF6ZXZ5cWN2eGFkamF5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTExNjI0NTMsImV4cCI6MjEwNjczODQ1M30.cps7FKgc_8btkPswlpRbrGHLtlQOIf7GC2XZlpacLC0"
+  SUPABASE_URL: "https://SIZNING-LOYIHA.supabase.co",
+  SUPABASE_KEY: "sb_publishable_SIZNING_OCHIQ_KALIT"
 };
 (function () {
   "use strict";
@@ -85,6 +91,10 @@ const CONFIG = {
   const APP_VER = "v22";
   const CFG_BAD = /SIZNING/.test(CONFIG.SUPABASE_URL) || /SIZNING/.test(CONFIG.SUPABASE_KEY);
   const OSRM = "https://router.project-osrm.org";
+  // 🚗🛵🚲🚶 transport turi (shu telefonda eslab qolinadi). Kalitsiz zaxira (OSRM) faqat mashina yo'lini biladi —
+  //   velosiped/piyodada zaxira vaqti tezlik bo'yicha qayta hisoblanadi
+  const SPEED = { car: 8, moto: 8, bike: 4, foot: 1.3 };          // m/s, taxminiy (to'g'ri chiziq zaxirasi uchun)
+  let PROF = (() => { try { return localStorage.getItem("rb_courier_prof") || "car"; } catch (e) { return "car"; } })();
   const ERR = { NOT_COURIER: "⛔ Bu sahifa faqat faol kuryerlar uchun.", NOT_YOURS: "🔒 Bu yetkazish sizga biriktirilmagan.",
     ALREADY: "ℹ️ Yetkazish yopilgan yoki o'zgargan — ro'yxatni yangilang.", CONFIG: "⚙️ kuryer.html ichidagi CONFIG to'ldirilmagan.",
     NO_TG: "Sahifani botdagi «🚚 Mening yetkazishlarim» → «🗺 Hammasini xaritada ko'rish» orqali oching.",
@@ -273,13 +283,13 @@ const CONFIG = {
       target = x.id; targetAt = Date.now(); targetFrom = here.slice();
       if (!quiet) toast("🧭 Yo'nalish hisoblanmoqda…", 0);
       let line = null, dist = 0, dur = 0;
-      const r = await api("admin_route", { from: here, to: [x.lat, x.lon] });
+      const r = await api("admin_route", { from: here, to: [x.lat, x.lon], profile: PROF });
       if (r && r.ok) { line = r.line; dist = r.distance; dur = r.duration; }
       else {
         try {                              // kalit yo'q / xizmat javob bermadi — kalitsiz OSRM
           const j = await (await fetch(OSRM + "/route/v1/driving/" + here[1] + "," + here[0] + ";" + x.lon + "," + x.lat + "?overview=full&geometries=geojson")).json();
           const rt = j.routes && j.routes[0];
-          if (rt) { line = rt.geometry.coordinates.map((c) => [c[1], c[0]]); dist = rt.distance; dur = rt.duration; }
+          if (rt) { line = rt.geometry.coordinates.map((c) => [c[1], c[0]]); dist = rt.distance; dur = PROF === "car" || PROF === "moto" ? rt.duration : rt.distance / SPEED[PROF]; }
         } catch (e) {}
       }
       routeLayer.clearLayers();
@@ -288,7 +298,7 @@ const CONFIG = {
         if (!quiet) map.fitBounds(line, { padding: [30, 30] });
         legs = {}; legs[x.id] = { d: dist, t: dur, from: false }; if (!quiet) order = null;
       } else {
-        dist = haversine(here, [x.lat, x.lon]); dur = dist / 8;      // ~30 km/soat — taxminiy
+        dist = haversine(here, [x.lat, x.lon]); dur = dist / (SPEED[PROF] || 8);      // taxminiy
         legs = {}; legs[x.id] = { d: dist, t: dur, from: false };
         if (!quiet) toast("ℹ️ Yo'nalish xizmati javob bermadi — to'g'ri chiziq bo'yicha taxminiy masofa ko'rsatildi.");
       }
@@ -328,7 +338,7 @@ const CONFIG = {
       let ids = null, line = null, total = 0, totalD = null, legMap = {};
       const st = $("#back") && $("#back").checked ? storeFor() : null;
       const r = await api("admin_route_best", { from: here, stops: items.map((x) => ({ id: x.id, lat: x.lat, lon: x.lon })),
-                                                end: st ? [st.lat, st.lon] : null });
+                                                end: st ? [st.lat, st.lon] : null, profile: PROF });
       if (r && r.ok && r.order && r.order.length) {
         ids = r.order.map((s) => +s.id); total = r.duration; totalD = r.distance;
         let prevT = 0, prevD = 0;
@@ -396,6 +406,11 @@ const CONFIG = {
   $("#reload").onclick = () => load();
   $("#me").onclick = () => locate();
   $("#best").onclick = () => best();
+  $("#prof").value = PROF;
+  $("#prof").onchange = (e) => {                       // transport almashsa — chizilgan yo'l qayta hisoblanadi
+    PROF = e.target.value; try { localStorage.setItem("rb_courier_prof", PROF); } catch (er) {}
+    if (order) best(); else if (target) { const x = items.find((y) => y.id === target); if (x && here) drawRoute(x); }
+  };
   load().then(() => locate());
 })();
 </script>
