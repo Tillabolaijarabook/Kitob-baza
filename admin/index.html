@@ -213,8 +213,10 @@ const CONFIG = {
   async function api(action, body) {
     let r;
     try {
-      r = await fetch(API, { method: "POST", headers: { "Content-Type": "application/json", ...(S ? { "x-admin-token": S.token } : {}) },
-        body: JSON.stringify(Object.assign({ action }, body || {})) });
+      // «oddiy» so'rov (text/plain, maxsus sarlavhasiz): brauzer oldindan OPTIONS (preflight) yubormaydi — tezroq va ishonchliroq.
+      // Sessiya kaliti tanada yuboriladi; server JSON'ni baribir o'qiydi
+      r = await fetch(API, { method: "POST", headers: { "Content-Type": "text/plain;charset=UTF-8" },
+        body: JSON.stringify(Object.assign({ action }, body || {}, S ? { token: S.token } : {})) });
     } catch (e) { return { ok: false, error: "NET" }; }
     let j; try { j = await r.json(); } catch (e) { return { ok: false, error: "SERVER" }; }
     if (j && (j.error === "LOGIN" || j.error === "NOT_ADMIN") && action !== "login") { logout(errText(j)); }
