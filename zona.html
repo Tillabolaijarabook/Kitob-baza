@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex">
 <title>Yetkazish hududlari — RentBooks admin</title>
-<!-- VERSIYA: v22 — 🗺 yetkazish hududlari (faqat superadmin; bot admin panelidan ochiladi) -->
+<!-- VERSIYA: v23 — 🗺 yetkazish hududlari (faqat superadmin; bot admin panelidan ochiladi) -->
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -75,7 +75,7 @@ const CONFIG = {
   const fmt = (n) => String(Math.round(Number(n || 0))).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
   let tt; const toast = (m) => { const t = $("#toast"); t.textContent = m; t.style.display = "block"; clearTimeout(tt); tt = setTimeout(() => t.style.display = "none", 3500); };
   const BASE = CONFIG.SUPABASE_URL.replace(/\/$/, "");
-  const APP_VER = "v22";
+  const APP_VER = "v23";
   const CFG_BAD = /SIZNING/.test(CONFIG.SUPABASE_URL) || /SIZNING/.test(CONFIG.SUPABASE_KEY);
   async function api(action, body) {
     if (CFG_BAD) return { ok: false, error: "CONFIG" };
@@ -99,7 +99,19 @@ const CONFIG = {
   const errText = (r) => ERR[r && r.error] || (r && r.error) || "Xatolik";
 
   // xarita
-  $("#ver").textContent = APP_VER + (CFG_BAD ? " · ⚙️ CONFIG to'ldirilmagan" : "");
+  $("#ver").textContent = CFG_BAD ? "⚙️ CONFIG to'ldirilmagan" : "";
+  // 🧪 v23: TEST lentasi (⚙️ sozlamalar → test_belgisi; botda: ⚙️ Sozlamalar → 🧪 TEST belgisi)
+  function testRibbon(on) {
+    let el = document.getElementById("rb-test");
+    if (!on) { if (el) el.remove(); return; }
+    if (el) return;
+    el = document.createElement("div"); el.id = "rb-test"; el.textContent = "🧪 TEST";
+    el.style.cssText = "position:fixed;top:0;left:50%;transform:translateX(-50%);z-index:9999;background:#F3E6C4;color:#6B5216;font:600 11px/1 system-ui,sans-serif;padding:4px 12px;border-radius:0 0 8px 8px;pointer-events:none;letter-spacing:.06em;opacity:.92";
+    document.body.appendChild(el);
+  }
+  if (!CFG_BAD) fetch(BASE + "/rest/v1/rpc/app_flags", { method: "POST", headers: Object.assign({ apikey: CONFIG.SUPABASE_KEY, "Content-Type": "application/json" },
+    CONFIG.SUPABASE_KEY.startsWith("eyJ") ? { Authorization: "Bearer " + CONFIG.SUPABASE_KEY } : {}), body: "{}" })
+    .then((r) => r.ok ? r.json() : null).then((d) => testRibbon(d && d.test)).catch(() => {});
   const map = L.map("map"); L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap" }).addTo(map);
   map.setView([41.55, 60.63], 12);
   let zonesAll = [], cur = null, rings = [], sel = -1, drawing = false;
