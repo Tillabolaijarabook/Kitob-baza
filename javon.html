@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex">
 <title>RentBooks</title>
-<!-- VERSIYA: v23 — to'liq mijoz kabineti -->
+<!-- VERSIYA: v24 — to'liq mijoz kabineti · 🌐 til (lotin / yangi lotin / kirill / rus) -->
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script>
   // 🌗 Mavzu: Telegram tungi rejimda bo'lsa — qora, kunduzgi rejimda — oq (Telegram'siz: qurilma sozlamasi)
@@ -14,6 +14,9 @@
     document.documentElement.setAttribute("data-theme", d ? "dark" : "light"); })();
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<!-- 🌐 v24: interfeys tili. Ikkala fayl shu papkada (javon.html yonida) turishi shart -->
+<script src="til_ru.js"></script>
+<script src="til.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -153,7 +156,7 @@ const CONFIG = {
   const $$ = (s, r) => [...(r || document).querySelectorAll(s)];
   const BASE = CONFIG.SUPABASE_URL.replace(/\/$/, "");
   const DEMO = BASE.includes("SIZNING");
-  const APP_VER = "v23";
+  const APP_VER = "v24";
   const INIT = (tg && tg.initData) || "";
 
   // ---------- yordamchilar ----------
@@ -488,9 +491,9 @@ const CONFIG = {
       timers.push(setInterval(() => { i = (i + 1) % slides.length; drawHero(); }, 3500));
     }
     const drawGrid = () => {
-      const q = catState.q.trim().toLowerCase();
+      const q = catState.q.trim();      // 🌐 v24: «Ўткан», «Ötkan», «Откан» ham «O'tkan»ni topadi
       let list = books.filter((b) => (catState.genre === "*" || (b.genre || "Boshqa") === catState.genre) &&
-        (!q || (b.title + " " + (b.author || "")).toLowerCase().includes(q)));
+        (!q || (window.TIL ? TIL.match(q, b.title, b.author, b.genre) : (b.title + " " + (b.author || "")).toLowerCase().includes(q.toLowerCase()))));
       if (catState.filter === "rent") list = list.filter((b) => st(b).rent);
       if (catState.filter === "buy") list = list.filter((b) => st(b).buy);
       if (catState.filter === "aksiya") list = list.filter((b) => b.aksiya_sale || b.aksiya_rent);
@@ -1113,7 +1116,7 @@ const CONFIG = {
       '<div class="card col" style="gap:2px;padding:12px"><b style="font-size:16px">' + (me.friends || 0) + ' ta</b><span class="tiny muted">Do\'stlar</span></div></div>' +
       couponsCard(me.coupons) +
       '<div class="list">' + [["profile", "Mening ma'lumotlarim"], ["qr", "🪪 Mening QR kodim"], ["history", "📜 Balans tarixi"], ["sos", "🆘 Yordam (SOS)"],
-        ["f_request", "🙋 Kitob so'rash"], ["f_offer", "📤 Kitobingizni soting"], ["sets", "📦 To'plamlar"], ["channel", "📢 Telegram kanalimiz"], ["insta", "📸 Instagram sahifamiz"]].map(([k, t]) =>
+        ["f_request", "🙋 Kitob so'rash"], ["f_offer", "📤 Kitobingizni soting"], ["sets", "📦 To'plamlar"], ["channel", "📢 Telegram kanalimiz"], ["insta", "📸 Instagram sahifamiz"], ["til", "🌐 Til · Язык"]].map(([k, t]) =>
         '<button data-m="' + k + '"><span>' + t + '</span><span class="muted">›</span></button>').join("") + "</div>" +
       '<p class="tiny muted" style="margin:0">⚠️ Rasmiy manzillar faqat: @' + esc(CONFIG.BOT_USERNAME) + ", @" + esc(CONFIG.CHANNEL) + " va Instagram: @" + esc(CONFIG.INSTAGRAM) + ". Boshqalardan kelgan to'lov so'rovlariga ishonmang.</p>"
     );
@@ -1122,13 +1125,26 @@ const CONFIG = {
       const k = b.dataset.m;
       if (k === "channel") openLink("https://t.me/" + CONFIG.CHANNEL);
       else if (k === "insta") openLink("https://www.instagram.com/" + CONFIG.INSTAGRAM + "/");
+      else if (k === "til") tilSheet();
       else if (k.startsWith("f_")) formSheet(k.slice(2)); else go(k);
     });
   };
+  // 🌐 v24: interfeys tili — tanlov botga ham saqlanadi (bot xabarlari ham shu tilda keladi)
+  function tilSheet() {
+    if (!window.TIL) return;
+    sheet('<div class="h2">🌐 Til · Язык</div><p class="small muted" style="margin:0">Qidiruv istalgan yozuvda ishlaydi: lotin, kirill yoki ruscha.</p>' +
+      '<div class="list">' + TIL.buttons() + "</div>", (el) => {
+      $$("[data-til]", el).forEach((b) => b.onclick = async () => {
+        const code = b.dataset.til; closeSheet(); TIL.set(code); haptic("ok"); render();
+        if (INIT && !DEMO) { const r = await api("set_til", { til: code }); if (me && r && r.ok) me.til = code; }
+      });
+    });
+  }
   function regScreen(title) {
-    const el = view('<span class="h1">' + title + '</span><div class="card warm col"><b>Avval ro\'yxatdan o\'ting</b><span class="small muted">Botga telefon raqamingizni bir marta yuboring — shundan keyin hamma narsa shu yerda.</span><button class="btn" id="rg">Botga o\'tish</button></div>' +
+    const el = view('<span class="h1">' + title + '</span><button class="btn ghost sm" id="tl" style="align-self:flex-start">🌐 Til · Язык</button><div class="card warm col"><b>Avval ro\'yxatdan o\'ting</b><span class="small muted">Botga telefon raqamingizni bir marta yuboring — shundan keyin hamma narsa shu yerda.</span><button class="btn" id="rg">Botga o\'tish</button></div>' +
       (DEMO ? '<div class="card small muted">Namuna rejimi: CONFIG to\'ldirilmagan.</div>' : ""));
     $("#rg", el).onclick = () => goBot("start");
+    $("#tl", el).onclick = tilSheet;
   }
 
   // ---------- 👤 Mening ma'lumotlarim ----------
@@ -1365,6 +1381,7 @@ const CONFIG = {
       if (DEMO) return;
       if (!INIT) { meErr = "nosign"; return; }
       const d = await api("me");
+      if (window.TIL && d && d.til && d.til !== TIL.lang && !TIL.fromUrl) TIL.set(d.til);     // 🌐 botda tanlangan til
       if (d.ok && d.registered) { me = d; meErr = null; }
       else if (d.ok || d.error === "NOT_REGISTERED" || d.error === "NO_PHONE") { me = null; meErr = d.error === "NOT_REGISTERED" ? "NOT_REGISTERED" : "NO_PHONE"; meStaff = !!d.is_staff; }
       else { meErr = d.error || "NETWORK"; }   // internet/server xatosi — avvalgi kabinet ma'lumoti saqlanadi

@@ -5,8 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex">
 <title>Yetkazish hududlari — RentBooks admin</title>
-<!-- VERSIYA: v23 — 🗺 yetkazish hududlari (faqat superadmin; bot admin panelidan ochiladi) -->
+<!-- VERSIYA: v24 — 🗺 yetkazish hududlari (faqat superadmin; bot admin panelidan ochiladi) -->
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="til.js"></script>  <!-- 🌐 v24: interfeys tili (shu papkada til.js bo'lishi kerak) -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
@@ -75,7 +76,7 @@ const CONFIG = {
   const fmt = (n) => String(Math.round(Number(n || 0))).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
   let tt; const toast = (m) => { const t = $("#toast"); t.textContent = m; t.style.display = "block"; clearTimeout(tt); tt = setTimeout(() => t.style.display = "none", 3500); };
   const BASE = CONFIG.SUPABASE_URL.replace(/\/$/, "");
-  const APP_VER = "v23";
+  const APP_VER = "v24";
   const CFG_BAD = /SIZNING/.test(CONFIG.SUPABASE_URL) || /SIZNING/.test(CONFIG.SUPABASE_KEY);
   async function api(action, body) {
     if (CFG_BAD) return { ok: false, error: "CONFIG" };
