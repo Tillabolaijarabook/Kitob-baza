@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex">
 <title>RentBooks</title>
-<!-- VERSIYA: v24 — to'liq mijoz kabineti · 🌐 til (lotin / yangi lotin / kirill / rus) -->
+<!-- VERSIYA: v30 — to'liq mijoz kabineti · 🌐 til (lotin / yangi lotin / kirill / rus) -->
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script>
   // 🌗 Mavzu: Telegram tungi rejimda bo'lsa — qora, kunduzgi rejimda — oq (Telegram'siz: qurilma sozlamasi)
@@ -123,6 +123,37 @@ textarea.field { height: 110px; padding: 12px 14px; resize: vertical; }
 .bubble.them { align-self: flex-start; background: var(--card); border: 1px solid var(--line); border-bottom-left-radius: 4px; }
 .skel { height: 210px; border-radius: 12px; background: linear-gradient(90deg, var(--card), var(--skel2), var(--card)); background-size: 200% 100%; animation: sk 1.2s infinite; }
 @keyframes sk { to { background-position: -200% 0; } }
+/* ============ 🎨 v30 (K8): brend kartochkasi, javonlar, kitob sahifasi foni, mayda harakatlar ============ */
+@keyframes rbIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.wrap { animation: rbIn .22s ease-out; }
+@media (prefers-reduced-motion: reduce) { .wrap { animation: none; } }
+.brandcard { position: relative; overflow: hidden; border-radius: 24px; padding: 18px; color: #FAF6EE;
+  background: radial-gradient(120% 90% at 100% 0%, rgba(64,200,190,.45), transparent 60%), radial-gradient(90% 80% at 0% 100%, rgba(242,112,63,.35), transparent 60%), linear-gradient(160deg, #0E1E40 0%, #123F5C 100%);
+  box-shadow: 0 14px 34px rgba(14,30,64,.28); display: flex; flex-direction: column; gap: 14px; }
+.brandcard::after { content: ""; position: absolute; inset: 8px; border-radius: 18px; border: 1px solid rgba(255,214,120,.35); pointer-events: none; }
+.brandcard .bclogo { width: 52px; height: 52px; border-radius: 26px; flex: 0 0 auto; box-shadow: 0 0 0 3px rgba(255,214,120,.25), 0 6px 16px rgba(0,0,0,.35); background: #0C183A center/cover no-repeat; }
+.brandcard .bname { font: 700 20px/1.1 var(--serif); letter-spacing: .01em; }
+.brandcard .bsub { font-size: 12.5px; color: rgba(250,246,238,.78); }
+.brandcard .bpill { height: 40px; padding: 0 14px; border-radius: 20px; border: 1px solid rgba(255,255,255,.22); background: rgba(255,255,255,.12); color: #FAF6EE; display: flex; align-items: center; gap: 7px; font-weight: 800; font-size: 13.5px; backdrop-filter: blur(6px); }
+.brandcard .bstats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.brandcard .bstat { border-radius: 14px; padding: 9px 10px; background: rgba(255,255,255,.10); border: 1px solid rgba(255,255,255,.16); display: flex; flex-direction: column; gap: 1px; text-align: left; color: inherit; }
+.brandcard .bstat b { font-size: 17px; color: #FFD678; } .brandcard .bstat span { font-size: 11px; color: rgba(250,246,238,.75); }
+.readcard { display: flex; gap: 12px; align-items: center; border-radius: 20px; padding: 12px; background: var(--card); border: 1px solid var(--line); text-align: left; color: var(--ink); width: 100%; box-shadow: 0 6px 18px rgba(0,0,0,.05); }
+.readcard .ring { --p: 50; width: 46px; height: 46px; border-radius: 23px; flex: 0 0 auto; display: grid; place-items: center; font-weight: 800; font-size: 13px;
+  background: conic-gradient(var(--accent) calc(var(--p) * 1%), var(--line) 0); }
+.readcard .ring span { width: 36px; height: 36px; border-radius: 18px; background: var(--card); display: grid; place-items: center; }
+.gchips { display: flex; gap: 8px; overflow-x: auto; margin: 0 -16px; padding: 2px 16px; scrollbar-width: none; }
+.gchips::-webkit-scrollbar { display: none; }
+.gchip { flex: 0 0 auto; height: 36px; padding: 0 14px; border-radius: 18px; border: 1px solid var(--line); background: var(--card); font-weight: 700; font-size: 13px; color: var(--ink); }
+.bk, .sec, .covers button, .readcard, .bstat { transition: transform .12s ease, box-shadow .12s ease; }
+.bk:active, .sec:active, .covers button:active, .readcard:active, .bstat:active { transform: scale(.97); }
+.covers .cov { box-shadow: 0 10px 22px rgba(0,0,0,.18); border-radius: 10px; }
+.rank { position: absolute; left: 0; bottom: -4px; font: 800 44px/1 var(--serif); color: var(--accent); text-shadow: 0 2px 0 var(--bg), 0 0 12px rgba(0,0,0,.25); }
+.bkhero { position: relative; overflow: hidden; margin: -16px -16px 0; height: 290px; display: flex; align-items: center; justify-content: center; background: var(--cover-bg); }
+.bkhero::before { content: ""; position: absolute; inset: -40px; background: var(--cv, none) center/cover no-repeat; filter: blur(28px) saturate(1.25); opacity: .65; transform: scale(1.1); }
+.bkhero::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,.05) 0%, transparent 55%, var(--bg) 100%); }
+.bkhero > * { position: relative; z-index: 1; }
+.nav button.on::before { content: ""; position: absolute; top: 6px; left: 50%; width: 22px; height: 4px; margin-left: -11px; border-radius: 2px; background: var(--accent); }
 .empty { text-align: center; padding: 30px 10px; color: var(--muted); }
 .stars button { background: none; border: 0; font-size: 30px; color: var(--accent-text); padding: 2px 4px; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
@@ -156,7 +187,7 @@ const CONFIG = {
   const $$ = (s, r) => [...(r || document).querySelectorAll(s)];
   const BASE = CONFIG.SUPABASE_URL.replace(/\/$/, "");
   const DEMO = BASE.includes("SIZNING");
-  const APP_VER = "v24";
+  const APP_VER = "v30";
   const INIT = (tg && tg.initData) || "";
 
   // ---------- yordamchilar ----------
@@ -412,13 +443,23 @@ const CONFIG = {
     const name = (me && me.name) || (u && u.first_name) || "";
     const ak = aksiyalar.find((a) => a.active) || aksiyalar[0];
     const fresh = [...books].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 8);
+    // 🔥 v30: ko'p o'qilayotganlar (oxirgi 30 kunda) va janrlar
+    const topH = books.filter((b) => Number(b.rent_30) > 0).sort((a, b) => Number(b.rent_30) - Number(a.rent_30)).slice(0, 8);
+    const genresH = [...new Set(books.map((b) => b.genre).filter(Boolean))].slice(0, 14);
     const sec = (key, title, sub, bg, br, k) => '<button type="button" class="sec" data-sec="' + k + '" style="background:' + bg + ";border-color:" + br + '">' +
       ART[key] + "<b>" + title + "</b><span>" + sub + "</span></button>";
     const akTitle = ak ? (ak.scope === "kitob" ? "«" + esc(ak.book) + "»" : ak.scope === "janr" ? esc(ak.genre) + " janriga" : "Barcha kitoblarga") : "";
+    // 🎨 v30: brend kartochkasi — rangli logotip, salomlashuv, balans va qisqa ko'rsatkichlar
+    const loyH = (me && me.loyalty) || {}, freeH = (me && me.free) || {};
+    const hr = new Date().getHours(), hello = hr < 5 ? "Xayrli tun" : hr < 12 ? "Xayrli tong" : hr < 18 ? "Xayrli kun" : "Xayrli kech";
     const el = view(
-      '<div class="row between"><div class="row"><div class="logo" id="logo">' + esc(CONFIG.BRAND_NAME.charAt(0)) + '</div><div class="col" style="gap:0">' +
-      '<span class="serif" style="font-size:19px">' + esc(CONFIG.BRAND_NAME) + '</span><span class="small muted">' + (name ? "Assalomu alaykum, " + esc(name) : "Kitob tanlang") + "</span></div></div>" +
-      (me && me.ok ? '<button class="pill" data-money aria-label="Balansni ko\'rsatish">' + ic("eye", 16, "#F0B54A") + money(me.available) + " so'm</button>" : "") + "</div>" +
+      '<div class="brandcard"><div class="row between" style="gap:10px"><div class="row" style="gap:12px;min-width:0"><div class="bclogo" id="bclogo"></div><div class="col" style="gap:2px;min-width:0">' +
+      '<span class="bname">' + esc(CONFIG.BRAND_NAME) + '</span><span class="bsub">' + (name ? hello + ", " + esc(name) + "!" : "Kitob ijarasi va savdosi") + "</span></div></div>" +
+      (me && me.ok ? '<button class="bpill" data-money aria-label="Balansni ko\'rsatish">' + ic("eye", 15, "#FFD678") + money(me.available) + " so'm</button>" : "") + "</div>" +
+      (me && me.ok ? '<div class="bstats"><button class="bstat" data-go="my"><b>' + (Number(me.open_count) || 0) + "</b><span>Kitoblarim</span></button>" +
+        '<button class="bstat" data-go="me"><b>' + fmt(me.bonus || 0) + "</b><span>Bonus, so'm</span></button>" +
+        '<button class="bstat" data-go="me"><b>' + (freeH.o_available || 0) + "</b><span>Tekin kunlar</span></button></div>" : "") +
+      "</div>" + '<div id="readnow"></div>' +
       '<label class="search">' + ic("search", 18, "#A89F92") + '<span class="sr">Qidiruv</span><input id="q" type="search" placeholder="Kitob yoki muallif nomi…" enterkeyhint="search"></label>' +
       (meErr === "NO_PHONE" || meErr === "NOT_REGISTERED" ? '<div class="card warm col"><b>' + (meStaff ? "👥 Xodim: mijoz hisobingizni faollashtiring" : "Kabinet uchun ro\'yxatdan o\'ting") + '</b><span class="small muted">' + (meStaff ? "O\'zingiz uchun kitob olish (xodim imtiyozi) uchun botda «📱 Raqamni yuborish» tugmasini bir marta bosing. Admin menyusi o\'zgarmaydi." : "Botga telefon raqamingizni bir marta yuboring.") + '</span><button class="btn sm" id="regbtn" style="align-self:flex-start">Botga o\'tish</button></div>'
         : meErr && meErr !== "nosign" ? '<div class="card col"><b>📶 Aloqa yo\'q</b><span class="small muted">Kabinet ma\'lumotini olib bo\'lmadi. Internetni tekshirib, qayta urining.</span><button class="btn ghost sm" id="retrybtn" style="align-self:flex-start">🔄 Qayta urinish</button></div>' : "") +
@@ -427,6 +468,7 @@ const CONFIG = {
         (ak.active ? dt(ak.start) + " – " + dt(ak.until) + " · yana " + Math.max(daysLeft(ak.until), 1) + " kun" : dt(ak.start) + " dan boshlanadi") + "</span>" +
         (Number(ak.limit) && ak.kind !== "ijara" ? '<span class="tiny" style="color:var(--muted)">Har mijozga ' + fmt(ak.limit) + " so'mgacha</span>" : "") +
         '</div><span class="serif" style="font-size:50px;color:var(--accent-text);line-height:1">−' + pct(ak.pct) + "%</span></button>" : "") +
+      (genresH.length > 1 ? '<div class="gchips">' + genresH.map((g) => '<button type="button" class="gchip" data-gn="' + esc(g) + '">' + esc(g) + "</button>").join("") + "</div>" : "") +
       '<div class="col" style="gap:10px"><span class="h2">Bo\'limlar</span><div class="grid2">' +
       sec("rent", "Ijaraga olish", "O'qing va qaytaring", "var(--s1)", "var(--s1b)", "f_rent") +
       sec("buy", "Sotib olish", "Yangi nusxalar", "var(--s2)", "var(--s2b)", "f_buy") +
@@ -435,9 +477,14 @@ const CONFIG = {
       sec("ask", "Kitob so'rash", "Topib beramiz", "var(--s5)", "var(--s5b)", "request") +
       sec("qr", "QR kodim", "Do'konda ko'rsating", "var(--s6)", "var(--s6b)", "qr") + "</div></div>" +
       (fresh.length ? '<div class="col" style="gap:10px"><div class="row between"><span class="h2">Yangi kelganlar</span><button class="btn ghost sm" data-go="catalog">Hammasi →</button></div>' +
-        '<div class="covers">' + fresh.map((b) => '<button type="button" data-book="' + b.id + '" style="flex:0 0 112px;border:0;padding:0;background:none;text-align:left" aria-label="' + esc(b.title) + '">' + coverHtml(b, 160) + "</button>").join("") + "</div></div>" : "")
+        '<div class="covers">' + fresh.map((b) => '<button type="button" data-book="' + b.id + '" style="flex:0 0 112px;border:0;padding:0;background:none;text-align:left" aria-label="' + esc(b.title) + '">' + coverHtml(b, 160) + "</button>").join("") + "</div></div>" : "") +
+      (topH.length > 2 ? '<div class="col" style="gap:10px"><div class="row between"><span class="h2">🔥 Ko\'p o\'qilayotgan</span><button class="btn ghost sm" data-go="catalog">Hammasi →</button></div>' +
+        '<div class="covers">' + topH.map((b, i) => '<button type="button" data-book="' + b.id + '" style="flex:0 0 124px;border:0;padding:0 0 0 24px;background:none;text-align:left;position:relative" aria-label="' + esc(b.title) + '">' + coverHtml(b, 160) + '<span class="rank">' + (i + 1) + "</span></button>").join("") + "</div></div>" : "")
     );
     logoImg();
+    brandLogo();
+    $$("[data-gn]", el).forEach((b) => b.onclick = () => { catState.genre = b.dataset.gn; catState.filter = "all"; go("catalog"); });
+    readNow();
     $("#q", el).onkeydown = (e) => { if (e.key === "Enter") { catState.q = e.target.value; go("catalog"); } };
     if ($("#regbtn", el)) $("#regbtn", el).onclick = () => goBot("start");
     if ($("#retrybtn", el)) $("#retrybtn", el).onclick = async () => { await refreshMe(); if (screen === "home") render(); };
@@ -450,6 +497,34 @@ const CONFIG = {
       else go(k);
     });
   };
+  // 🎨 v30: rangli brend logotipi (mini_app papkasidagi logo_rang.png; bo'lmasa — CONFIG.LOGO_URL)
+  function brandLogo() {
+    const box = $("#bclogo"); if (!box) return;
+    const tryUrl = (list) => { if (!list.length) { box.textContent = CONFIG.BRAND_NAME.charAt(0); box.style.cssText += ";display:grid;place-items:center;font:700 24px var(--serif);color:#FFD678"; return; }
+      const im = new Image(); im.onload = () => { box.style.backgroundImage = "url('" + list[0] + "')"; }; im.onerror = () => tryUrl(list.slice(1)); im.src = list[0]; };
+    tryUrl(["logo_rang.png", CONFIG.LOGO_URL].filter(Boolean));
+  }
+  // 📖 v30: bosh sahifada — hozir o'qilayotgan kitob (eng yaqin qaytarish muddati) va bronlar
+  async function readNow() {
+    if (!me || !me.ok || !Number(me.open_count)) return;
+    if (!myData) { const d = await api("my"); if (d && d.ok) myData = d; }
+    const box = $("#readnow"); if (!box || !myData || screen !== "home") return;
+    const act = (myData.rentals || []).filter((r) => r.status !== "kutilmoqda" && r.due).sort((a, b) => new Date(a.due) - new Date(b.due));
+    const pend = (myData.rentals || []).filter((r) => r.status === "kutilmoqda").length + (myData.sales || []).length;
+    let h = "";
+    if (act.length) {
+      const r = act[0], left = daysLeft(r.due), total = Number(r.days) || 30, p = Math.max(4, Math.min(100, Math.round(100 - (left / total) * 100)));
+      const u_ = cover(r.cover_path || r.cover);         // kichik muqova: rasm bo'lsa — rasm, bo'lmasa — bosh harf
+      h += '<button type="button" class="readcard" data-go="my"><div style="width:46px;height:66px;border-radius:8px;flex:0 0 auto;background:' + colorOf(r.title) +
+        (u_ ? " url('" + u_.replace(/'/g, "%27") + "') center/cover" : "") + ';display:grid;place-items:center;color:#FFD678;font:700 24px var(--serif);box-shadow:0 6px 14px rgba(0,0,0,.2)">' +
+        (u_ ? "" : esc(String(r.title || "?").charAt(0))) + '</div><div class="col" style="flex:1;gap:3px;min-width:0">' +
+        '<span class="tiny muted">📖 Hozir o\'qiyapsiz' + (act.length > 1 ? " · yana " + (act.length - 1) + " ta" : "") + "</span><b style=\"white-space:nowrap;overflow:hidden;text-overflow:ellipsis\">" + esc(r.title) + "</b>" +
+        '<span class="small" style="color:' + (left < 0 ? "var(--red)" : "var(--muted)") + '">' + (left < 0 ? "⚠️ Muddati " + (-left) + " kun o'tdi" : "Qaytarish: " + dt(r.due) + " · " + left + " kun qoldi") + "</span></div>" +
+        '<div class="ring" style="--p:' + p + '"><span>' + Math.max(left, 0) + "</span></div></button>";
+    }
+    if (pend) h += '<button type="button" class="readcard" data-go="my" style="margin-top:8px"><span style="font-size:26px">📌</span><div class="col" style="flex:1;gap:2px"><b>Bronlar: ' + pend + "</b><span class=\"small muted\">Olib ketish kutilmoqda — QR kodingizni do'konda ko'rsating</span></div><span class=\"muted\">›</span></button>";
+    box.innerHTML = h; bindCommon(box);
+  }
   function logoImg() {
     if (!CONFIG.LOGO_URL || !$("#logo")) return;
     const img = new Image(); img.alt = ""; img.src = CONFIG.LOGO_URL;
@@ -514,10 +589,11 @@ const CONFIG = {
     const id = param;
     if (meP) { try { await meP; } catch (e) {} }
     const b = books.find((x) => x.id === id) || { id, title: "…" };
-    const el = view('<div style="margin:-16px -16px 0;height:260px;background:var(--cover-bg);position:relative;display:flex;align-items:center;justify-content:center">' +
+    const cvU = cover(b.cover_path || b.cover);                // 🎨 v30: muqovadan xira rangli fon
+    const el = view('<div class="bkhero"' + (cvU ? ' style="--cv:url(\'' + cvU.replace(/'/g, "%27") + '\')"' : "") + ">" +
       '<button class="iconbtn" data-back aria-label="Orqaga" style="position:absolute;top:14px;left:14px;background:var(--bg)">' + ic("back") + "</button>" +
       '<button class="iconbtn" id="share" aria-label="Do\'stga ulashish" style="position:absolute;top:14px;right:14px;background:var(--bg)">' + ic("share") + "</button>" +
-      '<div style="width:150px;box-shadow:0 18px 40px rgba(0,0,0,.45)">' + coverHtml(b, 215) + "</div></div>" +
+      '<div style="width:158px;box-shadow:0 22px 46px rgba(0,0,0,.5);border-radius:8px;overflow:hidden">' + coverHtml(b, 226) + "</div></div>" +
       '<div class="col" style="gap:4px"><h1 class="h1" style="font-size:25px">' + esc(b.title) + '</h1><span class="muted">' + esc(b.author || "Muallif noma'lum") + (b.genre ? " · " + esc(b.genre) : "") + "</span>" +
       (b.rating && b.rating.show ? '<span style="color:var(--accent-text);font-weight:700">' + "★★★★★".slice(0, Math.round(b.rating.avg)) + ' <span style="color:var(--ink)">' + String(b.rating.avg).replace(".", ",") + '</span> <span class="muted small">· ' + b.rating.count + " ta baho</span></span>" : "") +
       "</div>" + '<div class="spec">' + [b.muqova, b.qogoz, b.til, b.pages ? b.pages + " bet" : "", b.publish_year ? b.publish_year + "-yil nashri" : ""].filter(Boolean).map((x) => "<span>" + esc(x) + "</span>").join("") + "</div>" +
