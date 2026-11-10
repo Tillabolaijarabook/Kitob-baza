@@ -1,0 +1,25 @@
+{
+  "name": "RentBooks Boshqaruv",
+  "short_name": "RentBooks",
+  "description": "RentBooks — admin va kassirlar uchun boshqaruv (kassa, ijara, sotuv, kitoblar, mijozlar)",
+  "lang": "uz",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#F6F1E7",
+  "theme_color": "#F6F1E7",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Kassa", "short_name": "Kassa", "url": "./#kassa", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] },
+    { "name": "Sotuv savati", "short_name": "Sotuv", "url": "./#cart_s", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] },
+    { "name": "Ijara savati", "short_name": "Ijara", "url": "./#cart_r", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] },
+    { "name": "Kutayotgan bronlar", "short_name": "Bronlar", "url": "./#pending", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] }
+  ]
+}
