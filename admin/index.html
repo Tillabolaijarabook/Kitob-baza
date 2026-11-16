@@ -456,7 +456,7 @@ const CONFIG = {
         body: JSON.stringify(Object.assign({ action }, body || {}, S ? (S.web ? { web_token: S.web } : { token: S.token }) : {})) });
     } catch (e) { return { ok: false, error: "NET" }; }
     let j; try { j = await r.json(); } catch (e) { return { ok: false, error: "SERVER" }; }
-    if (j && j.error === "PW_CHANGE_REQUIRED") { location.href = "../?kirish=change"; return j; }   // 🌐 v31: vaqtinchalik parol
+    if (j && j.error === "PW_CHANGE_REQUIRED") { location.href = "../javon.html?kirish=change"; return j; }   // 🌐 v31: vaqtinchalik parol
     if (j && (j.error === "LOGIN" || j.error === "NOT_ADMIN") && action !== "login") { logout(errText(j)); }
     // 🔢 muhim pul amali PIN so'rasa — PIN oynasi ochiladi va amal o'zi qayta bajariladi
     if (j && j.error === "PIN_KERAK" && action !== "pin" && !(body && body._pinRetry)) {
@@ -611,10 +611,10 @@ const CONFIG = {
       '<div class="slogan">RENT · READ · RETURN</div>' +
       '<div><h1 style="margin:0">RentBooks boshqaruvi</h1><p class="sub" style="margin:4px 0 0">Admin va kassirlar uchun · ' + SEASONS[season()].e + " " + SEASONS[season()].t + "</p></div>" +
       (msg ? '<div class="note t-red" style="width:100%">' + esc(msg) + "</div>" : "") +
-      '<a class="btn" href="../?kirish=1" style="width:100%;text-align:center">📱 Telefon va parol bilan kirish</a>' +
+      '<a class="btn" href="../javon.html?kirish=1" style="width:100%;text-align:center">📱 Telefon va parol bilan kirish</a>' +
       '<div class="tiny muted" style="margin:-4px 0 0">yoki eski usul — Telegram orqali:</div>' +
       '<div id="tgw" style="min-height:46px"></div>' +
-      '<p class="tiny muted" style="margin:0">1) Telegram akkauntingiz orqali, 2) shaxsiy parolingiz bilan kirasiz.<br>Kirish faqat 👥 adminlar ro\'yxatidagi faol xodimlar uchun.</p>' +
+      '<p class="tiny muted" style="margin:0">Parol yo\'qmi? Botda <b>/saytparol</b> buyrug\'ini yuboring (superadmin xodimlarga ham beradi).<br>Eski usul: 1) Telegram akkauntingiz orqali, 2) shaxsiy parolingiz bilan kirasiz.<br>Kirish faqat 👥 adminlar ro\'yxatidagi faol xodimlar uchun.</p>' +
       "</div></div>";
     if (!/SIZNING/.test(API) && !msg && HOL === null && !renderLogin._asked) {
       renderLogin._asked = true;
