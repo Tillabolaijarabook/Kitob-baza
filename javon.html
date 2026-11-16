@@ -194,7 +194,8 @@ const CONFIG = {
   // 🌐 v31: SAYT rejimi (rentbooks.uz, Telegram'dan tashqarida) — telefon + parol bilan kirish, sessiya tokeni
   const WEBKEY = "rb_web";
   const webTok = () => { try { return INIT ? "" : (localStorage.getItem(WEBKEY) || ""); } catch (e) { return ""; } };
-  const webSet = (t) => { try { t ? localStorage.setItem(WEBKEY, t) : localStorage.removeItem(WEBKEY); } catch (e) {} };
+  const webSet = (t) => { try { t ? localStorage.setItem(WEBKEY, t) : localStorage.removeItem(WEBKEY);
+    localStorage.setItem("rb_last_act", String(Date.now())); } catch (e) {} };   // 🔒 v31: yangi kirish — admin panel qulfi hisobi noldan
   const devId = () => { try { let d = localStorage.getItem("rb_dev"); if (!d) { d = (crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2)); localStorage.setItem("rb_dev", d); } return d + " · " + navigator.userAgent.slice(0, 120); } catch (e) { return navigator.userAgent.slice(0, 160); } };
 
   // ---------- yordamchilar ----------
