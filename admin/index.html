@@ -360,7 +360,7 @@ body[data-holiday] .login { background: var(--hero); }
   body.wxpause .dock { display: none; }                   /* savat va kassada 🤖/💬 tugmalari to'lov tugmasini yopmasin */
   .content canvas, .content img, .content .chart svg { max-width: 100%; }
   .top .burger { display: none; }                         /* menyu — pastki paneldagi «Menyu» */
-  .top .chip, .top .instbtn, .top .season { display: none; }
+  .top .chip, .top .instbtn, .top .shopbtn, .top .season { display: none; }
   .top { gap: 6px; }
   .dock { bottom: calc(74px + env(safe-area-inset-bottom)); right: 10px; }   /* 🤖 va 💬 — pastki panel ustida */
   .toast { left: 10px; right: 10px; bottom: calc(76px + env(safe-area-inset-bottom)); max-width: none; }
@@ -414,7 +414,7 @@ const CONFIG = {
     PIN_YOQ: "🔢 PIN-kod o'rnatilmagan. Botda: ⚙️ Sozlamalar → 🔢 PIN-kod.", PIN_KERAK: "🔢 PIN-kod kerak.",
     CASH_LOW: "💵 Kassangizda buncha naqd yo'q.", EMPTY: "Savat bo'sh.", NO_CUSTOMER: "Avval mijozni tanlang.",
     BALANCE: "Mijoz balansida mablag' yetmaydi.", MIX_SHORT: "💳 Qismlar yig'indisi yetmayapti.", MIX_OVER: "💳 Mijozsiz sotuvda ortiqcha summa bo'lmasin.", BAD_PARTS: "💳 Kamida bitta summani yozing.", LIMIT: "Mijozning ijaradagi kitoblari chegarasiga yetdi.", DEBT: "Mijozning qarzi bor — avval qarz to'lansin.",
-    ORIGIN: "⛔ Bu saytdan so'rov qabul qilinmaydi (ADMIN_ORIGINS).", BAD_AMOUNT: "Summa noto'g'ri.", BAD_TYPE: "Noto'g'ri tur.",
+    ORIGIN: "⛔ Bu saytdan so'rov qabul qilinmaydi (ADMIN_ORIGINS).", BAD_AMOUNT: "Summa noto'g'ri.", BAD_TYPE: "Noto'g'ri tur.", FORBIDDEN: "⛔ Superadmin va o'zingizning rolingizni saytdan o'zgartirib bo'lmaydi.",
     NOT_SELLABLE: "Bu nusxani sotib bo'lmaydi.", BAD_MONTHS: "A'zolik muddatini oyda yozing (1–120).", INSTA_REQUIRED: "Avval Instagram tugmasini bosish kerak.", MODE_RENT_ONLY: "Bu kitob faqat ijaraga beriladi.", MODE_SALE_ONLY: "Bu kitob faqat sotiladi.",
     NEED_TWO: "🔐 Bu summa uchun ikkinchi superadmin tasdig'i kerak (botda).", NEEDS_APPROVAL: "🔐 Ikkinchi admin tasdig'i kerak — so'rov yuborildi.",
     NO_COURIER: "Kuryer tanlanmagan.", WRONG_PIN: "❌ PIN noto'g'ri.", PIN_WEAK: "PIN juda oddiy (1234, 1111 kabi) — boshqa raqam tanlang.", BAD_PIN: "PIN 4–8 ta raqam bo'lsin.", PIN_FORMAT: "PIN 4–8 ta raqam bo'lsin.", LOCKED: "⛔ PIN bloklangan — superadmin ochishi kerak.", NO_PIN: "PIN o'rnatilmagan.", PROMO_BAD_CODE: "Promokod: 3–24 belgi, lotin harflari, raqam, - va _.", PROMO_EXISTS: "Bunday promokod bor.", BAD_PCT: "Foiz noto'g'ri (1–90).", TG_SEND: "Telegram xabarni qabul qilmadi.", SELF_APPROVE: "O'zingiz so'ragan amalni o'zingiz tasdiqlay olmaysiz.", TOO_LATE: "⌛ Bekor qilish muddati o'tdi.",
@@ -674,13 +674,14 @@ const CONFIG = {
   }
 
   // ---------- asosiy oyna ----------
+  const ROLES = { superadmin: "Superadmin", kassir: "Kassir", smm: "📣 SMM (reklamachi)", kuryer: "Kuryer" };   // 👥 v31
   const pctF = (v) => String(Math.round(Number(v || 0) * 10) / 10).replace(".", ",");   // 💸 v31
   const can = (...p) => ME && (ME.super || p.some((x) => ME.perms && ME.perms[x]));
   // Menyu botdagi «🏠 Admin panel» bilan bir xil: [id, nomi, ikonka, vakolat]. id «b:» bilan — hozircha faqat botda.
   //   vakolat: null — hamma xodim, "SUPER" — superadmin, "XODIM" — kuryerdan boshqa hamma, massiv — biri bo'lsa yetadi
   const NAV = [
     { g: "", items: [["home", "Bosh sahifa", "home", null], ["scan", "Kod bo'yicha qidirish", "scan", null]] },
-    { g: "Kassa va savdo", items: [["kassa", "Kassa", "cash", "XODIM"], ["pending", "Kutayotgan bronlar", "inbox", ["kitob_berish", "bron_bekor"]],
+    { g: "Kassa va savdo", items: [["kassa", "Kassa", "cash", "KASSA"], ["pending", "Kutayotgan bronlar", "inbox", ["kitob_berish", "bron_bekor"]],
       ["rentals", "Faol ijaralar", "ret", ["qabul_qilish", "hisobotlar"]], ["cart_s", "Sotuv savati", "cart", "dokon_sotish"],
       ["cart_r", "Ijara savati", "book", "dokon_ijara"], ["deliveries", "Yetkazishlar", "truck", "kitob_berish"],
       ["b:bal", "Balansni o'zgartirish", "wallet", "balans_ozgartirish"], ["payfix", "To'lovni tuzatish", "fix", ["kassa_boshqaruv", "balans_ozgartirish"]],
@@ -697,8 +698,8 @@ const CONFIG = {
       ["b:check", "Foydalanuvchilar tekshiruvi", "users", "ommaviy_elon"]] },
     { g: "Marketing", items: [["rk", "Reklama hikoyalari (AI)", "mega", "reklama"], ["b:annq", "Kutilayotgan e'lonlar", "mega", "elon"], ["b:broadcast", "E'lon / Video", "mega", "ommaviy_elon"],
       ["b:promo", "Promokodlar", "mega", "reklama"], ["b:dsc", "Chegirmalar", "mega", "narx_ozgartirish"], ["b:ads", "Reklama manbalari", "chart", "reklama"],
-      ["b:gw", "Giveaway", "mega", "elon"], ["b:kal", "Kalendar", "clock", "elon"], ["b:aks", "Yangi mijoz aksiyalari", "mega", "SUPER"],
-      ["b:warn", "Rasmiy ogohlantirish", "alert", "SUPER"]] },
+      ["b:gw", "Giveaway", "mega", "elon"], ["b:kal", "Kalendar", "clock", "elon"], ["b:aks", "Yangi mijoz aksiyalari", "mega", "aksiya"],
+      ["b:warn", "Rasmiy ogohlantirish", "alert", "elon"]] },
     { g: "Hisobotlar", items: [["report", "Statistika va hisobot", "chart", "hisobotlar"], ["b:daily", "Kunlik hisobot", "clock", "hisobotlar"], ["log", "Kim nima qildi", "log", "hisobotlar"],
       ["salary", "Maosh", "wallet", null], ["b:profit", "Foyda", "cash", ["kassa_boshqaruv", "hisobotlar"]], ["b:dep", "Ijara va depozit", "chart", "hisobotlar"],
       ["b:tax", "Soliq hisoboti", "log", "soliq_eksport"], ["b:lowr", "Past reytingli kitoblar", "alert", "elon"]] },
@@ -711,6 +712,7 @@ const CONFIG = {
     if (perm == null) return true;
     if (perm === "SUPER") return !!ME.super;
     if (perm === "XODIM") return ME.rol !== "kuryer";
+    if (perm === "KASSA") return ME.rol !== "kuryer" && ME.rol !== "smm";   // 📣 v31: SMM kassaga tegmaydi
     return Array.isArray(perm) ? can(...perm) : can(perm);
   };
   const GIC = { "Kassa va savdo": "💰", "Kitoblar": "📚", "Mijozlar": "👥", "Marketing": "📢", "Hisobotlar": "📈", "Sozlamalar": "⚙️" };
@@ -761,13 +763,14 @@ const CONFIG = {
           (x[0] === "pending" ? '<span class="badge hidden" id="pbadge">0</span>' : "") + (bot ? '<span class="bot">bot</span>' : "") + "</button>";
       }).join("") + "</div>";
     });
-    const ROL = { superadmin: "Superadmin", kassir: "Kassir", kuryer: "Kuryer" };
+    const ROL = ROLES;
     const se = SEASONS[season()];
     $("#root").innerHTML = '<div class="app"><aside class="side" id="side"><div class="brand"><img src="' + LOGO + '" alt=""><div><b>RentBooks</b><span>Boshqaruv</span></div></div>' +
       nav + '<div class="side-foot">' + se.e + " " + se.t + " · kitob ijarasi</div></aside>" +
       '<div class="main"><header class="top"><button class="btn ghost sm burger" id="burger">' + IC.menu + "</button>" +
       '<div class="crumb" id="crumb"></div>' + '<div class="qbar" id="qbar"></div>' +
       '<span class="chip"><span class="ab">🏬</span>' + esc(ME.store ? ME.store.name : "Asosiy do'kon") + "</span>" +
+      '<a class="btn ghost sm shopbtn" href="../javon.html" title="Do\'konni mijoz sifatida ochish">🛍 Mijoz sifatida</a>' +
       '<button class="btn ghost sm instbtn" id="instbtn" title="Kompyuterga ilova qilib o\'rnatish (Pusk va vazifalar paneliga)">💻 O\'rnatish</button>' +
       '<button class="btn ghost sm" id="reload" title="Yangilash">' + IC.refresh + "</button>" +
       '<span class="season" title="Mavzu fasl va bayramlar bo\'yicha o\'zgaradi">' + (holOn() ? esc(holText()) : se.e + " " + se.t) + "</span>" +
@@ -796,7 +799,7 @@ const CONFIG = {
       $("#side").after(bg);
     }
     const BN = [["home", "Bosh", "home", null], ["cart_s", "Sotuv", "cart", "dokon_sotish"], ["cart_r", "Ijara", "book", "dokon_ijara"],
-                ["kassa", "Kassa", "cash", "XODIM"], ["pending", "Bronlar", "inbox", ["kitob_berish", "bron_bekor"]]].filter((x) => allowed(x[3])).slice(0, 4);
+                ["kassa", "Kassa", "cash", "KASSA"], ["pending", "Bronlar", "inbox", ["kitob_berish", "bron_bekor"]]].filter((x) => allowed(x[3])).slice(0, 4);
     let bn = $(".bnav"); if (bn) bn.remove();
     bn = document.createElement("nav"); bn.className = "bnav";
     bn.innerHTML = BN.map((x) => '<button data-page="' + x[0] + '">' + (IC[x[2]] || "") + "<span>" + esc(x[1]) + "</span></button>").join("") +
@@ -825,10 +828,10 @@ const CONFIG = {
   }
   function userMenu() {
     const old = $(".umenu"); if (old) { old.remove(); $("#ubtn").classList.remove("on"); return; }
-    const ROL = { superadmin: "Superadmin", kassir: "Kassir", kuryer: "Kuryer" };
+    const ROL = ROLES;
     const m = document.createElement("div"); m.className = "umenu";
     m.innerHTML = '<div class="uh"><b>' + esc(ME.name) + '</b><div class="tiny muted">' + esc(ROL[ME.rol] || ME.rol) + " · ID " + esc(ME.telegram_id) + "</div></div>" +
-      '<button data-m="profile">👤 Profilim</button><button data-m="theme">🎨 Mavzu va fasl</button>' +
+      '<button data-m="profile">👤 Profilim</button><button data-m="shop">🛍 Mijoz sifatida (do\'kon)</button><button data-m="theme">🎨 Mavzu va fasl</button>' +
       (allowed(null) ? '<button data-m="pin">🔢 PIN-kod va tinchlik</button>' : "") +
       '<button data-m="out" style="color:var(--red)">🚪 Chiqish</button>';
     $(".user").appendChild(m); $("#ubtn").classList.add("on");
@@ -837,6 +840,7 @@ const CONFIG = {
     $$("[data-m]", m).forEach((b) => b.onclick = () => {
       close();
       const k = b.dataset.m;
+      if (k === "shop") { location.href = "../javon.html"; return; }   // 🛍 v31: o'zi uchun mijoz sahifasi
       if (k === "out") logout(); else if (k === "theme") themeModal(); else if (k === "pin") go("b:pin"); else go("profile");
     });
   }
@@ -1237,7 +1241,7 @@ const CONFIG = {
     xodim: (d) => {
       const F = d.fin, st = d.staff || [];
       return '<div class="card tw">' + (st.length ? "<table><thead><tr><th>Xodim</th><th>Lavozim</th><th>Berdi</th><th>Sotdi</th>" + (F ? "<th>Sotuv summasi</th><th>Qo'lidagi naqd</th>" : "") + "</tr></thead><tbody>" +
-        st.map((x) => "<tr><td><b>" + esc(x.name) + "</b>" + (x.faol === false ? ' <span class="pill p-gray">ishdan ketgan</span>' : "") + "</td><td>" + esc({ superadmin: "Superadmin", kassir: "Kassir", kuryer: "Kuryer" }[x.rol] || x.rol) + "</td><td>" + x.given + "</td><td>" + x.sold + "</td>" +
+        st.map((x) => "<tr><td><b>" + esc(x.name) + "</b>" + (x.faol === false ? ' <span class="pill p-gray">ishdan ketgan</span>' : "") + "</td><td>" + esc(ROLES[x.rol] || x.rol) + "</td><td>" + x.given + "</td><td>" + x.sold + "</td>" +
           (F ? "<td>" + som(x.sum) + "</td><td>" + (x.cash == null ? '<span class="muted">—</span>' : som(x.cash)) + "</td>" : "") + "</tr>").join("") + "</tbody></table>" : '<div class="empty">Bu oy xodimlar faoliyati yo\'q</div>') + "</div>" +
         '<p class="tiny muted">' + monthName(d.month) + " bo'yicha. Batafsil — Hisobotlar → Maosh va Kim nima qildi.</p>";
     },
@@ -1248,7 +1252,7 @@ const CONFIG = {
     const r = await call("web_profile");
     if (typeof c !== "undefined" && c && c.nodeType === 1 && !c.isConnected) return;
     if (r.ok === false) { c.innerHTML = '<div class="empty">' + esc(errText(r)) + "</div>"; return; }
-    const ROL = { superadmin: "Superadmin", kassir: "Kassir", kuryer: "Kuryer" };
+    const ROL = ROLES;
     const perms = Object.keys(ME.perms || {}).filter((k) => ME.perms[k]);
     c.innerHTML = '<div class="hero" style="min-height:0">' + fxLayer(10) + '<div class="row" style="gap:18px">' + avatarHtml(true) + "<div><h1>" + esc(r.name) + "</h1><p>" + esc(ROL[r.rol] || r.rol) + " · Telegram ID " + esc(r.tg) +
       (r.store ? " · 🏬 " + esc(r.store.name) : "") + (r.staff_free ? " · 👥 tekin ijara" : "") + "</p></div></div></div>" +
@@ -3260,12 +3264,31 @@ const CONFIG = {
   };
 
   // 📊 Reklama manbalari
+  // 📊 v31: REKLAMA ORQALI KELGAN MIJOZLAR — davr bo'yicha statistika, manbani bossangiz — mijozlar ro'yxati (pul va telefonsiz).
+  //   «Tushum» ustuni faqat «hisobotlar» galochkasi borlarga (SMM moliyani ko'rmaydi)
+  let adsDays = 30;
   VIEWS["b:ads"] = async (c) => {
-    const r = await call("web_ads"); if (r.ok === false) return errBox(c, r);
-    const it = r.items || [];
-    c.innerHTML = head("Reklama manbalari", "Har bir joy (Instagram, guruh, plakat) uchun alohida havola — qayerdan qancha mijoz va tushum kelgani.", '<button class="btn" id="new">➕ Manba</button>') + '<div class="card tw">' +
-      (it.length ? "<table><thead><tr><th>Manba</th><th>Havola</th><th>Bosish</th><th>Odam</th><th>Ro'yxatdan</th><th>Kitob olgan</th><th>Tushum</th></tr></thead><tbody>" + it.map((x) => "<tr><td><b>" + esc(x.manba) + '</b></td><td class="mono small"><a href="https://t.me/' + esc(CONFIG.BOT_USERNAME) + "?start=s_" + esc(x.kod) + '" target="_blank" rel="noopener">t.me/' + esc(CONFIG.BOT_USERNAME) + "?start=s_" + esc(x.kod) + '</a> <button class="btn ghost sm" data-cp="' + esc(x.kod) + '">📋</button></td><td>' + x.bosishlar + "</td><td>" + x.odamlar + "</td><td>" + x.royxatdan_otgan + "</td><td>" + x.kitob_olgan + "</td><td>" + som(x.tushum) + "</td></tr>").join("") + "</tbody></table>" : '<div class="empty">Hali manba yo\'q</div>') + "</div>" +
-      '<p class="tiny muted">Mijoz faqat birinchi kelgan manbasiga yoziladi.</p>';
+    const r = await call("ads_stats", { p_days: adsDays || null }); if (r.ok === false) return errBox(c, r);
+    const it = r.items || [], F = !!r.fin, pc = (a, b_) => Number(b_) ? Math.round(Number(a) / Number(b_) * 100) + "%" : "—";
+    const tot = (k) => it.reduce((s_, x) => s_ + Number(x[k] || 0), 0);
+    c.innerHTML = head("Reklama manbalari", "Har bir joy (Instagram, guruh, plakat) uchun alohida havola — qayerdan qancha mijoz kelgani va ular kitob olgani. Manba nomini bosing — kelgan mijozlar ro'yxati.", '<button class="btn" id="new">➕ Manba</button>') +
+      '<div class="row" style="gap:6px;margin-bottom:12px">' + [[7, "7 kun"], [30, "30 kun"], [90, "3 oy"], [365, "1 yil"], [0, "Hammasi"]].map((x) => '<button class="paybtn' + (adsDays === x[0] ? " on" : "") + '" data-dd="' + x[0] + '">' + x[1] + "</button>").join("") + "</div>" +
+      '<div class="hgrid">' + hc({ v: tot("royxatdan_otgan"), u: "kishi", t: "Reklamadan kelgan", ic: "users", f: "Manbasiz (to'g'ridan-to'g'ri): " + (r.no_source || 0) }) +
+        hc({ v: tot("kitob_olgan"), u: "kishi", t: "Kitob olgan", ic: "book", f: "Konversiya " + pc(tot("kitob_olgan"), tot("royxatdan_otgan")) }) +
+        hc({ v: tot("qaytib_kelgan"), u: "kishi", t: "Qayta kelgan (2+ kitob)", ic: "ret", f: "Kitob olganlarning " + pc(tot("qaytib_kelgan"), tot("kitob_olgan")) }) +
+        hc({ v: tot("bosishlar"), u: "marta", t: "Havolani bosish", ic: "chart", f: tot("odamlar") + " xil odam" }) + "</div>" +
+      '<div class="card tw" style="margin-top:14px">' +
+      (it.length ? "<table><thead><tr><th>Manba</th><th>Havola</th><th>Bosish</th><th>Odam</th><th>Ro'yxatdan</th><th>📱 Raqam bergan</th><th>Kitob olgan</th><th>Konversiya</th><th>Qayta kelgan</th><th>Botda faol</th>" + (F ? "<th>Tushum</th>" : "") + "</tr></thead><tbody>" +
+        it.map((x) => '<tr><td><a href="#" data-au="' + x.id + '"><b>' + esc(x.manba) + '</b></a></td><td class="mono small"><a href="https://t.me/' + esc(CONFIG.BOT_USERNAME) + "?start=s_" + esc(x.kod) + '" target="_blank" rel="noopener">t.me/' + esc(CONFIG.BOT_USERNAME) + "?start=s_" + esc(x.kod) + '</a> <button class="btn ghost sm" data-cp="' + esc(x.kod) + '">📋</button></td><td>' + x.bosishlar + "</td><td>" + x.odamlar + "</td><td><b>" + x.royxatdan_otgan + "</b></td><td>" + x.telefon_bergan + "</td><td>" + x.kitob_olgan + "</td><td>" + pc(x.kitob_olgan, x.royxatdan_otgan) + "</td><td>" + x.qaytib_kelgan + "</td><td>" + x.faol + "</td>" + (F ? "<td>" + som(x.tushum) + "</td>" : "") + "</tr>").join("") + "</tbody></table>" : '<div class="empty">Hali manba yo\'q</div>') + "</div>" +
+      '<p class="tiny muted">Mijoz faqat birinchi kelgan manbasiga yoziladi. Davr — mijoz ro\'yxatdan o\'tgan sana bo\'yicha. «Botda faol» — botni bloklamaganlar (e\'lon yetib boradi).' + (F ? "" : " Moliyaviy ko'rsatkichlar — «Hisobotlar» vakolatida.") + "</p>";
+    $$("[data-dd]", c).forEach((b) => b.onclick = () => { adsDays = +b.dataset.dd; VIEWS["b:ads"](c); });
+    $$("[data-au]", c).forEach((a) => a.onclick = async (e) => { e.preventDefault();
+      const u = await call("ads_users", { p_source: +a.dataset.au }); if (u.ok === false) return toast(errText(u), true);
+      const L = u.items || [];
+      const m = modal("👥 " + (u.manba || "Manba") + " — kelgan mijozlar", L.length ? '<div class="tw"><table><thead><tr><th>Mijoz</th><th>Kelgan</th><th>Ijara</th><th>Sotib olgan</th><th>Holat</th></tr></thead><tbody>' +
+        L.map((x) => "<tr><td><b>" + esc(x.name || "—") + '</b> <span class="tiny muted mono">' + esc(x.code || "") + "</span></td><td>" + dt(x.at) + "</td><td>" + x.ijara + "</td><td>" + x.sotuv + "</td><td>" + (x.bot === "active" ? (x.tel ? "📱 raqam bor" : "✅ faol") : '<span class="muted">bot bloklangan</span>') + "</td></tr>").join("") + "</tbody></table></div>" +
+        '<p class="tiny muted">Oxirgi 200 tasi. Shu mijozlarga maxsus taklif — 🏷 Promokodlar (shaxsiy) yoki 📢 E\'lon orqali.</p>' : '<div class="empty">Bu manbadan hali hech kim kelmagan</div>', '<button class="btn" data-x>Yopish</button>');
+      $$("[data-x]", m.el).forEach((b) => b.onclick = m.close); });
     $$("[data-cp]", c).forEach((b) => b.onclick = () => { try { navigator.clipboard.writeText("https://t.me/" + CONFIG.BOT_USERNAME + "?start=s_" + b.dataset.cp); toast("📋 Nusxalandi"); } catch (e) {} });
     $("#new").onclick = () => formModal("📊 Yangi reklama manbasi", field("an", "Nomi (masalan: Instagram, Urganch guruhi)", ""), async (m) => { const x = await call("ad_create", { p_name: $("#an", m.el).value.trim() }); if (x.ok !== false) { toast("✅ Yaratildi"); VIEWS["b:ads"](c); } return x; });
   };
@@ -3517,9 +3540,9 @@ const CONFIG = {
   // 👮 XODIMLAR — filial va «tekin ijara» (rol va galochkalar — Supabase «👥 adminlar» jadvalida)
   VIEWS.staff = async (c) => {
     const r = await call("web_staff_list"); if (r.ok === false) return errBox(c, r);
-    const ROL = { superadmin: "Superadmin", kassir: "Kassir", kuryer: "Kuryer" };
+    const ROL = ROLES;
     const opts = [["", "— filialsiz —"]].concat((r.stores || []).map((x) => [x.id, x.name]));
-    c.innerHTML = head("👮 Xodimlar", "Xodim qaysi filialda ishlashi (kitob o'sha filialga yoziladi) va 👥 tekin ijara imtiyozi. Rol va vakolat galochkalari — xavfsizlik uchun faqat Supabase → «👥 adminlar» jadvalida.") +
+    c.innerHTML = head("👮 Xodimlar", "Xodim qaysi filialda ishlashi (kitob o'sha filialga yoziladi), 👥 tekin ijara imtiyozi, pastda — rol va vakolatlar. Yangi xodim qo'shish va superadmin rolini berish — xavfsizlik uchun faqat Supabase → «👥 adminlar» jadvalida.") +
       '<div class="card tw"><table><thead><tr><th>Xodim</th><th>Lavozim</th><th>Filial</th><th>👥 Tekin ijara</th><th>Imtiyozli kitoblari</th><th>Bu oy ushlanma</th><th>🔑 Sayt paroli</th></tr></thead><tbody>' +
       (r.items || []).map((x) => "<tr" + (x.faol ? "" : ' style="opacity:.55"') + "><td><b>" + esc(x.name) + '</b><div class="tiny muted mono">' + esc(x.tg) + (x.faol ? "" : " · faol emas") + "</div></td><td>" + esc(ROL[x.rol] || x.rol) + "</td>" +
         '<td><select class="input" data-st="' + x.tg + '" style="padding:6px 8px">' + opts.map((o) => '<option value="' + esc(o[0]) + '"' + (String(o[0]) === String(x.store_id == null ? "" : x.store_id) ? " selected" : "") + ">" + esc(o[1]) + "</option>").join("") + "</select></td>" +
@@ -3532,6 +3555,32 @@ const CONFIG = {
     $$("[data-pwr]", c).forEach((b) => b.onclick = async () => { if (!confirm("«" + b.dataset.n + "» ning sayt paroli tiklansinmi? U saytdan chiqariladi va keyingi kirishda yangi parol o'rnatadi.")) return;
       const x = await api("pw_reset", { tg: +b.dataset.pwr }); if (!x || x.ok === false) return toast(errText(x), true); toast("♻️ Tiklandi — xodimga botda xabar ketdi"); VIEWS.staff(c); });
     $$("[data-sf]", c).forEach((el) => el.onchange = async () => { const x = await call("web_staff_set", { p_tg: +el.dataset.sf, p_field: "tekin_ijara", p_value: el.checked ? "1" : "0" }); if (x.ok === false) { el.checked = !el.checked; return toast(errText(x), true); } toast(el.checked ? "👥 Tekin ijara yoqildi" : "Tekin ijara o'chirildi"); });
+    // 👥 v31: ROL va VAKOLATLAR (superadmin; superadmin rolini berish/olish — faqat Supabase'da)
+    const PL = { kitob_berish: "Kitob berish", qabul_qilish: "Qaytarib olish", dokon_sotish: "Do'konda sotish", dokon_ijara: "Do'konda ijara", naqd_qabul: "Naqd qabul",
+      bron_bekor: "Bronni bekor qilish", inventarizatsiya: "Inventarizatsiya", stiker: "Stiker", kitob_qoshish: "Kitob qo'shish", narx_ozgartirish: "Narx / chegirma / tashkilot",
+      elon: "E'lon, giveaway, kalendar", reklama: "Reklama, promokod, AI hikoya", balans_ozgartirish: "Balansni o'zgartirish", pul_yechish: "Pul yechish", kodsiz_amal: "Kodsiz amal",
+      sos_javob: "SOS javob", hisob_kochirish: "Hisobni ko'chirish", hisobotlar: "Hisobotlar", soliq_eksport: "Soliq eksporti", ommaviy_elon: "Ommaviy e'lon / video",
+      ikkinchi_tasdiq: "Ikkinchi tasdiq", kassa_boshqaruv: "Kassa boshqaruvi", xarajat: "Xarajat", aksiya: "Yangi mijoz aksiyalari (bonus)" };
+    const MKT = ["elon", "ommaviy_elon", "reklama", "narx_ozgartirish", "aksiya"];
+    const ed = (r.items || []).filter((x) => x.faol && x.rol !== "superadmin" && String(x.tg) !== String(ME.telegram_id));
+    if (ed.length) {
+      const box = document.createElement("div");
+      box.innerHTML = '<div class="card pad" style="margin-top:14px"><b>👥 Rol va vakolatlar</b><div class="small muted" style="margin:4px 0 10px">Rol almashtirilsa galochkalar shu rolning standartiga qaytadi, keyin xohlaganingizcha o\'zgartirasiz. ' +
+        '<b>📣 SMM (reklamachi)</b> — marketing bo\'limi to\'liq (e\'lon, promokod, chegirma, giveaway, AI hikoyalar), kassa va pulga tegmaydi. Bot va sayt bir xil ishlaydi (bot ~30 soniyada yangilanadi).</div>' +
+        ed.map((x) => '<div class="card pad" style="margin-top:8px"><div class="row between"><b>' + esc(x.name) + '</b><select class="input" data-rl="' + x.tg + '" style="padding:6px 8px;width:auto">' +
+          ["kassir", "smm", "kuryer"].map((k) => '<option value="' + k + '"' + (x.rol === k ? " selected" : "") + ">" + esc(ROLES[k]) + "</option>").join("") + "</select></div>" +
+          (x.rol === "kuryer" ? '<div class="tiny muted" style="margin-top:6px">🚚 Kuryer galochkasiz ishlaydi — faqat o\'ziga biriktirilgan yetkazishlar va o\'z kassasi.</div>' :
+          '<div class="row" style="gap:6px 14px;margin-top:8px">' + (r.perm_list || Object.keys(PL)).map((k) => '<label class="row small" style="gap:4px"><input type="checkbox" data-pm="' + x.tg + '" data-k="' + esc(k) + '"' +
+            ((x.perms || {})[k] ? " checked" : "") + ">" + (MKT.includes(k) ? "📣 " : "") + esc(PL[k] || k) + "</label>").join("") + "</div>") + "</div>").join("") + "</div>";
+      c.appendChild(box);
+      $$("[data-rl]", box).forEach((el) => { const v0 = el.value; el.onchange = async () => {
+        if (!confirm("Rol «" + ROLES[el.value] + "» ga o'zgartirilsinmi? Galochkalar shu rol standartiga qaytadi.")) { el.value = v0; return; }
+        const x = await call("web_staff_set", { p_tg: +el.dataset.rl, p_field: "rol", p_value: el.value }); if (x.ok === false) { el.value = v0; return toast(errText(x), true); }
+        toast("✅ Rol: " + ROLES[el.value]); VIEWS.staff(c); }; });
+      $$("[data-pm]", box).forEach((el) => el.onchange = async () => {
+        const x = await call("web_staff_set", { p_tg: +el.dataset.pm, p_field: "perm", p_value: el.dataset.k + ":" + (el.checked ? "1" : "0") });
+        if (x.ok === false) { el.checked = !el.checked; return toast(errText(x), true); } toast((el.checked ? "✅ " : "☑️ ") + (PL[el.dataset.k] || el.dataset.k)); });
+    }
   };
 
   VIEWS["b:set"] = async (c) => {
