@@ -331,7 +331,7 @@ const CONFIG = {
     SMS_SEND: "SMS yuborilmadi. Birozdan keyin urinib ko'ring.", ALREADY_REGISTERED: "Bu raqam ro'yxatdan o'tgan — «Kirish» ni tanlang.",
     NOT_FOUND: "Bu raqam ro'yxatdan o'tmagan.", WRONG_CODE: "Kod noto'g'ri yoki eskirgan.", PW_SHORT: "Parol kamida 8 belgi bo'lsin.",
     WRONG_LOGIN: "Telefon yoki parol noto'g'ri.", LOCKED: "Ko'p xato — 15 daqiqadan keyin urinib ko'ring.", BLOCKED: "Kirish bloklangan. Do'konga murojaat qiling.",
-    NO_NAME: "Ismingizni yozing.", TOO_MANY: "Juda ko'p urinish. Bir daqiqadan keyin urinib ko'ring.", ORIGIN: "Bu saytdan kirib bo'lmaydi."
+    NO_NAME: "Ismingizni yozing.", SMS_OFF: "SMS orqali ro'yxatdan o'tish hozircha yopiq. Botda 🆘 Yordam'ga yozing yoki do'konga murojaat qiling — kirish parolini beramiz.", TOO_MANY: "Juda ko'p urinish. Bir daqiqadan keyin urinib ko'ring.", ORIGIN: "Bu saytdan kirib bo'lmaydi."
   };
   const authErr = (r) => (r && AUTH_ERR[r.error]) || errText(r);
   function afterLogin(r) {
@@ -340,20 +340,31 @@ const CONFIG = {
     closeSheet(); refreshMe().then(() => render());
     if (r.must_change) setTimeout(() => openLogin("change"), 400);
   }
-  function openLogin(mode) {
+  let smsOn = null;                                       // SMS xizmati (Eskiz) ulanganmi — darvozadan bir marta so'raladi
+  async function openLogin(mode) {
+    if (smsOn === null) { const c = await api("auth_config", {}); smsOn = !!(c && c.sms); }
+    if (!smsOn && (mode === "register" || mode === "reset")) {
+      sheet('<div class="h2">' + (mode === "register" ? "📝 Ro'yxatdan o'tish" : "♻️ Parolni tiklash") + '</div>' +
+        '<p class="muted" style="margin:0">Hozircha saytga kirish paroli do\'kon orqali beriladi (SMS xizmati tez orada ulanadi).</p>' +
+        '<p style="margin:0">🤖 Botda <b>🆘 Yordam</b>ga «Saytga kirish kerak» deb yozing yoki do\'konga murojaat qiling — admin vaqtinchalik parol beradi. Birinchi kirishda o\'z parolingizni o\'rnatasiz.</p>' +
+        '<div class="row" style="gap:8px"><button class="btn" id="tobot">Botga o\'tish</button><button class="btn ghost" id="tologin">Parolim bor — kirish</button></div>',
+        (el) => { $("#tobot", el).onclick = () => goBot("start"); $("#tologin", el).onclick = () => openLogin("login"); });
+      return;
+    }
     let phone = "";
     const field = (id, label, type, ph) => '<label class="col" style="gap:4px"><span class="small muted">' + label + '</span><input id="' + id + '" type="' + type + '" placeholder="' + (ph || "") + '" style="padding:12px;border-radius:12px;border:1px solid var(--line);font-size:16px"></label>';
     const draw = (m) => {
       const T = { login: "🔑 Kirish", register: "📝 Ro'yxatdan o'tish", reset: "♻️ Parolni tiklash", device: "📱 Yangi qurilma", change: "🔐 Yangi parol" }[m];
       let h = '<div class="h2">' + T + "</div>";
       if (m === "login") h += field("ph", "Telefon", "tel", "90 123 45 67") + field("pw", "Parol", "password") +
-        '<button class="btn" id="go">Kirish</button><div class="row between small"><a href="#" id="toreg">Ro\'yxatdan o\'tish</a><a href="#" id="torst">Parolni unutdim</a></div>';
+        '<button class="btn" id="go">Kirish</button><div class="row between small"><a href="#" id="toreg">Ro\'yxatdan o\'tish</a><a href="#" id="torst">Parolni unutdim</a></div>' +
+        (smsOn ? "" : '<span class="tiny muted">Parol yo\'qmi? Botda 🆘 Yordam\'ga yozing yoki do\'konga murojaat qiling — admin beradi.</span>');
       if (m === "register" || m === "reset") h += field("ph", "Telefon", "tel", "90 123 45 67") +
         '<button class="btn ghost" id="sms">SMS kod olish</button>' + '<div id="step2" style="display:none" class="col">' + field("cd", "SMS kod", "text", "6 xonali") +
         (m === "register" ? field("nm", "Ismingiz (botda bo'lmasangiz)", "text") : "") + field("pw", "Yangi parol (kamida 8 belgi)", "password") +
         '<button class="btn" id="go">' + (m === "register" ? "Ro'yxatdan o'tish" : "Saqlash") + "</button></div>" +
         '<span class="small muted">SMS faqat ro\'yxatdan o\'tish va parolni tiklash uchun (kuniga 2, haftasiga 5 ta). Keyin kirish — parol bilan, bepul.</span>';
-      if (m === "device") h += '<span class="small muted">Xodim hisobi yangi qurilmadan kirmoqda — xavfsizlik uchun SMS kod yuborildi.</span>' + field("cd", "SMS kod", "text") + '<button class="btn" id="go">Tasdiqlash</button>';
+      if (m === "device") h += '<span class="small muted">Xodim hisobi yangi qurilmadan kirmoqda — xavfsizlik uchun kod ' + (smsOn ? "SMS bilan" : "<b>botimiz orqali Telegram'ingizga</b>") + ' yuborildi.</span>' + field("cd", "Kod", "text") + '<button class="btn" id="go">Tasdiqlash</button>';
       if (m === "change") h += '<span class="small muted">Vaqtinchalik parol bilan kirdingiz — o\'zingizning parolingizni o\'rnating.</span>' + field("old", "Hozirgi (vaqtinchalik) parol", "password") + field("pw", "Yangi parol (kamida 8 belgi)", "password") + '<button class="btn" id="go">Saqlash</button>';
       return h;
     };
