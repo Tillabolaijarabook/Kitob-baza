@@ -385,7 +385,10 @@ const CONFIG = {
         if (m === "register") r = await api("auth_register", { phone, code: v("cd"), password: $("#pw", el).value, name: v("nm"), device: devId() });
         if (m === "reset") { r = await api("auth_reset", { phone, code: v("cd"), password: $("#pw", el).value }); if (r.ok) { toast("✅ Parol yangilandi — kiring"); return open("login"); } }
         if (m === "device") r = await api("auth_device", { phone, password: pwKeep, code: v("cd"), device: devId() });
-        if (m === "change") { r = await api("auth_pw_change", { old: $("#old", el).value, password: $("#pw", el).value }); if (r.ok) { toast("✅ Parol saqlandi"); closeSheet(); return; } }
+        if (m === "change") { r = await api("auth_pw_change", { old: $("#old", el).value, password: $("#pw", el).value });
+          if (r.ok) { toast("✅ Parol saqlandi"); closeSheet();
+            const s2 = await api("auth_session", {}); if (s2 && s2.ok && s2.staff) { location.href = "admin/"; }   // 👮 xodim — admin panelga
+            return; } }
         if (r && r.error === "NEED_DEVICE_CODE") {
           const s2 = await api("auth_sms", { phone: r.phone || phone, purpose: "device" });
           if (!s2.ok) return toast(authErr(s2));
@@ -558,7 +561,8 @@ const CONFIG = {
       (me && me.ok ? '<div class="bstats"><button class="bstat" data-go="my"><b>' + (Number(me.open_count) || 0) + "</b><span>Kitoblarim</span></button>" +
         '<button class="bstat" data-go="me"><b>' + fmt(me.bonus || 0) + "</b><span>Bonus, so'm</span></button>" +
         '<button class="bstat" data-go="me"><b>' + (freeH.o_available || 0) + "</b><span>Tekin kunlar</span></button></div>" : "") +
-      "</div>" + (me && me.ok && me.bot_link_hint ? '<div class="card warm col" id="botlink"><b>🤖 Botga ulaning</b><span class="small muted">Bron, qaytarish muddati va javoblar haqida xabarlar botga keladi, balansni to\'ldirish ham botda. Botda «📱 Raqamni yuborish» ni bosing — shu hisobingiz avtomatik ulanadi. Yangi kitoblar va aksiyalar — kanalimizda.</span><div class="row" style="gap:8px"><button class="btn sm" id="botlinkbtn">Botga ulanish</button>' + (CONFIG.CHANNEL ? '<button class="btn ghost sm" id="chanbtn">📢 Kanal</button>' : "") + '</div></div>' : "") + '<div id="readnow"></div>' +
+      "</div>" + (!INIT && webTok() && me && me.ok && me.is_staff ? '<a class="btn" href="admin/" style="display:block;text-align:center;margin:10px 0">👮 Admin panelga o\'tish</a>' : "") +
+      (me && me.ok && me.bot_link_hint ? '<div class="card warm col" id="botlink"><b>🤖 Botga ulaning</b><span class="small muted">Bron, qaytarish muddati va javoblar haqida xabarlar botga keladi, balansni to\'ldirish ham botda. Botda «📱 Raqamni yuborish» ni bosing — shu hisobingiz avtomatik ulanadi. Yangi kitoblar va aksiyalar — kanalimizda.</span><div class="row" style="gap:8px"><button class="btn sm" id="botlinkbtn">Botga ulanish</button>' + (CONFIG.CHANNEL ? '<button class="btn ghost sm" id="chanbtn">📢 Kanal</button>' : "") + '</div></div>' : "") + '<div id="readnow"></div>' +
       '<label class="search">' + ic("search", 18, "#A89F92") + '<span class="sr">Qidiruv</span><input id="q" type="search" placeholder="Kitob yoki muallif nomi…" enterkeyhint="search"></label>' +
       (meErr === "NO_PHONE" || meErr === "NOT_REGISTERED" ? '<div class="card warm col"><b>' + (meStaff ? "👥 Xodim: mijoz hisobingizni faollashtiring" : "Kabinet uchun ro\'yxatdan o\'ting") + '</b><span class="small muted">' + (meStaff ? "O\'zingiz uchun kitob olish (xodim imtiyozi) uchun botda «📱 Raqamni yuborish» tugmasini bir marta bosing. Admin menyusi o\'zgarmaydi." : "Botga telefon raqamingizni bir marta yuboring.") + '</span><button class="btn sm" id="regbtn" style="align-self:flex-start">Botga o\'tish</button></div>'
         : meErr === "nosign" && !INIT ? '<div class="card warm col"><b>🔑 Kabinetga kiring</b><span class="small muted">Telefon raqamingiz va parol bilan. Birinchi marta — SMS kod bilan ro\'yxatdan o\'ting (botdagi hisobingiz bo\'lsa, o\'shanga ulanadi).</span><div class="row" style="gap:8px"><button class="btn sm" id="loginbtn">Kirish</button><button class="btn ghost sm" id="signupbtn">Ro\'yxatdan o\'tish</button></div></div>'
