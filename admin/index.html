@@ -2,6 +2,8 @@
 <html lang="uz">
 <head>
 <meta charset="utf-8">
+<!-- 🔒 v31 (X16): Content-Security-Policy — skriptlar faqat shu saytdan va telegram.org dan; so'rovlar faqat Supabase va xarita xizmatlariga. Server (nginx) ham shu sarlavhani yuboradi -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://telegram.org; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co https://nominatim.openstreetmap.org https://router.project-osrm.org https://api.open-meteo.com; frame-src https://oauth.telegram.org https://telegram.org; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>RentBooks — Boshqaruv</title>
@@ -325,6 +327,51 @@ body[data-holiday] .login { background: var(--hero); }
   .hero .hlogo { display: none; } .hero > div { max-width: none; } .crumb, .season { display: none; } .ubtn > div:first-child { display: none; }
   .hgrid { grid-template-columns: 1fr 1fr; } .hc .hv { font-size: 22px; } .hc .hi { display: none; }
 }
+
+/* 📱 v31 (K10): TELEFON. Pastki panel, jadval → kartochka, tugma ≥ 44px, oyna to'liq ekran, gorizontal surish yo'q */
+.bnav { display: none; }
+.side-bg { display: none; }
+@media (max-width: 900px) {
+  .side.open + .side-bg, .side-bg.on { display: block; position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 55; }
+}
+@media (max-width: 640px) {
+  html, body { overflow-x: hidden; }
+  .content { padding: 10px 10px calc(78px + env(safe-area-inset-bottom)); }
+  .btn, .paybtn, .input, select, .field, input[type="text"], input[type="tel"], input[type="number"], input[type="password"], input[type="search"] { min-height: 44px; font-size: 16px; }
+  .btn.sm { min-height: 40px; padding-left: 12px; padding-right: 12px; }
+  .row { flex-wrap: wrap; }
+  h1 { font-size: 20px; }
+  .kpis, .hgrid { grid-template-columns: 1fr 1fr; gap: 8px; }
+  /* jadval → kartochka (ustun nomi har qatorda chapda) */
+  .m-cards thead { display: none; }
+  .m-cards, .m-cards tbody, .m-cards tr, .m-cards td { display: block; width: 100%; }
+  .m-cards tr { border: 1px solid var(--line, #e6e1d8); border-radius: 14px; padding: 8px 10px; margin: 0 0 10px; background: var(--card, #fff); }
+  .m-cards td { display: flex; justify-content: space-between; align-items: center; gap: 10px; border: 0 !important; padding: 6px 2px !important; text-align: right; min-height: 0; }
+  .m-cards td::before { content: attr(data-l); color: var(--mut, #8a8478); font-size: 12.5px; text-align: left; flex: 0 0 auto; max-width: 45%; }
+  .m-cards td[data-l=""]::before { content: none; }
+  .m-cards td[data-l=""] { justify-content: flex-end; }
+  .tw { overflow-x: visible; }
+  /* oynalar — to'liq ekran */
+  .ov { align-items: stretch !important; padding: 0 !important; }
+  .modal, .modal.wide { width: 100vw !important; max-width: 100vw !important; min-height: 100dvh; max-height: 100dvh; border-radius: 0 !important; margin: 0 !important; display: flex; flex-direction: column; }
+  .modal .mb { flex: 1; overflow-y: auto; }
+  .modal .mf { position: sticky; bottom: 0; background: inherit; padding-bottom: calc(10px + env(safe-area-inset-bottom)); }
+  /* savat / kassa — bir qo'lda: jami va to'lov pastda ko'rinadi */
+  body.wxpause .dock { display: none; }                   /* savat va kassada 🤖/💬 tugmalari to'lov tugmasini yopmasin */
+  .content canvas, .content img, .content .chart svg { max-width: 100%; }
+  .top .burger { display: none; }                         /* menyu — pastki paneldagi «Menyu» */
+  .top .chip, .top .instbtn, .top .season { display: none; }
+  .top { gap: 6px; }
+  .dock { bottom: calc(74px + env(safe-area-inset-bottom)); right: 10px; }   /* 🤖 va 💬 — pastki panel ustida */
+  .toast { left: 10px; right: 10px; bottom: calc(76px + env(safe-area-inset-bottom)); max-width: none; }
+  /* pastki panel */
+  .bnav { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; background: var(--card, #fff); border-top: 1px solid var(--line, #e6e1d8);
+          padding: 4px 4px env(safe-area-inset-bottom); justify-content: space-around; box-shadow: 0 -6px 18px rgba(0,0,0,.06); }
+  .bnav button { flex: 1; min-height: 56px; border: 0; background: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+                 font-size: 11px; color: var(--mut, #8a8478); font-weight: 600; }
+  .bnav button.on { color: var(--acc, #1B2E6E); }
+  .bnav button svg { width: 22px; height: 22px; }
+}
 </style>
 </head>
 <body>
@@ -333,9 +380,9 @@ body[data-holiday] .login { background: var(--hero); }
 <script>
 /* ⚙️ SOZLASH — 2 qator (javon.html dagi bilan bir xil Supabase manzili) */
 const CONFIG = {
-  SUPABASE_URL: "https://cyvrjjqzevyqcvxadjay.supabase.co",   // Supabase → Project Settings → Data API → Project URL
+  SUPABASE_URL: "https://SIZNING-LOYIHA.supabase.co",   // Supabase → Project Settings → Data API → Project URL
   BOT_USERNAME: "Kitobijarabot",                         // @ belgisisiz. BotFather → /setdomain → shu sayt manzili
-  IDLE_MINUTES: 45,                                      // shuncha daqiqa harakatsizlikdan keyin avtomatik chiqadi
+  IDLE_MINUTES: 30,                                      // shuncha daqiqa harakatsizlikdan keyin avtomatik chiqadi
 };
 (function () {
   "use strict";
@@ -362,7 +409,7 @@ const CONFIG = {
     STAFF_SELF: "👥 Imtiyozli kitobni o'zingizga o'zingiz bera olmaysiz — boshqa xodim bajarsin.",
     STAFF_LIMIT: "👥 Xodim imtiyozi chegarasi.", STAFF_OVERDUE: "👥 Xodimning muddati o'tgan kitobi bor.",
     IN_DELIVERY: "🛵 Kitob kuryerda — bekor qilib bo'lmaydi.", BUSY: "Nusxa band.", NOT_FOUND: "Topilmadi.",
-    DB: "Bazada xatolik.", SERVER: "Serverda xatolik.", NET: "📶 Serverga ulanib bo'lmadi.", BAD_ID: "Noto'g'ri so'rov.",
+    DB: "Bazada xatolik.", BAD_SETTING: "⚠️ Sozlama qiymati noto'g'ri.", SERVER: "Serverda xatolik.", NET: "📶 Serverga ulanib bo'lmadi.", BAD_ID: "Noto'g'ri so'rov.",
     UNKNOWN_ACTION: "Darvoza eski — Supabase'ga «admin» funksiyasini qayta deploy qiling.",
     PIN_YOQ: "🔢 PIN-kod o'rnatilmagan. Botda: ⚙️ Sozlamalar → 🔢 PIN-kod.", PIN_KERAK: "🔢 PIN-kod kerak.",
     CASH_LOW: "💵 Kassangizda buncha naqd yo'q.", EMPTY: "Savat bo'sh.", NO_CUSTOMER: "Avval mijozni tanlang.",
@@ -371,7 +418,7 @@ const CONFIG = {
     NOT_SELLABLE: "Bu nusxani sotib bo'lmaydi.", BAD_MONTHS: "A'zolik muddatini oyda yozing (1–120).", INSTA_REQUIRED: "Avval Instagram tugmasini bosish kerak.", MODE_RENT_ONLY: "Bu kitob faqat ijaraga beriladi.", MODE_SALE_ONLY: "Bu kitob faqat sotiladi.",
     NEED_TWO: "🔐 Bu summa uchun ikkinchi superadmin tasdig'i kerak (botda).", NEEDS_APPROVAL: "🔐 Ikkinchi admin tasdig'i kerak — so'rov yuborildi.",
     NO_COURIER: "Kuryer tanlanmagan.", WRONG_PIN: "❌ PIN noto'g'ri.", PIN_WEAK: "PIN juda oddiy (1234, 1111 kabi) — boshqa raqam tanlang.", BAD_PIN: "PIN 4–8 ta raqam bo'lsin.", PIN_FORMAT: "PIN 4–8 ta raqam bo'lsin.", LOCKED: "⛔ PIN bloklangan — superadmin ochishi kerak.", NO_PIN: "PIN o'rnatilmagan.", PROMO_BAD_CODE: "Promokod: 3–24 belgi, lotin harflari, raqam, - va _.", PROMO_EXISTS: "Bunday promokod bor.", BAD_PCT: "Foiz noto'g'ri (1–90).", TG_SEND: "Telegram xabarni qabul qilmadi.", SELF_APPROVE: "O'zingiz so'ragan amalni o'zingiz tasdiqlay olmaysiz.", TOO_LATE: "⌛ Bekor qilish muddati o'tdi.",
-    UNDO_BALANCE: "↩️ Bekor qilib bo'lmaydi: mijoz puli allaqachon ishlatilgan.", PAY_FIXED: "↩️ Bu amalning to'lov turi tuzatilgan — endi bekor qilib bo'lmaydi.", SAME_TYPE: "To'lov turi allaqachon shunday.", NOT_PAYMENT: "Bu yozuv to'lov emas.", BAD_NAME: "Ism 2–40 belgi bo'lsin.", NOTE_REQUIRED: "Izoh yozing (kamida 3 belgi).", NO_TITLE: "Nomini yozing.", BAD_COST: "Tannarx noto'g'ri.", BAD_COPIES: "Nusxalar soni 1–100.", BAD_PHOTO: "Rasm yuklanmadi.",
+    UNDO_BALANCE: "↩️ Bekor qilib bo'lmaydi: mijoz puli allaqachon ishlatilgan.", PAY_FIXED: "↩️ Bu amalning to'lov turi tuzatilgan — endi bekor qilib bo'lmaydi.", SAME_TYPE: "To'lov turi allaqachon shunday.", NOT_PAYMENT: "Bu yozuv to'lov emas.", BAD_NAME: "Ism 2–40 belgi bo'lsin.", NO_PHONE: "Mijozning telefon raqami yo'q — avval raqamni kiriting.", DISCOUNT_LIMIT: "⛔ Chegirma ruxsat etilgan chegaradan katta.", RENT_NO_DISCOUNT: "⛔ Ijarada kassir chegirmasi yo'q.", PW_CHANGE_REQUIRED: "Avval o'z parolingizni o'rnating.", NOTE_REQUIRED: "Izoh yozing (kamida 3 belgi).", NO_TITLE: "Nomini yozing.", BAD_COST: "Tannarx noto'g'ri.", BAD_COPIES: "Nusxalar soni 1–100.", BAD_PHOTO: "Rasm yuklanmadi.",
     PW_WRONG: "❌ Parol noto'g'ri.", PW_LOCKED: "🔒 Parol ko'p marta noto'g'ri terildi — kirish vaqtincha bloklandi.", PW_SHORT: "Parol kamida 8 belgi bo'lsin.",
     PW_LONG: "Parol juda uzun.", PW_WEAK: "Parol juda oddiy: harf va raqam aralash bo'lsin (12345678, telefon yoki ID emas).", PW_SAME: "Yangi parol eskisi bilan bir xil.",
     PW_TICKET: "⏱ Kirish vaqti o'tdi — Telegram orqali qaytadan kiring.", PW_EXISTS: "Parol allaqachon o'rnatilgan — qaytadan kiring.", PW_NONE: "Parol o'rnatilmagan — qaytadan kiring.", OTHER_COURIER: "Boshqa kuryer qabul qilgan.", BAD_DAYS: "Sana oralig'i noto'g'ri.",
@@ -381,7 +428,8 @@ const CONFIG = {
     let t = ERR[r.error] || r.error || "Xatolik";
     if (r.error === "WRONG_CODE" && r.left != null) t += " Yana " + r.left + " ta urinish.";
     if (r.error === "STAFF_LIMIT" && r.limit) t += " (ko'pi bilan " + r.limit + " ta)";
-    if (r.error === "DB" && r.detail) t += " Sabab: " + String(r.detail).replace(/^ERROR:\s*/i, "").slice(0, 160) + (r.fn ? " (" + r.fn + ")" : "");
+    if (r.error === "DB" && r.ref) t += " Xato raqami: " + r.ref + " (dasturchiga ayting).";   // 🔒 v31 (X33)
+    if (r.error === "BAD_SETTING" && r.reason) t += " (" + r.reason + ")";
     return t;
   };
   let tt;
@@ -405,9 +453,10 @@ const CONFIG = {
       // «oddiy» so'rov (text/plain, maxsus sarlavhasiz): brauzer oldindan OPTIONS (preflight) yubormaydi — tezroq va ishonchliroq.
       // Sessiya kaliti tanada yuboriladi; server JSON'ni baribir o'qiydi
       r = await fetch(API, { method: "POST", headers: { "Content-Type": "text/plain;charset=UTF-8" },
-        body: JSON.stringify(Object.assign({ action }, body || {}, S ? { token: S.token } : {})) });
+        body: JSON.stringify(Object.assign({ action }, body || {}, S ? (S.web ? { web_token: S.web } : { token: S.token }) : {})) });
     } catch (e) { return { ok: false, error: "NET" }; }
     let j; try { j = await r.json(); } catch (e) { return { ok: false, error: "SERVER" }; }
+    if (j && j.error === "PW_CHANGE_REQUIRED") { location.href = "../?kirish=change"; return j; }   // 🌐 v31: vaqtinchalik parol
     if (j && (j.error === "LOGIN" || j.error === "NOT_ADMIN") && action !== "login") { logout(errText(j)); }
     // 🔢 muhim pul amali PIN so'rasa — PIN oynasi ochiladi va amal o'zi qayta bajariladi
     if (j && j.error === "PIN_KERAK" && action !== "pin" && !(body && body._pinRetry)) {
@@ -438,7 +487,12 @@ const CONFIG = {
   let lastAct = Date.now();
   ["mousedown", "keydown", "wheel", "touchstart"].forEach((ev) => document.addEventListener(ev, () => { lastAct = Date.now(); }, { passive: true }));
   setInterval(() => { if (ME && Date.now() - lastAct > IDLE_MIN * 60e3) logout("⏱ " + IDLE_MIN + " daqiqa harakatsizlik — xavfsizlik uchun chiqildi."); }, 20000);
-  function logout(msg) { store.clear(); S = null; ME = null; renderLogin(msg); }
+  // 🌐 v31: yangi kirish (rentbooks.uz da telefon + parol) — sessiya tokeni umumiy («rb_web»)
+  const webTok = () => { try { return localStorage.getItem("rb_web") || ""; } catch (e) { return ""; } };
+  function logout(msg) {
+    if (S && S.web) { try { localStorage.removeItem("rb_web"); } catch (e) {} }
+    store.clear(); S = null; ME = null; renderLogin(msg);
+  }
 
   // ---------- 🎨 mavzu: fasl bo'yicha (avtomatik) yoki qo'lda tanlangan ----------
   const LOGO_BW = "data:image/png;base64,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";             // 🧾 chek uchun oq-qora logo (termoprinter)
@@ -557,6 +611,8 @@ const CONFIG = {
       '<div class="slogan">RENT · READ · RETURN</div>' +
       '<div><h1 style="margin:0">RentBooks boshqaruvi</h1><p class="sub" style="margin:4px 0 0">Admin va kassirlar uchun · ' + SEASONS[season()].e + " " + SEASONS[season()].t + "</p></div>" +
       (msg ? '<div class="note t-red" style="width:100%">' + esc(msg) + "</div>" : "") +
+      '<a class="btn" href="../?kirish=1" style="width:100%;text-align:center">📱 Telefon va parol bilan kirish</a>' +
+      '<div class="tiny muted" style="margin:-4px 0 0">yoki eski usul — Telegram orqali:</div>' +
       '<div id="tgw" style="min-height:46px"></div>' +
       '<p class="tiny muted" style="margin:0">1) Telegram akkauntingiz orqali, 2) shaxsiy parolingiz bilan kirasiz.<br>Kirish faqat 👥 adminlar ro\'yxatidagi faol xodimlar uchun.</p>' +
       "</div></div>";
@@ -618,6 +674,7 @@ const CONFIG = {
   }
 
   // ---------- asosiy oyna ----------
+  const pctF = (v) => String(Math.round(Number(v || 0) * 10) / 10).replace(".", ",");   // 💸 v31
   const can = (...p) => ME && (ME.super || p.some((x) => ME.perms && ME.perms[x]));
   // Menyu botdagi «🏠 Admin panel» bilan bir xil: [id, nomi, ikonka, vakolat]. id «b:» bilan — hozircha faqat botda.
   //   vakolat: null — hamma xodim, "SUPER" — superadmin, "XODIM" — kuryerdan boshqa hamma, massiv — biri bo'lsa yetadi
@@ -638,7 +695,7 @@ const CONFIG = {
       ["b:crep", "Mijoz hisoboti", "log", "hisobotlar"], ["b:prm", "Premium nomzodlari", "users", "SUPER"],
       ["b:relink", "Hisobni ko'chirish", "users", "hisob_kochirish"], ["b:org", "Tashkilotlar", "users", "narx_ozgartirish"],
       ["b:check", "Foydalanuvchilar tekshiruvi", "users", "ommaviy_elon"]] },
-    { g: "Marketing", items: [["b:annq", "Kutilayotgan e'lonlar", "mega", "elon"], ["b:broadcast", "E'lon / Video", "mega", "ommaviy_elon"],
+    { g: "Marketing", items: [["rk", "Reklama hikoyalari (AI)", "mega", "reklama"], ["b:annq", "Kutilayotgan e'lonlar", "mega", "elon"], ["b:broadcast", "E'lon / Video", "mega", "ommaviy_elon"],
       ["b:promo", "Promokodlar", "mega", "reklama"], ["b:dsc", "Chegirmalar", "mega", "narx_ozgartirish"], ["b:ads", "Reklama manbalari", "chart", "reklama"],
       ["b:gw", "Giveaway", "mega", "elon"], ["b:kal", "Kalendar", "clock", "elon"], ["b:aks", "Yangi mijoz aksiyalari", "mega", "SUPER"],
       ["b:warn", "Rasmiy ogohlantirish", "alert", "SUPER"]] },
@@ -732,6 +789,22 @@ const CONFIG = {
     $("#ubtn").onclick = (e) => { e.stopPropagation(); userMenu(); };
     $("#reload").onclick = () => go(page);
     $("#burger").onclick = () => $("#side").classList.toggle("open");
+    // 📱 v31 (K10): telefon — pastki panel (vakolatga qarab) va yon menyu orqasidagi fon (bosilsa yopiladi)
+    if (!$(".side-bg")) {
+      const bg = document.createElement("div"); bg.className = "side-bg";
+      bg.onclick = () => $("#side").classList.remove("open");
+      $("#side").after(bg);
+    }
+    const BN = [["home", "Bosh", "home", null], ["cart_s", "Sotuv", "cart", "dokon_sotish"], ["cart_r", "Ijara", "book", "dokon_ijara"],
+                ["kassa", "Kassa", "cash", "XODIM"], ["pending", "Bronlar", "inbox", ["kitob_berish", "bron_bekor"]]].filter((x) => allowed(x[3])).slice(0, 4);
+    let bn = $(".bnav"); if (bn) bn.remove();
+    bn = document.createElement("nav"); bn.className = "bnav";
+    bn.innerHTML = BN.map((x) => '<button data-page="' + x[0] + '">' + (IC[x[2]] || "") + "<span>" + esc(x[1]) + "</span></button>").join("") +
+      '<button id="bmenu">' + IC.menu + "<span>Menyu</span></button>";
+    document.body.appendChild(bn);
+    $$("button[data-page]", bn).forEach((b) => b.onclick = () => { $("#side").classList.remove("open"); go(b.dataset.page); });
+    $("#bmenu", bn).onclick = () => $("#side").classList.toggle("open");
+    labelTables();
     const h = decodeURIComponent((location.hash || "").replace("#", ""));
     go(ITEM[h] && allowed(ITEM[h].perm) ? h : "home");
     if (!openG && ITEM[page] && ITEM[page].g) setOpen(ITEM[page].g);
@@ -802,9 +875,25 @@ const CONFIG = {
   function setBadge(n) { pendingN = n; const b = $("#pbadge"); if (b) { b.textContent = n; b.classList.toggle("hidden", !n); } }
   setInterval(() => { if (ME && document.visibilityState === "visible") refreshBadge(); }, 30000);
 
+  // 📱 v31 (K10): har bir jadval katakchasiga ustun nomi (telefonda kartochka ko'rinishida chapda chiqadi)
+  let labelT = null;
+  function labelTables() {
+    const run = () => $$("table").forEach((t) => {
+      const ths = $$("thead th", t).map((th) => th.textContent.trim());
+      if (!ths.length) return;
+      t.classList.add("m-cards");
+      $$("tbody tr", t).forEach((tr) => [...tr.children].forEach((td, i) => { if (!td.hasAttribute("data-l")) td.setAttribute("data-l", ths[i] || ""); }));
+    });
+    run();
+    if (!labelT && window.MutationObserver) {
+      labelT = new MutationObserver(() => { clearTimeout(labelT._t); labelT._t = setTimeout(run, 60); });
+      labelT.observe(document.body, { childList: true, subtree: true });
+    }
+  }
   function go(p) {
+    $("#side") && $("#side").classList.remove("open");
     page = p; try { history.replaceState(null, "", "#" + p); } catch (e) {}
-    document.body.classList.toggle("wxpause", p === "cart" || p === "kassa");      // 🌦 kassada diqqat chalg'imasin
+    document.body.classList.toggle("wxpause", /^cart/.test(p) || p === "kassa");      // 🌦 kassada diqqat chalg'imasin
     setTimeout(drawQbar, 0);
     $$("[data-page]").forEach((b) => b.classList.toggle("on", b.dataset.page === p));
     const it_ = ITEM[p];
@@ -1507,10 +1596,39 @@ const CONFIG = {
         u.money.map((l) => '<tr><td class="small">' + dt(l.at, true) + '</td><td class="small">' + esc(MONEY[l.type] || l.type) + "</td><td><b style=\"color:" + (Number(l.amount) < 0 ? "var(--red)" : "var(--ok)") + '">' + (Number(l.amount) > 0 ? "+" : "") + fmt(l.amount) + '</b></td><td class="small muted">' + esc(l.note || "") + "</td></tr>").join("") + "</tbody></table></div>" : '<div class="muted small">—</div>'),
       '<div class="row" style="margin-top:6px">' + (can("kitob_berish", "qabul_qilish", "sos_javob", "hisobotlar") ? '<button class="btn ghost sm" id="u_note">📝 Izoh qo\'shish</button>' : "") +
         (can("hisobotlar") ? '<button class="btn ghost sm" id="u_rep">📄 To\'liq hisobot</button>' : "") +
+        (can("hisob_kochirish") ? '<button class="btn ghost sm" id="u_web">🔑 Saytga kirish</button>' : "") +
         (ME.super ? '<button class="btn ghost sm" id="u_prm">' + (u.premium === "premium" ? "⭐ Premiumni olib tashlash" : "⭐ Premium berish") + "</button>" : "") +
         (can("balans_ozgartirish") ? '<button class="btn ghost sm" id="u_bal">💵 Balansni o\'zgartirish</button>' : "") + "</div>",
       "", true);
     const um = { el: document.body.lastElementChild };
+    // 🔑 v31 (N05): saytga kirishni boshqarish — vaqtinchalik parol (SMS'siz), bloklash, qurilmalardan chiqarish
+    if ($("#u_web", um.el)) $("#u_web", um.el).onclick = async () => {
+      const i = await api("web_access_info", { user_id: id });
+      if (i && i.ok === false) return toast(errText(i), true);
+      const ses = (i.sessions || []).map((x) => "<li>" + esc((x.device || "?").split(" · ")[1] || x.device || "?").slice(0, 60) + ' <span class="tiny muted">' + dt(x.last_seen, true) + "</span></li>").join("");
+      const m = modal("🔑 Saytga kirish (rentbooks.uz)", i.has_account
+        ? '<div class="small">📱 ' + esc(i.phone) + " · " + (i.blocked ? '<span class="pill p-red">bloklangan</span>' : '<span class="pill p-ok">faol</span>') +
+          (i.must_change ? ' · <span class="pill p-warn">vaqtinchalik parol</span>' : "") + "<br>Oxirgi kirish: " + (i.last_login ? dt(i.last_login, true) : "—") + "</div>" +
+          '<b class="small">Ochiq qurilmalar</b><ul class="small" style="margin:0;padding-left:18px">' + (ses || "<li>yo'q</li>") + "</ul>" +
+          '<div class="row"><button class="btn sm" data-a="grant">♻️ Vaqtinchalik parol berish</button><button class="btn ghost sm" data-a="out">🚪 Hamma qurilmadan chiqarish</button>' +
+          '<button class="btn ghost sm" data-a="' + (i.blocked ? "unblock" : "block") + '">' + (i.blocked ? "✅ Blokdan chiqarish" : "⛔ Bloklash") + "</button></div>"
+        : '<p class="small" style="margin:0">Mijoz hali saytda ro\'yxatdan o\'tmagan. U o\'zi SMS bilan o\'tishi mumkin yoki shu yerda vaqtinchalik parol bering (SMS ketmaydi — parolni mijozga o\'zingiz ayting).</p>' +
+          '<button class="btn" data-a="grant">🔑 Kirishni ochish (vaqtinchalik parol)</button>');
+      $$("[data-a]", m.el).forEach((b) => b.onclick = async () => {
+        const a = b.dataset.a;
+        if (a === "block" && !confirm("Saytga kirish bloklansinmi? Ochiq sessiyalar darhol yopiladi.")) return;
+        const r = a === "grant" ? await api("web_access_grant", { user_id: id })
+          : a === "out" ? await api("web_access_logout_all", { user_id: id })
+          : await api("web_access_block", { user_id: id, block: a === "block" });
+        if (r && r.ok === false) return toast(errText(r), true);
+        if (a === "grant") {
+          m.el.querySelector(".mb").insertAdjacentHTML("afterbegin", '<div class="note t-ok">✅ Vaqtinchalik parol: <b style="font-size:18px;letter-spacing:.06em">' + esc(r.temp_password) +
+            "</b><br>Telefon: " + esc(r.phone) + " — mijozga shaxsan ayting. Birinchi kirishda o'z parolini o'rnatadi. Bu oyna yopilgach parol qayta ko'rsatilmaydi.</div>");
+          return;
+        }
+        toast("✅ Bajarildi"); m.close();
+      });
+    };
     if ($("#u_note", um.el)) $("#u_note", um.el).onclick = async () => { const n = prompt("Mijoz haqida ichki izoh (faqat xodimlar ko'radi):"); if (!n) return; const r = await call("note_add", { p_user_id: id, p_note: n }); if (r.ok === false) return toast(errText(r), true); toast("📝 Saqlandi"); um.el.remove(); userModal(id); };
     if ($("#u_rep", um.el)) $("#u_rep", um.el).onclick = () => { um.el.remove(); crepUser = { id, name: u.name }; go("b:crep"); };
     if ($("#u_prm", um.el)) $("#u_prm", um.el).onclick = async () => { const r = await call("premium_set", { p_user_id: id, p_on: u.premium !== "premium" }); if (r.ok === false) return toast(errText(r), true); toast("⭐ O'zgartirildi"); um.el.remove(); userModal(id); if (UKIND[page]) go(page); };
@@ -1905,7 +2023,13 @@ const CONFIG = {
             (S_ ? '<div class="tiny muted" style="margin-top:6px">Mijozsiz ham sotish mumkin (anonim).</div>' : "") + "</div>") +
         '<div style="margin-top:10px">' + (x.bundles || []).map((b) => '<div class="note t-ok small">📦 «' + esc(b.name) + "» to'plami: −" + som(b.discount) + "</div>").join("") +
         '<div class="sum-row"><span class="muted">' + x.items.length + " ta kitob</span><span>" + som(x.subtotal) + "</span></div>" +
-        (Number(x.discount) ? '<div class="sum-row"><span class="muted">Chegirma</span><span style="color:var(--ok)">−' + som(x.discount) + "</span></div>" : "") +
+        (Number(x.discount) ? '<div class="sum-row"><span class="muted">Chegirma' + (x.manual_used ? " (kassir " + pctF(x.manual_pct) + "%)" : "") + '</span><span style="color:var(--ok)">−' + som(x.discount) + "</span></div>" : "") +
+        (S_ && Number(x.manual_pct) > 0 && !x.manual_used ? '<div class="note t-warn small">Kassir chegirmasi (' + pctF(x.manual_pct) + "%) qo'llanmadi — aksiya yoki to'plam foydaliroq (chegirmalar qo'shilmaydi).</div>" : "") +
+        // 💸 v31 (N07): kassir chegirmasi — faqat sotuvda, chegara ⚙️ kassir_chegirma_max (superadmin — chegarasiz)
+        (S_ && x.items.length && (ME.super || Number(x.manual_max) > 0) ? '<details class="small" style="margin:6px 0"' + (Number(x.manual_pct) ? " open" : "") + '><summary style="cursor:pointer">💸 Chegirma berish' +
+          (ME.super ? "" : " (ko'pi bilan " + pctF(x.manual_max) + "%)") + '</summary><div class="row" style="margin-top:6px;gap:6px"><input class="input" id="mpct" type="number" min="0" max="100" step="1" style="width:80px" value="' +
+          (Number(x.manual_pct) || "") + '" placeholder="%"><input class="input" id="mwhy" style="flex:1" placeholder="Sabab (masalan: eski nusxa)" value="' + esc(x.manual_reason || "") +
+          '"><button class="btn sm" id="mset">OK</button></div><div class="tiny muted">Narx eng past narxdan pastga tushmaydi. Har chegirma jurnalga yoziladi. 0 — olib tashlash.</div></details>' : "") +
         (S_ ? '<label class="row small" style="margin:6px 0"><input type="checkbox" id="gift"' + (x.gift ? " checked" : "") + '> 🎁 Sovg\'a qadog\'i (+' + som(x.gift_price) + ")</label>" : "") +
         (x.staff_free ? '<div class="note t-ok small">👥 Xodim imtiyozi: garovsiz va ijara haqisiz' + (x.staff ? " · imtiyozli kitoblari " + x.staff.staff_active + " / " + x.staff.staff_limit : "") + "</div>" : "") +
         '<div class="sum-row tot"><span>Jami' + (S_ ? "" : " garov") + "</span><span>" + som(x.total) + "</span></div></div>" +
@@ -1966,6 +2090,11 @@ const CONFIG = {
       });
       if (split) mixCalc();
       if ($("#gift")) $("#gift").onchange = async (e) => { await api("cart_gift", { cart_id: x.cart_id, on: e.target.checked }); load(); };
+      if ($("#mset")) $("#mset").onclick = async () => {
+        const r = await api("cart_manual", { cart_id: x.cart_id, pct: Number($("#mpct").value) || 0, reason: $("#mwhy").value.trim() });
+        if (r && r.ok === false) return toast(errText(r) + (r.error === "DISCOUNT_LIMIT" && r.limit != null ? " (ko'pi bilan " + r.limit + "%)" : ""), true);
+        load();
+      };
       if ($("#cclr")) $("#cclr").onclick = () => { pick = true; draw(); setTimeout(() => $("#cq") && $("#cq").focus(), 30); };
       const cq = $("#cq");
       if (cq) cq.oninput = debounce(async () => {
@@ -2282,8 +2411,8 @@ const CONFIG = {
   function loadLib(url) {
     return libs[url] || (libs[url] = new Promise((res, rej) => { const s_ = document.createElement("script"); s_.src = url; s_.onload = res; s_.onerror = () => { delete libs[url]; rej(new Error("lib")); }; document.head.appendChild(s_); }));
   }
-  const QR_LIB = "https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js";
-  const XLSX_LIB = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+  const QR_LIB = "vendor/qrcode-generator.js";
+  const XLSX_LIB = "vendor/xlsx.full.min.js";
   let genresCache = null;
   const genres = async () => genresCache || (genresCache = ((await call("genres_list")).items || []).map((g) => g.name));
   const field = (id, label, val, attrs) => '<label class="col" style="display:flex;flex-direction:column;gap:4px"><span class="small muted">' + label + '</span><input class="input" id="' + id + '" value="' + esc(val == null ? "" : val) + '" ' + (attrs || "") + "></label>";
@@ -3142,6 +3271,88 @@ const CONFIG = {
   };
 
   // 🎉 Giveaway
+
+  // ---------- 🎬 v31 (K11): REKLAMA HIKOYALARI (AI) — saytdan boshqarish; rasmni bot chizadi ----------
+  const RKS = { navbatda: ["🕓 navbatda", "p-gray"], tayyorlanmoqda: ["⚙️ tayyorlanmoqda", "p-warn"], tekshiruvda: ["👀 tasdiq kutmoqda", "p-warn"],
+    tasdiqlangan: ["✅ tasdiqlangan", "p-ok"], joylanmoqda: ["📤 joylanmoqda", "p-warn"], joylangan: ["📣 joylangan", "p-ok"], xato: ["⚠️ xato", "p-red"], bekor: ["❌ bekor", "p-gray"] };
+  let rkTimer = null;
+  VIEWS.rk = async (c) => {
+    clearTimeout(rkTimer);
+    const r = await api("rk_list", {});
+    if (!c.isConnected) return;
+    if (r.ok === false) { c.innerHTML = '<div class="empty">' + esc(errText(r)) + "</div>"; return; }
+    const mon = r.month || {};
+    c.innerHTML = head("🎬 Reklama hikoyalari (AI)", "Rasmni bot chizadi (AI kalitlari bot .env da). Tugma bosilgach bir necha soniya — natija shu yerda yangilanadi. Tasdiqsiz hech narsa joylanmaydi.",
+      '<label class="btn">📥 Excel yuklash<input type="file" id="rkx" accept=".xlsx" hidden></label>') +
+      '<div class="note small">💰 Bu oy AI xarajati: <b>$' + Number(mon.total || 0).toFixed(2) + "</b> / $" + Number(r.limit_usd || 0).toFixed(0) +
+      (Number(r.pending) ? " · ⏳ botda bajarilayotgan buyruqlar: " + r.pending : "") + ' · 📄 Shablon — botda: 🎬 Reklama → 📄 Shablon</div>' +
+      '<div class="card tw" style="margin-top:12px">' + ((r.items || []).length ? "<table><thead><tr><th>#</th><th>Hikoya</th><th>Holat</th><th>Slaydlar</th><th>Joylash vaqti</th><th>Kanal · Insta · Story</th><th></th></tr></thead><tbody>" +
+        r.items.map((x) => "<tr><td>" + x.id + "</td><td><b>" + esc(x.title) + "</b>" + (x.error ? '<div class="tiny" style="color:var(--red)">' + esc(x.error.split("\n")[0]) + "</div>" : "") + "</td>" +
+          '<td><span class="pill ' + (RKS[x.status] || ["", "p-gray"])[1] + '">' + esc((RKS[x.status] || [x.status])[0]) + "</span></td><td>" + x.ready + " / " + x.slides + "</td>" +
+          "<td>" + (x.scheduled_at ? dt(x.scheduled_at, true) : "—") + "</td><td>" + (x.tg_done ? "✅" : "—") + " · " + (x.ig ? "✅" : "—") + " · " + (x.ig_story ? "✅" : "—") + "</td>" +
+          '<td style="text-align:right"><button class="btn sm" data-o="' + x.id + '">Ochish</button></td></tr>').join("") + "</tbody></table>"
+        : '<div class="empty">Hikoya yo\'q — Excel yuklang</div>') + "</div>";
+    $$("[data-o]", c).forEach((b) => b.onclick = () => rkStory(+b.dataset.o, c));
+    $("#rkx", c).onchange = async (e) => {
+      const f = e.target.files && e.target.files[0]; e.target.value = "";
+      if (!f) return;
+      if (f.size > 5 * 1024 * 1024) return toast("Fayl 5 MB dan katta", true);
+      const b64 = await new Promise((ok) => { const rd = new FileReader(); rd.onload = () => ok(rd.result); rd.readAsDataURL(f); });
+      const x = await api("rk_upload", { file: b64 });
+      if (x.ok === false) return toast(errText(x), true);
+      toast("📥 Yuklandi — bot o'qiyapti, natija bir necha soniyada");
+      rkTimer = setTimeout(() => go("rk"), 6000);
+    };
+    if (Number(r.pending) || (r.items || []).some((x) => x.status === "tayyorlanmoqda" || x.status === "joylanmoqda")) rkTimer = setTimeout(() => { if (page === "rk" && c.isConnected) VIEWS.rk(c); }, 8000);
+  };
+  async function rkStory(id, c) {
+    const r = await api("rk_story", { id });
+    if (r.ok === false) return toast(errText(r), true);
+    const st = r.status, sup = !!ME.super;
+    const can_ = (a) => ({ gen: ["navbatda", "tekshiruvda", "tasdiqlangan", "xato"], sch: ["tekshiruvda", "tasdiqlangan"], un: ["tasdiqlangan"],
+      pub: ["tekshiruvda", "tasdiqlangan", "xato"], x: ["navbatda", "tekshiruvda", "tasdiqlangan", "xato"] }[a] || []).includes(st);
+    const ready = (r.slides || []).filter((x) => x.final_path).length, total = (r.slides || []).length;
+    const m = modal("🎬 #" + r.id + " · " + esc(r.title),
+      '<div class="small">Holat: <span class="pill ' + (RKS[st] || ["", "p-gray"])[1] + '">' + esc((RKS[st] || [st])[0]) + "</span> · slaydlar " + ready + "/" + total +
+        " · xarajat $" + Number(r.cost || 0).toFixed(2) + (r.scheduled_at ? " · ⏰ " + dt(r.scheduled_at, true) : "") + "</div>" +
+      (r.error ? '<div class="note t-red small" style="white-space:pre-wrap">' + esc(r.error) + "</div>" : "") +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px">' + (r.slides || []).map((x) =>
+        '<div class="card" style="padding:6px">' + (x.url ? '<a href="' + esc(x.url) + '" target="_blank" rel="noopener"><img src="' + esc(x.url) + '" style="width:100%;border-radius:8px;aspect-ratio:4/5;object-fit:cover"></a>'
+          : '<div class="empty" style="aspect-ratio:4/5;display:grid;place-items:center">' + x.no + "-slayd<br>chizilmagan</div>") +
+        '<div class="tiny" style="margin:4px 0">' + esc(x.dialog || "—") + '</div><div class="row" style="gap:4px"><button class="btn ghost sm" data-ed="' + x.no + '">✏️ Matn</button>' +
+        (can_("gen") || st === "tekshiruvda" ? '<button class="btn ghost sm" data-rs="' + x.no + '">🔄</button>' : "") + "</div></div>").join("") + "</div>" +
+      '<b class="small">📝 Post matni (kanal va Instagram)</b><textarea class="input" id="pt" rows="5" style="width:100%">' + esc(r.post_text || "") + "</textarea>" +
+      '<div class="row"><button class="btn ghost sm" id="pts">💾 Post matnini saqlash</button></div>',
+      '<div class="row" style="gap:6px;flex-wrap:wrap">' +
+        (can_("gen") ? '<button class="btn" data-w="' + (ready && ready < total ? "missing" : "generate") + '">' + (ready && ready < total ? "🔁 Qolgan " + (total - ready) + " ta slaydni chizish" : "🎨 Tayyorlash") + "</button>" : "") +
+        (can_("sch") ? '<button class="btn ok" data-w="schedule">⏰ Jadvaldagi vaqtda</button>' : "") +
+        (can_("un") ? '<button class="btn ghost" data-w="unschedule">↩️ Tasdiqni bekor</button>' : "") +
+        (sup && can_("pub") && ready === total && total ? '<button class="btn ghost" data-w="publish">✅ Hozir joylash</button>' : "") +
+        (sup && can_("gen") ? '<button class="btn ghost" data-w="test">🧪 3 modelda</button>' : "") +
+        (sup && can_("x") ? '<button class="btn ghost" data-w="cancel" style="color:var(--red)">❌ Bekor</button>' : "") + "</div>", true);
+    const req = async (what, extra) => {
+      if (what === "publish" && !confirm("Hozir kanal va Instagram'ga joylansinmi?")) return;
+      if (what === "cancel" && !confirm("Hikoya bekor qilinsinmi?")) return;
+      if ((what === "generate" || what === "missing" || what === "slide" || what === "test") && !confirm("AI rasm chiziladi — pul sarflanadi. Davom etamizmi?")) return;
+      const x = await api("rk_request", Object.assign({ id, what }, extra || {}));
+      if (x.ok === false) return toast(errText(x), true);
+      toast("⏳ Buyruq botga yuborildi — natija bir necha soniyadan keyin shu ro'yxatda");
+      m.close(); VIEWS.rk(c);
+    };
+    $$("[data-w]", m.el).forEach((b) => b.onclick = () => req(b.dataset.w));
+    $$("[data-rs]", m.el).forEach((b) => b.onclick = () => req("slide", { no: +b.dataset.rs }));
+    $$("[data-ed]", m.el).forEach((b) => b.onclick = () => {
+      const sl = (r.slides || []).find((x) => x.no === +b.dataset.ed) || {};
+      const t = prompt(b.dataset.ed + "-slayd matni (AI rasm o'zgarmaydi — bepul). Bo'sh — matnsiz:", sl.dialog || "");
+      if (t === null) return;
+      req("slide_text", { no: +b.dataset.ed, text: t });
+    });
+    $("#pts", m.el).onclick = async () => {
+      const x = await api("rk_post_text", { id, text: $("#pt", m.el).value });
+      if (x.ok === false) return toast(errText(x), true);
+      toast("✅ Post matni saqlandi");
+    };
+  }
   VIEWS["b:gw"] = async (c) => {
     const r = await call("giveaway_list"); if (r.ok === false) return errBox(c, r);
     const it = r.items || [], GS = { qoralama: ["qoralama", "p-gray"], faol: ["faol", "p-ok"], yakunlandi: ["yakunlandi", "p-blue"], bekor: ["bekor", "p-gray"] };
@@ -3411,7 +3622,7 @@ const CONFIG = {
   };
 
   // 🗺 v23: YETKAZISH HUDUDLARI — botdagi zona.html bilan bir xil xarita muharriri (faqat superadmin)
-  const LEAFLET_JS = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js", LEAFLET_CSS = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css";
+  const LEAFLET_JS = "vendor/leaflet/leaflet.js", LEAFLET_CSS = "vendor/leaflet/leaflet.css";
   VIEWS["b:zone"] = async (c) => {
     if (!document.querySelector('link[href="' + LEAFLET_CSS + '"]')) { const l = document.createElement("link"); l.rel = "stylesheet"; l.href = LEAFLET_CSS; document.head.appendChild(l); }
     try { await loadLib(LEAFLET_JS); } catch (e) { c.innerHTML = '<div class="empty">🗺 Xarita kutubxonasi yuklanmadi (internet).</div>'; return; }
@@ -3517,6 +3728,12 @@ const CONFIG = {
   if (S && ME) {
     renderApp();
     api("me").then((r) => { if (r && r.ok !== false && r.telegram_id) { ME = r; S.me = r; store.set(S); } });
+  } else if (webTok()) {                                   // 🌐 v31: rentbooks.uz dan telefon + parol bilan kirgan xodim
+    S = { web: webTok(), exp: Date.now() + 12 * 3600e3 };
+    api("me").then((r) => {
+      if (r && r.ok !== false && r.telegram_id) { ME = r; S.me = r; renderApp(); }
+      else { S = null; renderLogin(r && r.error === "NOT_ADMIN" ? "Bu hisob xodim emas — mijoz kabineti: rentbooks.uz" : null); }
+    });
   } else renderLogin();
 })();
 </script>
