@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <!-- 🔒 v31 (X16): Content-Security-Policy — skriptlar faqat shu saytdan va telegram.org dan; so'rovlar faqat Supabase va xarita xizmatlariga. Server (nginx) ham shu sarlavhani yuboradi -->
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://telegram.org; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co https://nominatim.openstreetmap.org https://router.project-osrm.org https://api.open-meteo.com; frame-src https://oauth.telegram.org https://telegram.org; object-src 'none'; base-uri 'self'; form-action 'self'">
+<link rel="icon" type="image/png" href="admin/icon-192.png">
+<link rel="apple-touch-icon" href="admin/icon-192.png">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex">
 <title>RentBooks</title>
@@ -160,6 +162,13 @@ textarea.field { height: 110px; padding: 12px 14px; resize: vertical; }
 .stars button { background: none; border: 0; font-size: 30px; color: var(--accent-text); padding: 2px 4px; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 .qrbox { background: #fff; padding: 18px; border-radius: 18px; align-self: center; }
+/* 👁 v31 (U05): parolni ko'rsatish tugmasi — har bir parol maydoniga o'zi qo'shiladi */
+.pw-wrap { position: relative; display: block; width: 100%; }
+.pw-wrap > input { width: 100%; padding-right: 48px !important; box-sizing: border-box; }
+.pw-eye { position: absolute; right: 4px; top: 4px; width: 40px; height: 40px; min-height: 0 !important; padding: 0; border: 0; border-radius: 9px; background: none; color: inherit; cursor: pointer; font-size: 18px; line-height: 1; opacity: .65; }
+.pw-eye:hover, .pw-eye:focus-visible { opacity: 1; background: rgba(127,127,127,.12); }
+.pw-caps { display: none; margin-top: 4px; font-size: 12px; font-weight: 600; color: #C2410C; text-align: left; }
+.pw-wrap.caps .pw-caps { display: block; }
 </style>
 </head>
 <body>
@@ -174,7 +183,7 @@ textarea.field { height: 110px; padding: 12px 14px; resize: vertical; }
 const CONFIG = {
   SUPABASE_URL: "https://cyvrjjqzevyqcvxadjay.supabase.co",        // Supabase → Project Settings → Data API → Project URL
   SUPABASE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN5dnJqanF6ZXZ5cWN2eGFkamF5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTExNjI0NTMsImV4cCI6MjEwNjczODQ1M30.cps7FKgc_8btkPswlpRbrGHLtlQOIf7GC2XZlpacLC0",         // Supabase → API Keys → Publishable key (OCHIQ kalit! secret EMAS)
-  BOT_USERNAME: "Kitobijarabot",                               // @ belgisisiz
+  BOT_USERNAME: "Rentbooksuz_Bot",                               // @ belgisisiz
   BRAND_NAME:   "RentBooks",
   LOGO_URL:     "logo.png",
   CHANNEL:      "Rentbooksuz",                                 // rasmiy kanal (@ belgisisiz)
@@ -278,6 +287,9 @@ const CONFIG = {
     TOO_MANY: "Juda tez-tez so'rov. Bir daqiqadan keyin urinib ko'ring.",
     TOO_MANY_PHOTOS: "📷 Rasm chegarasi tugadi (soatiga 5, kuniga 15). Matn bilan yozing yoki keyinroq urinib ko'ring.",
     PHOTO_TOO_BIG: "📷 Rasm juda katta (0.5 MB gacha).",
+    FILE_TOO_BIG: "📄 Fayl 0.5 MB dan katta — qabul qilinmaydi.",
+    BAD_FILE: "📄 Faylni yuborib bo'lmadi. Rasm, skrinshot yoki PDF tanlang (0.5 MB gacha).",
+    BAD_PDF: "🚫 Bu PDF ichida avtomatik ishga tushadigan qism bor — xavfsizlik uchun qabul qilinmaydi. Skrinshot yuboring.",
     WAITLIST: "⚠️ Bu kitobni boshqa mijoz navbatda kutmoqda, shuning uchun uzaytirib bo'lmaydi."
   };
   const errText = (r) => (r && ERR[r.error]) || "⚠️ Amalni bajarib bo'lmadi. Qayta urinib ko'ring yoki «Yordam» bo'limiga yozing.";
@@ -332,7 +344,9 @@ const CONFIG = {
     SMS_SEND: "SMS yuborilmadi. Birozdan keyin urinib ko'ring.", ALREADY_REGISTERED: "Bu raqam ro'yxatdan o'tgan — «Kirish» ni tanlang.",
     NOT_FOUND: "Bu raqam ro'yxatdan o'tmagan.", WRONG_CODE: "Kod noto'g'ri yoki eskirgan.", PW_SHORT: "Parol kamida 8 belgi bo'lsin.",
     WRONG_LOGIN: "Telefon yoki parol noto'g'ri.", LOCKED: "Ko'p xato — 15 daqiqadan keyin urinib ko'ring.", BLOCKED: "Kirish bloklangan. Do'konga murojaat qiling.",
-    NO_NAME: "Ismingizni yozing.", SMS_OFF: "SMS orqali ro'yxatdan o'tish hozircha yopiq. Botda 🆘 Yordam'ga yozing yoki do'konga murojaat qiling — kirish parolini beramiz.", TOO_MANY: "Juda ko'p urinish. Bir daqiqadan keyin urinib ko'ring.", ORIGIN: "Bu saytdan kirib bo'lmaydi."
+    NO_NAME: "Ismingizni yozing.", SMS_OFF: "Bu raqam botimizga bog'lanmagan, SMS esa hozircha yopiq. Botda 🆘 Yordam'ga yozing yoki do'konga murojaat qiling — kirish parolini beramiz.",
+    TG_SEND: "Kodni Telegram botga yuborib bo'lmadi. Botni ochib /start bosing, keyin qayta urinib ko'ring.",
+    NO_TG: "Hisobingiz Telegram botga bog'lanmagan — yangi qurilmadan kirish uchun do'konga murojaat qiling.", TOO_MANY: "Juda ko'p urinish. Bir daqiqadan keyin urinib ko'ring.", ORIGIN: "Bu saytdan kirib bo'lmaydi."
   };
   const authErr = (r) => (r && AUTH_ERR[r.error]) || errText(r);
   function afterLogin(r) {
@@ -344,28 +358,29 @@ const CONFIG = {
   let smsOn = null;                                       // SMS xizmati (Eskiz) ulanganmi — darvozadan bir marta so'raladi
   async function openLogin(mode) {
     if (smsOn === null) { const c = await api("auth_config", {}); smsOn = !!(c && c.sms); }
-    if (!smsOn && (mode === "register" || mode === "reset")) {
+    const viaAdmin = (mode) => {
       sheet('<div class="h2">' + (mode === "register" ? "📝 Ro'yxatdan o'tish" : "♻️ Parolni tiklash") + '</div>' +
         '<p class="muted" style="margin:0">Hozircha saytga kirish paroli do\'kon orqali beriladi (SMS xizmati tez orada ulanadi).</p>' +
         '<p style="margin:0">🤖 Botda <b>🆘 Yordam</b>ga «Saytga kirish kerak» deb yozing yoki do\'konga murojaat qiling — admin vaqtinchalik parol beradi. Birinchi kirishda o\'z parolingizni o\'rnatasiz.</p>' +
         '<div class="row" style="gap:8px"><button class="btn" id="tobot">Botga o\'tish</button><button class="btn ghost" id="tologin">Parolim bor — kirish</button></div>',
         (el) => { $("#tobot", el).onclick = () => goBot("start"); $("#tologin", el).onclick = () => openLogin("login"); });
-      return;
-    }
-    let phone = "";
+    };
+    let phone = "", devVia = "telegram";
     const field = (id, label, type, ph) => '<label class="col" style="gap:4px"><span class="small muted">' + label + '</span><input id="' + id + '" type="' + type + '" placeholder="' + (ph || "") + '" style="padding:12px;border-radius:12px;border:1px solid var(--line);font-size:16px"></label>';
     const draw = (m) => {
       const T = { login: "🔑 Kirish", register: "📝 Ro'yxatdan o'tish", reset: "♻️ Parolni tiklash", device: "📱 Yangi qurilma", change: "🔐 Yangi parol" }[m];
       let h = '<div class="h2">' + T + "</div>";
       if (m === "login") h += field("ph", "Telefon", "tel", "90 123 45 67") + field("pw", "Parol", "password") +
         '<button class="btn" id="go">Kirish</button><div class="row between small"><a href="#" id="toreg">Ro\'yxatdan o\'tish</a><a href="#" id="torst">Parolni unutdim</a></div>' +
-        (smsOn ? "" : '<span class="tiny muted">Parol yo\'qmi? Botda 🆘 Yordam\'ga yozing yoki do\'konga murojaat qiling — admin beradi.</span>');
+        '<span class="tiny muted">🤖 Kodlar Telegram\'dagi @' + esc(CONFIG.BOT_USERNAME) + ' botimizga keladi' + (smsOn ? " (botda bo\'lmasangiz — SMS)" : "") + '. Botda bo\'lmasangiz — do\'konga murojaat qiling.</span>';
       if (m === "register" || m === "reset") h += field("ph", "Telefon", "tel", "90 123 45 67") +
-        '<button class="btn ghost" id="sms">SMS kod olish</button>' + '<div id="step2" style="display:none" class="col">' + field("cd", "SMS kod", "text", "6 xonali") +
+        '<button class="btn ghost" id="sms">Kod olish</button>' + '<div id="step2" style="display:none" class="col">' + field("cd", "Kod", "text", "6 xonali") +
         (m === "register" ? field("nm", "Ismingiz (botda bo'lmasangiz)", "text") : "") + field("pw", "Yangi parol (kamida 8 belgi)", "password") +
         '<button class="btn" id="go">' + (m === "register" ? "Ro'yxatdan o'tish" : "Saqlash") + "</button></div>" +
-        '<span class="small muted">SMS faqat ro\'yxatdan o\'tish va parolni tiklash uchun (kuniga 2, haftasiga 5 ta). Keyin kirish — parol bilan, bepul.</span>';
-      if (m === "device") h += '<span class="small muted">Xodim hisobi yangi qurilmadan kirmoqda — xavfsizlik uchun kod ' + (smsOn ? "SMS bilan" : "<b>botimiz orqali Telegram'ingizga</b>") + ' yuborildi.</span>' + field("cd", "Kod", "text") + '<button class="btn" id="go">Tasdiqlash</button>';
+        '<span class="small muted">Kod botimizga bog\'langan raqamga <b>Telegram\'dagi @' + esc(CONFIG.BOT_USERNAME) + '</b> orqali keladi' + (smsOn ? ", aks holda SMS bilan (kuniga 2, haftasiga 5 ta)" : "") + '. Keyin kirish — parol bilan.</span>';
+      if (m === "device") h += '<span class="small muted">🔐 Yangi qurilmadan kirilmoqda — xavfsizlik uchun tasdiq kodi ' + (devVia === "sms" ? "SMS bilan" : "<b>Telegram\'dagi @" + esc(CONFIG.BOT_USERNAME) + " botimizga</b>") + ' yuborildi.</span>' + field("cd", "Kod", "text", "6 xonali") + '<button class="btn" id="go">Tasdiqlash</button>' +
+        '<div class="row between small"><a href="#" id="resend">Kodni qayta yuborish</a><a href="#" id="tobotd">Botni ochish</a></div>' +
+        '<span class="tiny muted">Bir marta tasdiqlangan qurilmadan 30 kun davomida kod so\'ralmaydi.</span>';
       if (m === "change") h += '<span class="small muted">Vaqtinchalik parol bilan kirdingiz — o\'zingizning parolingizni o\'rnating.</span>' + field("old", "Hozirgi (vaqtinchalik) parol", "password") + field("pw", "Yangi parol (kamida 8 belgi)", "password") + '<button class="btn" id="go">Saqlash</button>';
       return h;
     };
@@ -377,9 +392,19 @@ const CONFIG = {
       if ($("#sms", el)) $("#sms", el).onclick = async () => {
         phone = v("ph");
         const r = await api("auth_sms", { phone, purpose: m === "register" ? "register" : "reset" });
+        if (r && r.error === "SMS_OFF") return viaAdmin(m);           // botga bog'lanmagan raqam, SMS yopiq — admin orqali
         if (!r.ok) return toast(authErr(r));
-        phone = r.phone; $("#step2", el).style.display = ""; $("#sms", el).style.display = "none"; toast("📩 Kod yuborildi");
+        phone = r.phone; $("#step2", el).style.display = ""; $("#sms", el).style.display = "none";
+        toast(r.via === "telegram" ? "📩 Kod Telegram'dagi botimizga yuborildi" : "📩 Kod SMS bilan yuborildi");
       };
+      if ($("#resend", el)) $("#resend", el).onclick = async (e) => {     // qayta yuborish = parol bilan qayta kirish (kod o'zi ketadi)
+        e.preventDefault();
+        const r = await api("auth_login", { phone, password: pwKeep, device: devId() });
+        if (r && r.error === "NEED_DEVICE_CODE") { devVia = r.via || devVia; return toast("📩 Yangi kod yuborildi"); }
+        if (r && r.ok) return afterLogin(r);
+        toast(authErr(r));
+      };
+      if ($("#tobotd", el)) $("#tobotd", el).onclick = (e) => { e.preventDefault(); goBot("start"); };
       $("#go", el).onclick = async () => {
         let r;
         if (m === "login") { phone = v("ph"); pwKeep = $("#pw", el).value; r = await api("auth_login", { phone, password: pwKeep, device: devId() }); }
@@ -390,10 +415,8 @@ const CONFIG = {
           if (r.ok) { toast("✅ Parol saqlandi"); closeSheet();
             const s2 = await api("auth_session", {}); if (s2 && s2.ok && s2.staff) { location.href = "admin/"; }   // 👮 xodim — admin panelga
             return; } }
-        if (r && r.error === "NEED_DEVICE_CODE") {
-          const s2 = await api("auth_sms", { phone: r.phone || phone, purpose: "device" });
-          if (!s2.ok) return toast(authErr(s2));
-          phone = s2.phone; return open("device");
+        if (r && r.error === "NEED_DEVICE_CODE") {           // 🤖 v31 (U06): kod parol tekshirilgach darvozaning o'zi yuborgan
+          phone = r.phone || phone; devVia = r.via || "telegram"; return open("device");
         }
         if (!r || !r.ok) return toast(authErr(r));
         afterLogin(r);
@@ -1427,19 +1450,30 @@ const CONFIG = {
       // 📷 rasm tanlanganda DARHOL yuborilmaydi: tepada kichik ko'rinishi chiqadi, matn yoziladi, «Yuborish» — ikkalasi birga
       let fi = document.getElementById("sosfi");                    // v20: har ochilganda yangisi qo'shilmaydi
       if (fi) fi.remove();
-      fi = document.createElement("input"); fi.id = "sosfi"; fi.type = "file"; fi.accept = "image/*"; fi.style.display = "none"; document.body.appendChild(fi);
-      let photo = null;
+      fi = document.createElement("input"); fi.id = "sosfi"; fi.type = "file"; fi.accept = "image/*,application/pdf,.pdf"; fi.style.display = "none"; document.body.appendChild(fi);
+      // 🆘 v31 (U04): rasm (skrinshot) yoki PDF — 0.5 MB gacha. APK, ZIP va boshqa fayllar tanlanmaydi
+      let photo = null, pdf = null;
       const prev = document.createElement("div"); prev.style.cssText = "display:none;max-width:560px;margin:0 auto 8px;align-items:center;gap:10px";
       $(".foot").insertBefore(prev, $(".foot .in"));
       const drawPrev = () => {
-        prev.style.display = photo ? "flex" : "none";
+        prev.style.display = photo || pdf ? "flex" : "none";
         prev.innerHTML = photo ? '<img src="' + photo + '" alt="" style="width:54px;height:54px;object-fit:cover;border-radius:10px;border:1px solid var(--line)">' +
-          '<span class="small muted" style="flex:1">Rasm biriktirildi — izoh yozib, «Yuborish»ni bosing</span><button class="iconbtn" id="rmp" aria-label="Rasmni olib tashlash" style="width:38px;height:38px">✕</button>' : "";
-        if (photo) $("#rmp").onclick = () => { photo = null; drawPrev(); };
+          '<span class="small muted" style="flex:1">Rasm biriktirildi — izoh yozib, «Yuborish»ni bosing</span><button class="iconbtn" id="rmp" aria-label="Rasmni olib tashlash" style="width:38px;height:38px">✕</button>'
+          : pdf ? '<span style="width:54px;height:54px;display:grid;place-items:center;font-size:28px;border-radius:10px;border:1px solid var(--line)">📄</span>' +
+          '<span class="small muted" style="flex:1;min-width:0;overflow-wrap:anywhere">' + esc(pdf.name) + " · " + Math.ceil(pdf.size / 1024) + ' KB — izoh yozib, «Yuborish»ni bosing</span><button class="iconbtn" id="rmp" aria-label="PDF ni olib tashlash" style="width:38px;height:38px">✕</button>' : "";
+        if (photo || pdf) $("#rmp").onclick = () => { photo = null; pdf = null; drawPrev(); };
       };
       $("#att").onclick = () => fi.click();
       fi.onchange = async () => {
         const f = fi.files && fi.files[0]; fi.value = ""; if (!f) return;
+        if (f.type === "application/pdf" || /\.pdf$/i.test(f.name)) {
+          if (f.size > 512 * 1024) { toast("📄 PDF 0.5 MB dan katta — qabul qilinmaydi"); return; }
+          const data = await new Promise((ok) => { const rd = new FileReader(); rd.onload = () => ok(String(rd.result || "")); rd.onerror = () => ok(""); rd.readAsDataURL(f); });
+          let head = ""; try { head = atob(data.split(",")[1] || "").slice(0, 5); } catch (e) {}
+          if (head !== "%PDF-") { toast("Bu fayl PDF emas"); return; }
+          photo = null; pdf = { name: f.name, size: f.size, data: "data:application/pdf;base64," + data.split(",")[1] }; drawPrev(); $("#msg").focus(); return;
+        }
+        if (!/^image\//.test(f.type)) { toast("Faqat rasm (skrinshot) yoki PDF yuborish mumkin"); return; }
         try {
           const img = await new Promise((ok, no) => { const im = new Image(); im.onload = () => ok(im); im.onerror = no; im.src = URL.createObjectURL(f); });
           // 🔒 v31: rasm 0.5 MB dan oshmasin — avval sifat, keyin o'lcham kamaytiriladi
@@ -1454,15 +1488,15 @@ const CONFIG = {
             if (q > 0.55) q -= 0.1; else side = Math.round(side * 0.8);
           }
           if (!out || out.length > MAXB64) { toast("Rasm juda katta (0.5 MB gacha)"); return; }
-          photo = out; drawPrev(); $("#msg").focus();
+          photo = out; pdf = null; drawPrev(); $("#msg").focus();
         } catch (e) { toast("Rasmni o'qib bo'lmadi"); }
       };
       const send = async () => {
-        const t = $("#msg").value.trim(); if (t.length < 2 && !photo) return;
+        const t = $("#msg").value.trim(); if (t.length < 2 && !photo && !pdf) return;
         $("#snd").disabled = true;
-        const r = await api("sos_send", { text: "[" + topic + "] " + (t || "rasm"), image: photo || undefined });
+        const r = await api("sos_send", { text: "[" + topic + "] " + (t || (pdf ? "pdf" : "rasm")), image: photo || undefined, pdf: pdf ? pdf.data : undefined });
         $("#snd").disabled = false;
-        if (r.ok) { $("#msg").value = ""; photo = null; drawPrev(); haptic("ok"); loadChat(); } else toast(errText(r));
+        if (r.ok) { $("#msg").value = ""; photo = null; pdf = null; drawPrev(); haptic("ok"); loadChat(); } else toast(errText(r));
       };
       $("#snd").onclick = send; $("#msg").onkeydown = (e) => { if (e.key === "Enter") send(); };
     });
@@ -1474,7 +1508,7 @@ const CONFIG = {
     if (!d.ok) { if (!quiet) box.innerHTML = '<div class="card muted">' + esc(errText(d)) + "</div>"; return; }
     const items = d.items || [];
     if (!items.length) { box.innerHTML = '<div class="empty">Savol, taklif yoki muammoingizni yozing — adminlarimiz javob beradi.</div>'; return; }
-    box.innerHTML = items.map((t) => '<div class="bubble me">' + (t.photo ? "📷 " : "") + esc(t.text) + '<div class="tiny" style="color:var(--muted);margin-top:4px;text-align:right">' + dt(t.at, true) + "</div></div>" +
+    box.innerHTML = items.map((t) => '<div class="bubble me">' + (t.photo ? (/\.pdf$/i.test(t.photo_path || "") || /\[pdf\]/.test(t.text || "") ? "📄 " : "📷 ") : "") + esc(t.text) + '<div class="tiny" style="color:var(--muted);margin-top:4px;text-align:right">' + dt(t.at, true) + "</div></div>" +
       (t.answers || []).map((a) => '<div class="bubble them">' + esc(a.text) + (String(a.text || "").length >= 120 ? "…" : "") + '<div class="tiny muted" style="margin-top:4px">RentBooks · ' + esc(a.at || "") + "</div></div>").join("") +
       ((t.answers || []).length && t.rating == null && !t.parent ? '<div class="card col" style="align-self:flex-start;gap:8px"><span class="small" style="color:var(--soft)">Javob yordam berdimi?</span><div class="row">' +
         '<button class="btn ghost sm" data-rt="1" data-id="' + t.id + '">Ha, rahmat</button><button class="btn ghost sm" data-rt="-1" data-id="' + t.id + '">Yo\'q</button></div></div>' : "")).join("") +
@@ -1643,6 +1677,40 @@ const CONFIG = {
   }
   start();
 })();
+  // 👁 v31 (U05): har bir parol/PIN maydoniga «ko'rsatish» tugmasi + Caps Lock ogohlantirishi.
+  //   Ko'rsatilgan parol 30 soniyadan keyin, maydondan chiqilganda yoki forma yuborilganda o'zi yashiriladi.
+  (function () {
+    const enh = (inp) => {
+      if (inp.dataset.eye) return; inp.dataset.eye = "1";
+      const w = document.createElement("span"); w.className = "pw-wrap";
+      inp.parentNode.insertBefore(w, inp); w.appendChild(inp);
+      const b = document.createElement("button"); b.type = "button"; b.className = "pw-eye";
+      w.appendChild(b);
+      const numeric = (inp.getAttribute("inputmode") || "") === "numeric";
+      let cap = null;
+      if (!numeric) { cap = document.createElement("span"); cap.className = "pw-caps"; cap.textContent = "⇪ Caps Lock yoqilgan"; w.appendChild(cap); }
+      let t = null;
+      const set = (show) => {
+        inp.type = show ? "text" : "password"; b.textContent = show ? "🙈" : "👁";
+        const l = show ? "Parolni yashirish" : "Parolni ko'rsatish"; b.title = l; b.setAttribute("aria-label", l);
+        clearTimeout(t); if (show) t = setTimeout(() => set(false), 30000);
+      };
+      set(false);
+      b.addEventListener("mousedown", (e) => e.preventDefault());          // bosilganda maydon fokusini yo'qotmasin
+      b.addEventListener("click", () => { set(inp.type === "password"); inp.focus(); });
+      inp.addEventListener("blur", () => setTimeout(() => { if (document.activeElement !== b && document.activeElement !== inp) set(false); }, 120));
+      if (cap) {
+        const ck = (e) => { if (e.getModifierState) w.classList.toggle("caps", !!e.getModifierState("CapsLock")); };
+        inp.addEventListener("keydown", ck); inp.addEventListener("keyup", ck); inp.addEventListener("blur", () => w.classList.remove("caps"));
+      }
+      if (inp.form) inp.form.addEventListener("submit", () => set(false));
+    };
+    const scan = () => document.querySelectorAll('input[type="password"]:not([data-eye])').forEach(enh);
+    let q = 0;
+    if (window.MutationObserver) new MutationObserver(() => { if (!q) q = requestAnimationFrame(() => { q = 0; scan(); }); })
+      .observe(document.documentElement, { childList: true, subtree: true });
+    scan();
+  })();
 </script>
 </body>
 </html>
