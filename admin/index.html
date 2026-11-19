@@ -75,14 +75,14 @@ body[data-mode="light"][data-wx="night"] { --side: #283247; --side2: #323D55; --
 body[data-wx="night"] .side, body[data-mode="dark"] .side { --wxp-s: rgba(255,255,255,.6); }
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; }
-body { background: var(--bg); color: var(--ink); font: 400 15px/1.55 Inter, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+body { background: var(--bg); color: var(--ink); font: 400 15px/1.55 Inter, -apple-system, "Segoe UI", Roboto, Arial, sans-serif, "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji"; -webkit-font-smoothing: antialiased; }
 b, strong { font-weight: 600; }
 button, input, select, textarea { font: inherit; color: inherit; }
 a { color: var(--blue); text-decoration: none; }
 .hidden { display: none !important; }
 
 /* ---------- tuzilma ---------- */
-.app { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+.app { display: grid; grid-template-columns: clamp(240px, 15vw, 290px) minmax(0, 1fr); min-height: 100vh; }
 .side { background: var(--side); color: var(--side-ink); display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
 .brand { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--side-line); }
 .brand img { width: 40px; height: 40px; border-radius: 50%; flex: none; box-shadow: 0 0 0 2px var(--side-line); }
@@ -93,7 +93,7 @@ a { color: var(--blue); text-decoration: none; }
 .nav.on { background: var(--side2); box-shadow: inset 3px 0 0 var(--side-acc); color: var(--side-ink); font-weight: 600; }
 .nav.on svg { color: var(--side-acc); opacity: 1; }
 .nav svg { flex: none; opacity: .85; }
-.nav > span:first-of-type { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.nav > span:first-of-type { white-space: normal; overflow-wrap: anywhere; line-height: 1.25; min-width: 0; }
 .nav .badge { margin-left: auto; background: var(--acc); color: var(--acc-ink); border-radius: 10px; padding: 0 7px; font-size: 11.5px; font-weight: 650; }
 .sgroup.tg { display: flex; align-items: center; gap: 8px; width: calc(100% - 16px); margin: 6px 8px 0; padding: 9px 10px; border: 0; border-radius: 9px; background: none; cursor: pointer; text-align: left; }
 .sgroup.tg:hover { color: var(--side-ink); background: var(--side-chip); }
@@ -187,13 +187,55 @@ body.wxpause .wx, body.nowx .wx { display: none; }
 .qbar .qt.on { opacity: 1; border-color: var(--cc); background: var(--card); box-shadow: 0 1px 6px rgba(0,0,0,.08); }
 .qbar .qt i { width: 18px; height: 18px; border-radius: 6px; background: var(--cc); color: #fff; font-style: normal; font-size: 11px; font-weight: 600; display: grid; place-items: center; }
 .cart-head { border-left: 6px solid var(--cc); padding-left: 12px; }
+/* 🔍 v31 (U02): brauzer zoom (67%–175%) — yuqori panel siqilmasin, hech narsa kesilmasin; kam muhimlari tor ekranda yashiriladi */
+.top { min-height: 58px; height: auto; flex-wrap: nowrap; }
+.top > .crumb { flex: 0 1 auto; max-width: 260px; white-space: nowrap; overflow: hidden; }
+.top > .crumb > * { white-space: nowrap; }
+.top > .qbar { flex: 1 1 auto; min-width: 0; }
+@media (min-width: 901px) { .top > .qbar { scrollbar-width: thin; } }
+.top > .chip, .top > .btn, .top > .season, .top > a.btn { flex: none; white-space: nowrap; }
+.top > .user { flex: none; }
+.ubtn b, .ubtn span { white-space: nowrap; }
+@media (max-width: 1700px) { .top > .season:not(.wxchip) { display: none; } .storechip .tt { display: none; } .storechip { padding: 4px; } }
+@media (max-width: 1450px) { .top > .crumb { display: none; } .shopbtn .tt, .instbtn .tt { display: none; } .qbar .qt .nm { display: none; } }
+@media (max-width: 1300px) { .cart-wm { display: none; } }
+@media (max-width: 1200px) and (min-width: 901px) { .ubtn > div:first-child { display: none; } }
+/* 🛒/📖 v31 (U01): sotuv va ijara savatlari — har biri o'z rangida, adashmaslik uchun */
+:root { --t-sotuv: #1E9A5B; --t-ijara: #2F64D6; }
+.qbar .qb.new[data-qnew="sotuv"] { border-color: var(--t-sotuv); color: var(--t-sotuv); }
+.qbar .qb.new[data-qnew="ijara"] { border-color: var(--t-ijara); color: var(--t-ijara); }
+.qbar .qb.new[data-qnew="sotuv"]:hover { background: color-mix(in srgb, var(--t-sotuv) 12%, var(--card)); }
+.qbar .qb.new[data-qnew="ijara"]:hover { background: color-mix(in srgb, var(--t-ijara) 12%, var(--card)); }
+.qbar .qt { background: color-mix(in srgb, var(--cc) 9%, var(--bg)); }
+.qbar .qt.on { background: color-mix(in srgb, var(--cc) 14%, var(--card)); }
+.qbar .qt b.tk { font-size: 10.5px; font-weight: 800; letter-spacing: .06em; color: var(--cc); }
+.ctype { display: inline-flex; align-items: center; gap: 6px; padding: 3px 12px; border-radius: 999px; background: var(--cc); color: #fff; font-size: 15px; font-weight: 800; letter-spacing: .08em; vertical-align: middle; }
+.ctype-note { display: inline-block; margin-left: 8px; font-size: 13px; font-weight: 600; color: var(--cc); vertical-align: middle; }
+.cart-page .cart-grid > .col > .card:first-child, .cart-page .cart-grid > .card { border-top: 3px solid var(--cc); }
+.cart-wm { position: fixed; right: 3vw; bottom: 11vh; z-index: 0; pointer-events: none; user-select: none; text-align: right; color: var(--cc); opacity: .11; line-height: .9; }
+.cart-wm b { display: block; font-size: clamp(72px, 12vw, 230px); font-weight: 900; letter-spacing: .02em; }
+.cart-wm span { display: block; font-size: clamp(14px, 1.6vw, 30px); font-weight: 800; letter-spacing: .04em; margin-top: 6px; }
+.cart-wm ~ * { position: relative; z-index: 1; }
+@media (min-width: 900px) { .cart-page .cart-head { flex-wrap: nowrap; align-items: flex-start; } .cart-page .cart-head > div { flex: 1; min-width: 0; } .cart-page .cart-head > .btn { flex: none; } }
+body[data-mode="dark"] .cart-wm { opacity: .16; }
+/* 👫 v31 (U03): reklama qahramonlari */
+.cp-grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); margin-top: 12px; }
+.cp-card.drop { outline: 2px dashed var(--blue); outline-offset: 2px; }
+.cp-imgs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.cp-img { position: relative; aspect-ratio: 3 / 4; border-radius: 10px; overflow: hidden; background: var(--bg); border: 1px solid var(--line); display: grid; place-items: center; }
+.cp-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cp-x { position: absolute; top: 3px; right: 3px; width: 22px; height: 22px; min-height: 0 !important; padding: 0; border: 0; border-radius: 50%; background: rgba(0,0,0,.55); color: #fff; font-size: 11px; cursor: pointer; }
+.cp-add { cursor: pointer; border-style: dashed; color: var(--mut); font-size: 22px; line-height: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+.cp-add:hover { color: var(--blue); border-color: var(--blue); }
+.cp-tg { font-size: 13px; color: var(--mut); text-align: center; }
+.cp-desc { margin-top: 6px; color: var(--soft); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .scanflash { animation: scanflash .7s ease; }
 @keyframes scanflash { 0% { box-shadow: 0 0 0 0 var(--cc); } 40% { box-shadow: 0 0 0 6px var(--cc); } 100% { box-shadow: 0 0 0 0 transparent; } }
 .crumb b { color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .crumb i { font-style: normal; color: var(--soft); }
 .season { font-size: 12px; font-weight: 600; border-radius: 20px; padding: 4px 10px; background: var(--bg); color: var(--mut); white-space: nowrap; }
 .user b { display: block; font-size: 13px; } .user span { font-size: 11.5px; color: var(--mut); }
 .burger { display: none; }
-.content { padding: 22px; max-width: 1400px; width: 100%; }
+.content { padding: 22px; width: 100%; max-width: none; }
 h1 { font-size: 20px; margin: 0 0 4px; } .sub { color: var(--mut); margin: 0 0 18px; font-size: 13px; }
 
 /* ---------- elementlar ---------- */
@@ -372,6 +414,13 @@ body[data-holiday] .login { background: var(--hero); }
   .bnav button.on { color: var(--acc, #1B2E6E); }
   .bnav button svg { width: 22px; height: 22px; }
 }
+/* 👁 v31 (U05): parolni ko'rsatish tugmasi — har bir parol maydoniga o'zi qo'shiladi */
+.pw-wrap { position: relative; display: block; width: 100%; }
+.pw-wrap > input { width: 100%; padding-right: 48px !important; box-sizing: border-box; }
+.pw-eye { position: absolute; right: 4px; top: 4px; width: 40px; height: 40px; min-height: 0 !important; padding: 0; border: 0; border-radius: 9px; background: none; color: inherit; cursor: pointer; font-size: 18px; line-height: 1; opacity: .65; }
+.pw-eye:hover, .pw-eye:focus-visible { opacity: 1; background: rgba(127,127,127,.12); }
+.pw-caps { display: none; margin-top: 4px; font-size: 12px; font-weight: 600; color: #C2410C; text-align: left; }
+.pw-wrap.caps .pw-caps { display: block; }
 </style>
 </head>
 <body>
@@ -381,7 +430,7 @@ body[data-holiday] .login { background: var(--hero); }
 /* ⚙️ SOZLASH — 2 qator (javon.html dagi bilan bir xil Supabase manzili) */
 const CONFIG = {
   SUPABASE_URL: "https://cyvrjjqzevyqcvxadjay.supabase.co",   // Supabase → Project Settings → Data API → Project URL
-  BOT_USERNAME: "Kitobijarabot",                         // @ belgisisiz. BotFather → /setdomain → shu sayt manzili
+  BOT_USERNAME: "Rentbooksuz_Bot",                         // @ belgisisiz. BotFather → /setdomain → shu sayt manzili
   IDLE_MINUTES: 45,                                      // shuncha daqiqa harakatsizlikdan keyin avtomatik chiqadi
 };
 (function () {
@@ -400,6 +449,7 @@ const CONFIG = {
     return p(t.getDate()) + "." + p(t.getMonth() + 1) + (short ? "" : "." + t.getFullYear()) + " " + p(t.getHours()) + ":" + p(t.getMinutes());
   };
   const ERR = {
+    BAD_KEY: "Kalit noto'g'ri: lotin kichik harf, raqam yoki _ (2–30 belgi).", KEY_EXISTS: "Bu kalit band — boshqasini yozing.", MAX_4: "Ko'pi bilan 4 ta rasm.", NO_NAME: "Nomini yozing (kamida 2 belgi).", BAD_FILE: "Faylni yuklab bo'lmadi (rasm: jpg, png, webp; 5 MB gacha).",
     LOGIN: "Sessiya tugadi — qayta kiring.", NOT_ADMIN: "⛔ Siz xodimlar ro'yxatida yo'qsiz (👥 adminlar → faol).",
     BAD_SIGN: "🔐 Telegram imzosi tasdiqlanmadi. Qayta urinib ko'ring.", RUXSAT_YOQ: "⛔ Bu amal uchun vakolatingiz yo'q (👥 adminlar galochkasi).",
     ADMIN_BLOK: "⛔ Siz bloklangansiz (PIN). Superadminga murojaat qiling.", TOO_MANY: "⏳ Juda tez — biroz kuting.",
@@ -681,13 +731,11 @@ const CONFIG = {
       '<div class="small">👋 <b>' + esc(r.name || "") + "</b>, " + (first ? "saytga kirish uchun <b>shaxsiy parol</b> o'rnating (birinchi marta)." : "parolingizni kiriting.") + "</div>" +
       '<input class="input" type="password" id="pw1" autocomplete="' + (first ? "new-password" : "current-password") + '" placeholder="' + (first ? "Yangi parol (kamida 8 belgi, harf + raqam)" : "Parol") + '" style="width:100%">' +
       (first ? '<input class="input" type="password" id="pw2" autocomplete="new-password" placeholder="Parolni takrorlang" style="width:100%">' : "") +
-      '<label class="row tiny muted"><input type="checkbox" id="pwv"> Parolni ko\'rsatish</label>' +
       '<div id="pwe" class="small" style="color:var(--red);min-height:18px"></div>' +
       '<button class="btn" id="pwb" type="submit" style="width:100%">' + (first ? "🔑 Parolni saqlab kirish" : "Kirish") + "</button>" +
       (first ? "" : '<div class="tiny muted">Parolni unutdingizmi? Superadmin botda tiklaydi: 💼 Mening hisobim → 🔑 Xodimlarning sayt paroli.</div>') + "</form>";
     if (box) { const n = box.querySelector(".note"); if (n) n.remove(); }
     setTimeout(() => $("#pw1").focus(), 30);
-    $("#pwv").onchange = (e) => $$("#pw1,#pw2").forEach((x) => x.type = e.target.checked ? "text" : "password");
     $("#pwf").onsubmit = async (e) => {
       e.preventDefault();
       const p1 = $("#pw1").value, err = (t) => { $("#pwe").textContent = t; };
@@ -791,7 +839,7 @@ const CONFIG = {
       if (g.g) nav += '<button class="sgroup tg' + (op ? " open" : " shut") + '" data-g="' + esc(g.g) + '"><span class="gic">' + (GIC[g.g] || "•") + "</span><span>" + esc(g.g) + '</span><span class="tiny" style="opacity:.6">' + its.length + "</span><i>▾</i></button>";
       nav += '<div class="gitems" data-gi="' + esc(g.g) + '"' + (op ? "" : ' style="display:none"') + ">" + its.map((x) => {
         const bot = !VIEWS[x[0]];                     // sahifasi yo'q — hozircha faqat botda
-        return '<button class="nav' + (bot ? " dim" : "") + '" data-page="' + x[0] + '" data-t="' + esc(x[1].toLowerCase()) + '">' + IC[x[2]] + "<span>" + esc(x[1]) + "</span>" +
+        return '<button class="nav' + (bot ? " dim" : "") + '" data-page="' + x[0] + '" title="' + esc(x[1]) + '" data-t="' + esc(x[1].toLowerCase()) + '">' + IC[x[2]] + "<span>" + esc(x[1]) + "</span>" +
           (x[0] === "pending" ? '<span class="badge hidden" id="pbadge">0</span>' : "") + (bot ? '<span class="bot">bot</span>' : "") + "</button>";
       }).join("") + "</div>";
     });
@@ -801,9 +849,9 @@ const CONFIG = {
       nav + '<div class="side-foot">' + se.e + " " + se.t + " · kitob ijarasi</div></aside>" +
       '<div class="main"><header class="top"><button class="btn ghost sm burger" id="burger">' + IC.menu + "</button>" +
       '<div class="crumb" id="crumb"></div>' + '<div class="qbar" id="qbar"></div>' +
-      '<span class="chip"><span class="ab">🏬</span>' + esc(ME.store ? ME.store.name : "Asosiy do'kon") + "</span>" +
-      '<a class="btn ghost sm shopbtn" href="../javon.html" title="Do\'konni mijoz sifatida ochish">🛍 Mijoz sifatida</a>' +
-      '<button class="btn ghost sm instbtn" id="instbtn" title="Kompyuterga ilova qilib o\'rnatish (Pusk va vazifalar paneliga)">💻 O\'rnatish</button>' +
+      '<span class="chip storechip" title="' + esc(ME.store ? ME.store.name : "Asosiy do'kon") + '"><span class="ab">🏬</span><span class="tt">' + esc(ME.store ? ME.store.name : "Asosiy do'kon") + "</span></span>" +
+      '<a class="btn ghost sm shopbtn" href="../javon.html" title="Do\'konni mijoz sifatida ochish">🛍<span class="tt"> Mijoz sifatida</span></a>' +
+      '<button class="btn ghost sm instbtn" id="instbtn" title="Kompyuterga ilova qilib o\'rnatish (Pusk va vazifalar paneliga)">💻<span class="tt"> O\'rnatish</span></button>' +
       '<button class="btn ghost sm" id="reload" title="Yangilash">' + IC.refresh + "</button>" +
       '<span class="season" title="Mavzu fasl va bayramlar bo\'yicha o\'zgaradi">' + (holOn() ? esc(holText()) : se.e + " " + se.t) + "</span>" +
       '<span class="season wxchip hidden" id="wxchip"></span>' +
@@ -1886,7 +1934,8 @@ const CONFIG = {
       DOCK.items.filter((x) => x.kind === "support").slice(0, 10).map((x) => '<div class="dn old"><div class="tiny muted">' + dt(x.at, true) + '</div><div class="small">' + safeHtml(x.body) + "</div></div>").join("");
     const c_ = DOCK.cur, u = c_.user || {};
     return '<div class="small"><b>' + esc(u.name || "") + '</b> <span class="muted">' + esc(u.user_code || "") + " · " + esc(u.phone || "") + "</span></div>" +
-      (c_.messages || []).map((m_) => '<div class="dmsg"><div class="tiny muted">' + dt(m_.at, true) + "</div>" + esc(m_.text || "") + (m_.photo ? ' <span class="tiny">📷 rasm — botda ko\'ring</span>' : "") + "</div>" +
+      (c_.messages || []).map((m_) => '<div class="dmsg"><div class="tiny muted">' + dt(m_.at, true) + "</div>" + esc(m_.text || "") + (m_.url ? ' <a class="tiny" href="' + esc(m_.url) + '" target="_blank" rel="noopener noreferrer">' + (m_.pdf ? "📄 PDF ni ochish" : "📷 Rasmni ochish") + "</a>" + (m_.pdf ? ' <span class="tiny muted">(faqat ishonchli dasturda)</span>' : "")
+          : m_.photo ? ' <span class="tiny">' + (/\[pdf\]/.test(m_.text || "") ? "📄 PDF" : "📷 rasm") + " — botda ko'ring</span>" : "") + "</div>" +
         (m_.answers || []).map((a) => '<div class="dmsg me"><div class="tiny muted">' + esc(a.admin || "") + " · " + esc(a.at || "") + "</div>" + esc(a.text || "") + "</div>").join("")).join("") +
       (c_.root && c_.root.ai_draft && c_.root.ai_status === "tayyor" ? '<button class="btn ghost sm" id="dai" style="margin:6px 0">🤖 AI qoralamasini qo\'yish</button>' : "") +
       '<textarea class="input" id="dtx" rows="3" placeholder="Javob yozing… (Ctrl+Enter — yuborish)" style="width:100%;margin-top:6px"></textarea><button class="btn sm" id="dsend" style="margin-top:6px;width:100%">📨 Yuborish</button>';
@@ -1942,6 +1991,9 @@ const CONFIG = {
   //   Har qanday sahifadan: yuqoridagi «🛒 Sotuv» / «📖 Ijara» — yangi savat; yorliqlar — ochiq savatlar (4 tagacha).
   //   Skaner faqat FAOL savatga yozadi. Klaviatura: F2 — yangi sotuv, F3 — yangi ijara, Alt+1…4 — savatni tanlash.
   const CART_CC = ["#3E6FD8", "#2E9B62", "#E08A2C", "#8E5BD6"];
+  // 🛒/📖 v31 (U01): rang savat TURIGA qarab — sotuv doim yashil, ijara doim ko'k (raqam rangi adashtirardi)
+  const TYPE_CC = { sotuv: "#1E9A5B", ijara: "#2F64D6" };
+  const cartTC = (mode) => TYPE_CC[mode === "sotuv" ? "sotuv" : "ijara"];
   let CARTS = [], ACTIVE_CART = (() => { try { return +sessionStorage.getItem("rb_cart") || null; } catch (e) { return null; } })();
   const cartNo = (id) => { const i = CARTS.findIndex((x) => x.cart_id === id); return i < 0 ? null : i + 1; };
   const cartCC = (id) => CART_CC[((cartNo(id) || 1) - 1) % CART_CC.length];
@@ -1959,8 +2011,8 @@ const CONFIG = {
     if (!canCart()) { q.innerHTML = ""; return; }
     q.innerHTML = (can("dokon_sotish") ? '<button class="qb new" data-qnew="sotuv" title="Yangi sotuv savati (F2)">🛒 Sotuv</button>' : "") +
       (can("dokon_ijara") ? '<button class="qb new" data-qnew="ijara" title="Yangi ijara savati (F3)">📖 Ijara</button>' : "") +
-      CARTS.map((x, i) => '<button class="qt' + (x.cart_id === ACTIVE_CART && page === "cart" ? " on" : "") + '" style="--cc:' + CART_CC[i % 4] + '" data-qcart="' + x.cart_id + '" title="Alt+' + (i + 1) + '"><i>' + (i + 1) + "</i>" +
-        (x.mode === "sotuv" ? "🛒" : "📖") + " " + esc((x.user_name || "Mijozsiz").split(" ")[0].slice(0, 12)) + ' <span class="muted">· ' + x.items + " ta" + (Number(x.total) ? " · " + fmt(x.total) : "") + "</span></button>").join("");
+      CARTS.map((x, i) => '<button class="qt' + (x.cart_id === ACTIVE_CART && page === "cart" ? " on" : "") + '" style="--cc:' + cartTC(x.mode) + '" data-qcart="' + x.cart_id + '" title="' + (x.mode === "sotuv" ? "Sotuv" : "Ijara") + " savati · Alt+" + (i + 1) + '"><i>' + (i + 1) + "</i>" +
+        '<b class="tk">' + (x.mode === "sotuv" ? "SOTUV" : "IJARA") + '</b> <span class="nm">' + esc((x.user_name || "Mijozsiz").split(" ")[0].slice(0, 12)) + '</span> <span class="muted">· ' + x.items + " ta" + (Number(x.total) ? " · " + fmt(x.total) : "") + "</span></button>").join("");
     $$("[data-qnew]", q).forEach((b) => b.onclick = () => newCart(b.dataset.qnew));
     $$("[data-qcart]", q).forEach((b) => b.onclick = () => openCart(+b.dataset.qcart));
   }
@@ -2037,7 +2089,10 @@ const CONFIG = {
     // 💳 v26: bo'lib to'lash (masalan naqd + karta). split — ochiqmi, parts — yozilgan summalar, touched — kassir o'zi yozgan maydonlar
     let split = false; const parts = { naqd: "", karta: "", schot: "" }; let touched = [];
     const cno = cartNo(cartId);
-    c.innerHTML = '<div class="row between cart-head" style="margin-bottom:14px;--cc:' + (cartId ? cartCC(cartId) : CART_CC[0]) + '"><div><h1>' + (cno ? cno + "-savat · " : "") + (S_ ? "🛒 Sotuv" : "📖 Ijara") + '</h1><p class="sub" style="margin:0">' +
+    const TC = cartTC(mode);
+    c.innerHTML = '<div class="cart-wm" style="--cc:' + TC + '" aria-hidden="true"><b>' + (S_ ? "SOTUV" : "IJARA") + "</b><span>" + (S_ ? "kitob sotiladi · pul olinadi" : "kitob qaytariladi · garov olinadi") + "</span></div>" +
+      '<div class="cart-page" style="--cc:' + TC + '"><div class="row between cart-head" style="margin-bottom:14px"><div><h1>' + (cno ? cno + "-savat · " : "") + '<span class="ctype">' + (S_ ? "🛒 SOTUV" : "📖 IJARA") + "</span>" +
+      '<span class="ctype-note">' + (S_ ? "kitob sotiladi — pul olinadi" : "kitob vaqtincha beriladi — garov olinadi") + '</span></h1><p class="sub" style="margin:0">' +
       (cno ? "📷 Skaner shu savatga yozadi. Boshqa mijoz kelsa — yuqoridagi «" + (S_ ? "🛒 Sotuv" : "📖 Ijara") + "» bilan yangi savat oching. " : "") +
       (S_ ? "Kitob stikerini skanerlang — savatga qo'shiladi. Mijozsiz ham sotish mumkin." : "Mijozni tanlang va kitob stikerlarini skanerlang. Garov mijoz balansidan yoki naqd olinadi.") + "</p></div>" +
       '<button class="btn ghost" id="clr">🗑 Savatni tozalash</button></div>' +
@@ -2045,13 +2100,13 @@ const CONFIG = {
       '<div class="card tw" id="items"></div>' +
       (S_ && can("naqd_qabul") ? '<details class="card pad"><summary style="cursor:pointer;font-weight:700">⚡ Tez sotuv (bitta kitob, mijozsiz, savatsiz)</summary><div class="row" style="margin-top:10px"><input class="input" id="qcode" placeholder="Stiker kodi" style="flex:1;text-transform:uppercase">' +
         '<select class="input" id="qpay"><option value="naqd">💵 Naqd</option><option value="karta">💳 Karta</option><option value="schot">🏦 O\'tkazma</option></select><button class="btn ok" id="qgo">Sotildi</button></div></details>' : "") +
-      '</div><div class="card pad" id="side2"></div></div>';
+      '</div><div class="card pad" id="side2"></div></div></div>';
     const draw = () => {
       const x = cart;
       $("#items").innerHTML = x.items.length ? "<table><thead><tr><th>Kitob</th><th>Nusxa</th><th>" + (S_ ? "Narx" : "Garov") + "</th><th></th></tr></thead><tbody>" +
         x.items.map((it) => "<tr><td><b>" + esc(it.title) + "</b>" + (it.is_new ? ' <span class="pill p-ok">yangi</span>' : "") + (it.days ? '<div class="tiny muted">' + it.days + " kun · ijara haqi ~" + som(it.fee) + "</div>" : "") + '</td><td class="mono">' + esc(it.copy_code) + "</td>" +
           "<td>" + (S_ && Number(it.full_price) > Number(it.price) ? '<s class="muted small">' + fmt(it.full_price) + "</s> " : "") + "<b>" + som(S_ ? it.price : it.deposit) + '</b></td><td style="text-align:right"><button class="btn ghost sm" data-rm="' + it.copy_id + '">✕</button></td></tr>').join("") + "</tbody></table>"
-        : '<div class="empty">🛒 Savat bo\'sh — stikerni skanerlang</div>';
+        : '<div class="empty">' + (S_ ? "🛒 Sotuv" : "📖 Ijara") + ' savati bo\'sh — stikerni skanerlang</div>';
       const hasCust = !!x.user_id && x.user_code !== "U-ANONIM" && !pick;
       $("#side2").innerHTML = "<b>👤 Mijoz</b>" + (hasCust ? '<div class="row between" style="margin:8px 0"><div><b>' + esc(x.user_name) + '</b><div class="tiny muted">' + esc(x.user_code) + " · " + esc(x.phone || "") + "</div>" +
           '<div class="tiny">Bo\'sh balans: <b>' + som(x.available) + "</b>" + (Number(x.debt) ? ' · <span style="color:var(--red)">qarz ' + som(x.debt) + "</span>" : "") + '</div></div><button class="btn ghost sm" id="cclr">Almashtirish</button></div>'
@@ -2080,7 +2135,7 @@ const CONFIG = {
             .map((p) => '<label style="display:flex;flex-direction:column;gap:2px;min-width:0"><span class="tiny muted">' + p[1] + '</span><input class="input" type="number" min="0" step="1000" data-part="' + p[0] + '" value="' + esc(parts[p[0]]) + '" placeholder="0" style="width:100%;min-width:0;padding-left:10px;padding-right:6px"></label>').join("") +
           '</div><div id="mixcalc" style="background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px;min-width:0;font-size:12.5px;display:flex;flex-direction:column;gap:4px"></div></div>' : "") +
         (hasCust && x.telegram_id ? '<div style="margin-top:12px" id="cb"></div>' : "") +
-        '<button class="btn ok" id="done" style="width:100%;margin-top:14px;padding:13px"' + (x.items.length ? "" : " disabled") + ">✅ " + (S_ ? "Sotildi" : "Ijaraga berildi") + " — " + som(x.total) + "</button>";
+        '<button class="btn ok" id="done" style="width:100%;margin-top:14px;padding:13px;background:' + TC + '"' + (x.items.length ? "" : " disabled") + ">✅ " + (S_ ? "Sotildi" : "Ijaraga berildi") + " — " + som(x.total) + "</button>";
       if ($("#cb")) { $("#cb").innerHTML = codeBlock("savat", x.cart_id, true); }
       const fakeM = { el: $("#side2") };
       if ($("#cb")) bindCode(fakeM, "savat", x.cart_id);
@@ -3331,22 +3386,188 @@ const CONFIG = {
   const RKS = { navbatda: ["🕓 navbatda", "p-gray"], tayyorlanmoqda: ["⚙️ tayyorlanmoqda", "p-warn"], tekshiruvda: ["👀 tasdiq kutmoqda", "p-warn"],
     tasdiqlangan: ["✅ tasdiqlangan", "p-ok"], joylanmoqda: ["📤 joylanmoqda", "p-warn"], joylangan: ["📣 joylangan", "p-ok"], xato: ["⚠️ xato", "p-red"], bekor: ["❌ bekor", "p-gray"] };
   let rkTimer = null;
+  // ---------- 👫 v31 (U03): REKLAMA — QAHRAMONLAR (personajlar) va ⚙️ SOZLAMALAR saytdan ----------
+  //   Rasmlar «reklama» omborida; bot har generatsiyada shu rasmlarni ilova qiladi (yuzlar bir xil chiqadi).
+  let rkTab = (() => { try { return sessionStorage.getItem("rb_rktab") || "list"; } catch (e) { return "list"; } })();
+  const rkTabs = () => '<div class="row" style="gap:6px;margin-bottom:12px">' +
+    [["list", "📋 Hikoyalar"], ["cp", "👫 Qahramonlar"], ["set", "⚙️ Sozlamalar"]].map((x) =>
+      '<button class="btn ' + (rkTab === x[0] ? "" : "ghost ") + 'sm" data-rkt="' + x[0] + '">' + x[1] + "</button>").join("") +
+    '<button class="btn ghost sm" id="rktpl" style="margin-left:auto" title="Hikoya yozish uchun Excel shablon (qahramonlaringiz ham ichida)">📄 Excel shablon</button></div>';
+  const rkTabsBind = (c) => {
+    $$("[data-rkt]", c).forEach((b) => b.onclick = () => { rkTab = b.dataset.rkt; try { sessionStorage.setItem("rb_rktab", rkTab); } catch (e) {} VIEWS.rk(c); });
+    const t = $("#rktpl", c); if (t) t.onclick = rkTemplate;
+  };
+  // 📄 shablon: yo'riqnoma + namuna hikoya + «Qahramonlar» varag'i (hozirgi qahramonlar bilan)
+  async function rkTemplate() {
+    try { await loadLib(XLSX_LIB); } catch (e) { return toast("Excel kutubxonasi yuklanmadi (internet)", true); }
+    const cp = await api("rk_couples", {});
+    const wb = XLSX.utils.book_new();
+    const guide = [["📣 Reklama hikoyalari — qanday to'ldiriladi"], [],
+      ["• Har bir varaq (pastdagi yorliq) — bitta hikoya. Varaq nomi — hikoya sarlavhasi."],
+      ["• Har qator — bitta slayd (5–6 ta tavsiya, 2–10 ta mumkin). Instagram 4:5 (1080×1350)."],
+      ["• A: slayd raqami · B: sahna tavsifi INGLIZCHA (AI uchun) · C: o'zbekcha dialog (rasm ustiga yoziladi)"],
+      ["• D: juftlik kaliti — o'sha qahramonlarning rasmlari ilova qilinadi (kalitlar — «Qahramonlar» varag'ida)"],
+      ["• E: post matni (Instagram/kanal izohi) — istalgan qatorga yozing, hammasi birlashtiriladi"],
+      ["• Dialogda «Ism: gap» yozsangiz, ism oltin rangda alohida chiqadi. Bir nechta gap — yangi qatordan (Alt+Enter)."],
+      ["• F: KIM BOR — shu slaydda ko'rinadigan qahramon(lar) kaliti, vergul bilan (masalan: shirin  yoki  shirin, shoir)."],
+      ["   Faqat shu qahramonlar chiziladi va faqat ularning rasmlari ilova qilinadi."],
+      ["• G: KADR — yaqin (yuz, qo'llar) / o'rta (beldan yuqori) / umumiy (to'liq bo'y va joy)."],
+      ["• B ustunda avval HARAKATNI yozing: kim nima qilyapti, qayerda, qachon. Qisqa va aniq."],
+      ["• Oxirgi slaydga logo, @bot va QR avtomatik qo'shiladi."],
+      ["• «Qahramonlar» varag'i: A — kalit, B — nomi, C — inglizcha tavsif → bot qahramonni qo'shadi/yangilaydi. Rasmlarini saytda (👫 Qahramonlar) qo'shing."],
+      ["• B ustunda «STYLE …» bilan o'z uslubingizni yozsangiz — botning standart uslubi qo'shilmaydi."],
+      ["• Bu «Yo'riqnoma» varag'i o'qilmaydi."]];
+    const ws0 = XLSX.utils.aoa_to_sheet(guide); ws0["!cols"] = [{ wch: 110 }];
+    XLSX.utils.book_append_sheet(wb, ws0, "Yo'riqnoma");
+    const k0 = ((cp && cp.items) || [])[0], key = k0 ? k0.key : "yunus";
+    const ex = [["Slayd №", "Sahna (inglizcha prompt)", "Dialog (o'zbekcha)", "Juftlik kaliti", "Post matni", "Kim bor (qahramon kalitlari)", "Kadr (yaqin / o'rta / umumiy)"],
+      [1, "Two friends meet in an old candle-lit library full of floating books", "Bu kitoblar tunda tirilishini bilarmidingiz?", key, "Sehrli kutubxona ✨", key, "umumiy"],
+      [2, "One of them opens a glowing book, golden letters fly out like fireflies", "Har bir sahifa — yangi dunyo!", key, "", key, "yaqin"],
+      [3, "They walk through a forest made of book pages under a starry sky", "Qani, keyingi sahifaga!", key, "", key, "o'rta"],
+      [4, "Reading together by a window at sunset, cozy room with bookshelves", "Kitob o'qing — sehrni his qiling!", key, "Sevimli kitoblaringizni ijaraga oling 👇", key, "umumiy"]];
+    const ws1 = XLSX.utils.aoa_to_sheet(ex); ws1["!cols"] = [9, 70, 50, 16, 60, 26, 22].map((w) => ({ wch: w }));
+    XLSX.utils.book_append_sheet(wb, ws1, "Sehrli kutubxona");
+    const chars = [["Kalit", "Nomi", "Inglizcha tavsif"]].concat(((cp && cp.items) || []).map((x) => [x.key, x.name, x.description || ""]));
+    const ws2 = XLSX.utils.aoa_to_sheet(chars); ws2["!cols"] = [{ wch: 16 }, { wch: 34 }, { wch: 110 }];
+    XLSX.utils.book_append_sheet(wb, ws2, "Qahramonlar");
+    XLSX.writeFile(wb, "reklama_shablon.xlsx");
+  }
+  // rasmni brauzerda kichraytirish (≤ 1600 px, JPEG) — yuklash tez va arzon bo'ladi
+  const rkShrink = (file) => new Promise((ok, no) => {
+    const im = new Image();
+    im.onload = () => {
+      const k = Math.min(1, 1600 / Math.max(im.width, im.height)), cv = document.createElement("canvas");
+      cv.width = Math.round(im.width * k); cv.height = Math.round(im.height * k);
+      cv.getContext("2d").drawImage(im, 0, 0, cv.width, cv.height);
+      ok(cv.toDataURL("image/jpeg", 0.88));
+    };
+    im.onerror = no; im.src = URL.createObjectURL(file);
+  });
+  async function rkCouples(c) {
+    const r = await api("rk_couples", {});
+    if (!c.isConnected) return;
+    if (r.ok === false) { c.innerHTML = '<div class="empty">' + esc(errText(r)) + "</div>"; return; }
+    const it = r.items || [];
+    c.innerHTML = head("🎬 Reklama hikoyalari (AI)", "👫 Qahramonlar — har biriga 1–4 ta «xarakter varag'i» rasmi (yuz, kiyim, to'liq bo'y). Ular har slayd generatsiyasiga ilova qilinadi — qahramon har safar bir xil chiqadi.",
+      '<button class="btn" id="cpnew">➕ Yangi qahramon</button>') + rkTabs() +
+      '<div class="note small">Excel\'da <b>F ustuni (Kim bor)</b> yoki <b>D ustuni</b>ga qahramon <b>kalitini</b> yozasiz. Rasmni kartochkaga sudrab tashlash ham mumkin. Rasm ≤ 5 MB (jpg, png, webp).</div>' +
+      (it.length ? '<div class="cp-grid">' + it.map((x) => {
+        const imgs = x.images || [], free = Math.max(0, 4 - imgs.length - (x.tg_only || 0));
+        return '<div class="card pad cp-card" data-k="' + esc(x.key) + '"><div class="cp-imgs">' +
+          imgs.map((m) => '<div class="cp-img">' + (m.url ? '<a href="' + esc(m.url) + '" target="_blank" rel="noopener"><img src="' + esc(m.url) + '" alt=""></a>' : '<span class="tiny muted">?</span>') +
+            '<button class="cp-x" data-del="' + esc(m.path) + '" title="Rasmni o\'chirish">✕</button></div>').join("") +
+          (x.tg_only ? '<div class="cp-img cp-tg" title="Botda qo\'shilgan eski rasmlar — bot qayta ishga tushganda omborga ko\'chiriladi va shu yerda ko\'rinadi">🤖 ' + x.tg_only + "</div>" : "") +
+          (free ? '<label class="cp-img cp-add" title="Rasm qo\'shish">＋<span class="tiny">Rasm</span><input type="file" accept="image/jpeg,image/png,image/webp" multiple hidden data-up></label>' : "") + "</div>" +
+          '<div class="row between" style="margin-top:10px;align-items:flex-start"><div style="min-width:0"><b>' + esc(x.name) + '</b><div class="tiny muted">Kalit: <code class="mono">' + esc(x.key) + "</code>" +
+          (Number(x.used) ? " · " + x.used + " ta faol slaydda" : "") + "</div></div>" +
+          '<div class="row" style="gap:4px;flex:none"><button class="btn ghost sm" data-ed title="Tahrirlash">✏️</button><button class="btn ghost sm" data-rm title="O\'chirish">🗑</button></div></div>' +
+          '<div class="tiny cp-desc">' + (x.description ? esc(x.description) : '<span class="muted">Tavsif yo\'q — AI uchun inglizcha qisqa tavsif yozing</span>') + "</div></div>";
+      }).join("") + "</div>" : '<div class="empty">Qahramon yo\'q — «➕ Yangi qahramon»</div>');
+    rkTabsBind(c);
+    const edit = (x) => formModal(x ? "✏️ " + esc(x.name) : "➕ Yangi qahramon",
+      field("ck", "Kalit (lotin kichik harf, raqam, _ — Excel'ga shu yoziladi)", x ? x.key : "", x ? "disabled" : 'placeholder="dilnoza" maxlength="30"') +
+      field("cn", "Nomi", x ? x.name : "", 'placeholder="Dilnoza va rassom" maxlength="80"') +
+      area("cd", "Inglizcha tavsif (AI uchun: yoshi, sochi, kiyimi, ranglar…)", x ? x.description : "") +
+      '<div class="tiny muted">Masalan: a young woman with curly dark hair in a green atlas dress and a painter with a beret.</div>',
+      async (m) => {
+        const v = (s_) => $(s_, m.el).value.trim();
+        const res = await api("rk_couple_save", { key: x ? x.key : v("#ck").toLowerCase(), name: v("#cn"), description: v("#cd"), isNew: !x });
+        if (res.ok !== false) { toast("✅ Saqlandi"); rkCouples(c); }
+        return res;
+      });
+    $("#cpnew", c).onclick = () => edit(null);
+    $$(".cp-card", c).forEach((card) => {
+      const x = it.find((y) => y.key === card.dataset.k);
+      const upload = async (files) => {
+        const list = [...files].filter((f) => /^image\/(jpeg|png|webp)$/.test(f.type));
+        if (!list.length) return toast("Faqat jpg, png yoki webp rasm", true);
+        for (const f of list) {
+          if (f.size > 5 * 1024 * 1024) { toast("Rasm 5 MB dan katta: " + f.name, true); continue; }
+          let data; try { data = await rkShrink(f); } catch (e) { toast("Rasmni o'qib bo'lmadi", true); continue; }
+          const res = await api("rk_couple_img_add", { key: x.key, image: data });
+          if (res.ok === false) { toast(res.error === "MAX_4" ? "Ko'pi bilan 4 ta rasm" : errText(res), true); break; }
+        }
+        toast("✅ Rasm qo'shildi"); rkCouples(c);
+      };
+      const up = $("[data-up]", card); if (up) up.onchange = (e) => upload(e.target.files || []);
+      card.addEventListener("dragover", (e) => { e.preventDefault(); card.classList.add("drop"); });
+      card.addEventListener("dragleave", () => card.classList.remove("drop"));
+      card.addEventListener("drop", (e) => { e.preventDefault(); card.classList.remove("drop"); upload((e.dataTransfer && e.dataTransfer.files) || []); });
+      $$("[data-del]", card).forEach((b) => b.onclick = async () => {
+        if (!confirm("Rasm o'chirilsinmi?")) return;
+        const res = await api("rk_couple_img_del", { key: x.key, path: b.dataset.del });
+        if (res.ok === false) return toast(errText(res), true);
+        rkCouples(c);
+      });
+      $("[data-ed]", card).onclick = () => edit(x);
+      $("[data-rm]", card).onclick = async () => {
+        if (!confirm("«" + x.name + "» qahramoni va uning rasmlari o'chirilsinmi?" + (Number(x.used) ? "\n⚠️ U " + x.used + " ta faol slaydda ishlatilgan!" : ""))) return;
+        const res = await api("rk_couple_del", { key: x.key });
+        if (res.ok === false) return toast(errText(res), true);
+        toast("🗑 O'chirildi"); rkCouples(c);
+      };
+    });
+  }
+  async function rkSettings(c) {
+    const r = await api("rk_settings", {});
+    if (!c.isConnected) return;
+    if (r.ok === false) { c.innerHTML = '<div class="empty">' + esc(errText(r)) + "</div>"; return; }
+    const v = r.values || {}, sup = !!r.super, dis = sup ? "" : " disabled";
+    const days = String(Math.trunc(Number(v.rk_days) || 0)).split("").map(Number);
+    const WD = ["Du", "Se", "Ch", "Pa", "Ju", "Sh", "Ya"];
+    const tg = (k, label) => '<label class="row" style="gap:8px"><input type="checkbox" data-k="' + k + '"' + (Number(v[k]) > 0 ? " checked" : "") + dis + "> " + label + "</label>";
+    c.innerHTML = head("🎬 Reklama hikoyalari (AI)", "⚙️ Sozlamalar — bot ham, sayt ham shu qiymatlar bilan ishlaydi (bot ~30 soniyada yangilanadi)." +
+      (sup ? "" : " O'zgartirish — faqat superadmin."), "") + rkTabs() +
+      '<div class="card pad" style="display:flex;flex-direction:column;gap:14px;max-width:720px">' +
+      '<label style="display:flex;flex-direction:column;gap:4px"><span class="small muted">Asosiy AI model (kaliti bot .env da bo\'lishi kerak)</span><select class="input" id="s_model"' + dis + ">" +
+        [[1, "🍌 Nano Banana Pro (Gemini)"], [2, "🤖 GPT Image"], [3, "🌱 Seedream"]].map((o) => '<option value="' + o[0] + '"' + (Number(v.rk_model) === o[0] ? " selected" : "") + ">" + o[1] + "</option>").join("") + "</select></label>" +
+      '<div><span class="small muted">Slayd matnini kim yozadi</span><div class="row" style="gap:14px;margin-top:4px">' +
+        '<label class="row" style="gap:6px"><input type="radio" name="s_tx" value="0"' + (Number(v.rk_text_ai) > 0 ? "" : " checked") + dis + "> Kod (aniq, xatosiz — tavsiya)</label>" +
+        '<label class="row" style="gap:6px"><input type="radio" name="s_tx" value="1"' + (Number(v.rk_text_ai) > 0 ? " checked" : "") + dis + "> AI (rasm ichida, harflarda xato bo'lishi mumkin)</label></div></div>" +
+      '<div><span class="small muted">Joylash kunlari va vaqti</span><div class="row" style="gap:6px;margin-top:4px">' +
+        WD.map((d, i) => '<label class="chip" style="cursor:pointer"><input type="checkbox" data-day="' + (i + 1) + '"' + (days.includes(i + 1) ? " checked" : "") + dis + "> " + d + "</label>").join("") +
+        '<select class="input" id="s_h" style="width:auto"' + dis + ">" + Array.from({ length: 24 }, (_, h) => '<option' + (Number(v.rk_hour) === h ? " selected" : "") + ">" + String(h).padStart(2, "0") + "</option>").join("") + "</select> :" +
+        '<select class="input" id="s_m" style="width:auto"' + dis + "><option" + (Number(v.rk_minute) === 30 ? "" : " selected") + ">00</option><option" + (Number(v.rk_minute) === 30 ? " selected" : "") + ">30</option></select></div></div>" +
+      '<div style="display:flex;flex-direction:column;gap:6px">' + tg("rk_auto", "Avto-tayyorlash (1 kun oldin rasmlar chiziladi va tasdiqqa keladi)") +
+        '<div class="row" style="gap:16px">' + tg("rk_channel", "Telegram kanal") + tg("rk_insta", "Instagram") + tg("rk_story", "Instagram Story") + "</div></div>" +
+      field("s_lim", "💰 Oylik chegara, $ (yetganda generatsiya to'xtaydi) — bu oy: $" + Number((r.month || {}).total || 0).toFixed(2), v.rk_limit_usd, 'type="number" min="0" step="5"' + dis) +
+      (sup ? '<div class="row"><button class="btn" id="s_save">💾 Saqlash</button></div>' : "") + "</div>";
+    rkTabsBind(c);
+    if (!sup) return;
+    $("#s_save", c).onclick = async () => {
+      const d = $$("[data-day]", c).filter((x) => x.checked).map((x) => x.dataset.day).sort().join("");
+      const want = { rk_model: +$("#s_model", c).value, rk_text_ai: +(($('input[name="s_tx"]:checked', c) || {}).value || 0), rk_days: +(d || 0),
+        rk_hour: +$("#s_h", c).value, rk_minute: +$("#s_m", c).value, rk_limit_usd: +$("#s_lim", c).value || 0 };
+      $$("[data-k]", c).forEach((x) => { want[x.dataset.k] = x.checked ? 1 : 0; });
+      let n = 0;
+      for (const k of Object.keys(want)) {
+        if (Number(v[k]) === want[k]) continue;
+        const res = await api("rk_setting_set", { key: k, value: want[k] });
+        if (res.ok === false) return toast(k + ": " + errText(res), true);
+        n++;
+      }
+      toast(n ? "✅ Saqlandi (" + n + " ta o'zgarish)" : "O'zgarish yo'q"); rkSettings(c);
+    };
+  }
   VIEWS.rk = async (c) => {
     clearTimeout(rkTimer);
+    if (rkTab === "cp") return rkCouples(c);
+    if (rkTab === "set") return rkSettings(c);
     const r = await api("rk_list", {});
     if (!c.isConnected) return;
     if (r.ok === false) { c.innerHTML = '<div class="empty">' + esc(errText(r)) + "</div>"; return; }
     const mon = r.month || {};
     c.innerHTML = head("🎬 Reklama hikoyalari (AI)", "Rasmni bot chizadi (AI kalitlari bot .env da). Tugma bosilgach bir necha soniya — natija shu yerda yangilanadi. Tasdiqsiz hech narsa joylanmaydi.",
-      '<label class="btn">📥 Excel yuklash<input type="file" id="rkx" accept=".xlsx" hidden></label>') +
+      '<label class="btn">📥 Excel yuklash<input type="file" id="rkx" accept=".xlsx" hidden></label>') + rkTabs() +
       '<div class="note small">💰 Bu oy AI xarajati: <b>$' + Number(mon.total || 0).toFixed(2) + "</b> / $" + Number(r.limit_usd || 0).toFixed(0) +
-      (Number(r.pending) ? " · ⏳ botda bajarilayotgan buyruqlar: " + r.pending : "") + ' · 📄 Shablon — botda: 🎬 Reklama → 📄 Shablon</div>' +
+      (Number(r.pending) ? " · ⏳ botda bajarilayotgan buyruqlar: " + r.pending : "") + ' · 📄 Shablon — yuqoridagi «Excel shablon» tugmasi</div>' +
       '<div class="card tw" style="margin-top:12px">' + ((r.items || []).length ? "<table><thead><tr><th>#</th><th>Hikoya</th><th>Holat</th><th>Slaydlar</th><th>Joylash vaqti</th><th>Kanal · Insta · Story</th><th></th></tr></thead><tbody>" +
         r.items.map((x) => "<tr><td>" + x.id + "</td><td><b>" + esc(x.title) + "</b>" + (x.error ? '<div class="tiny" style="color:var(--red)">' + esc(x.error.split("\n")[0]) + "</div>" : "") + "</td>" +
           '<td><span class="pill ' + (RKS[x.status] || ["", "p-gray"])[1] + '">' + esc((RKS[x.status] || [x.status])[0]) + "</span></td><td>" + x.ready + " / " + x.slides + "</td>" +
           "<td>" + (x.scheduled_at ? dt(x.scheduled_at, true) : "—") + "</td><td>" + (x.tg_done ? "✅" : "—") + " · " + (x.ig ? "✅" : "—") + " · " + (x.ig_story ? "✅" : "—") + "</td>" +
           '<td style="text-align:right"><button class="btn sm" data-o="' + x.id + '">Ochish</button></td></tr>').join("") + "</tbody></table>"
         : '<div class="empty">Hikoya yo\'q — Excel yuklang</div>') + "</div>";
+    rkTabsBind(c);
     $$("[data-o]", c).forEach((b) => b.onclick = () => rkStory(+b.dataset.o, c));
     $("#rkx", c).onchange = async (e) => {
       const f = e.target.files && e.target.files[0]; e.target.value = "";
@@ -3358,7 +3579,7 @@ const CONFIG = {
       toast("📥 Yuklandi — bot o'qiyapti, natija bir necha soniyada");
       rkTimer = setTimeout(() => go("rk"), 6000);
     };
-    if (Number(r.pending) || (r.items || []).some((x) => x.status === "tayyorlanmoqda" || x.status === "joylanmoqda")) rkTimer = setTimeout(() => { if (page === "rk" && c.isConnected) VIEWS.rk(c); }, 8000);
+    if (Number(r.pending) || (r.items || []).some((x) => x.status === "tayyorlanmoqda" || x.status === "joylanmoqda")) rkTimer = setTimeout(() => { if (page === "rk" && rkTab === "list" && c.isConnected) VIEWS.rk(c); }, 8000);
   };
   async function rkStory(id, c) {
     const r = await api("rk_story", { id });
@@ -3797,7 +4018,7 @@ const CONFIG = {
   VIEWS["b:warn"] = async (c) => {
     c.innerHTML = head("Rasmiy ogohlantirish", "Ro'yxatdan o'tishda va profilda mijozlarga ko'rsatiladi. Kanalga joylab, «Pin» qilib qo'yish tavsiya etiladi — firibgarlardan himoya.",
         '<button class="btn" id="wp">📣 Kanalga joylash</button>') +
-      '<div class="card pad" style="max-width:620px;line-height:1.6">📌 <b>Diqqat! RentBooks\'ning rasmiy sahifalari faqat shular:</b><br>🤖 Bot: @Kitobijarabot<br>📢 Kanal: @Rentbooksuz<br>' +
+      '<div class="card pad" style="max-width:620px;line-height:1.6">📌 <b>Diqqat! RentBooks\'ning rasmiy sahifalari faqat shular:</b><br>🤖 Bot: @Rentbooksuz_Bot<br>🌐 Sayt: rentbooks.uz<br>📢 Kanal: @Rentbooksuz<br>' +
       '📸 Instagram: <a href="https://instagram.com/rentbooks.uz" target="_blank" rel="noopener">rentbooks.uz</a><br><br>Biz hech qachon APK fayl, SMS kod, PIN yoki karta CVV kodini so\'ramaymiz. ' +
       "Boshqa nomdagi bot, kanal yoki sahifadan shunday so'rov kelsa — bu firibgarlar.</div>" +
       '<p class="tiny muted">Matnni o\'zgartirish: asosiy.py → OFFICIAL_WARNING. Natija (joylandi / xato) botga va o\'ng pastdagi 🤖 oynaga keladi.</p>';
@@ -3817,6 +4038,40 @@ const CONFIG = {
     });
   } else renderLogin();
 })();
+  // 👁 v31 (U05): har bir parol/PIN maydoniga «ko'rsatish» tugmasi + Caps Lock ogohlantirishi.
+  //   Ko'rsatilgan parol 30 soniyadan keyin, maydondan chiqilganda yoki forma yuborilganda o'zi yashiriladi.
+  (function () {
+    const enh = (inp) => {
+      if (inp.dataset.eye) return; inp.dataset.eye = "1";
+      const w = document.createElement("span"); w.className = "pw-wrap";
+      inp.parentNode.insertBefore(w, inp); w.appendChild(inp);
+      const b = document.createElement("button"); b.type = "button"; b.className = "pw-eye";
+      w.appendChild(b);
+      const numeric = (inp.getAttribute("inputmode") || "") === "numeric";
+      let cap = null;
+      if (!numeric) { cap = document.createElement("span"); cap.className = "pw-caps"; cap.textContent = "⇪ Caps Lock yoqilgan"; w.appendChild(cap); }
+      let t = null;
+      const set = (show) => {
+        inp.type = show ? "text" : "password"; b.textContent = show ? "🙈" : "👁";
+        const l = show ? "Parolni yashirish" : "Parolni ko'rsatish"; b.title = l; b.setAttribute("aria-label", l);
+        clearTimeout(t); if (show) t = setTimeout(() => set(false), 30000);
+      };
+      set(false);
+      b.addEventListener("mousedown", (e) => e.preventDefault());          // bosilganda maydon fokusini yo'qotmasin
+      b.addEventListener("click", () => { set(inp.type === "password"); inp.focus(); });
+      inp.addEventListener("blur", () => setTimeout(() => { if (document.activeElement !== b && document.activeElement !== inp) set(false); }, 120));
+      if (cap) {
+        const ck = (e) => { if (e.getModifierState) w.classList.toggle("caps", !!e.getModifierState("CapsLock")); };
+        inp.addEventListener("keydown", ck); inp.addEventListener("keyup", ck); inp.addEventListener("blur", () => w.classList.remove("caps"));
+      }
+      if (inp.form) inp.form.addEventListener("submit", () => set(false));
+    };
+    const scan = () => document.querySelectorAll('input[type="password"]:not([data-eye])').forEach(enh);
+    let q = 0;
+    if (window.MutationObserver) new MutationObserver(() => { if (!q) q = requestAnimationFrame(() => { q = 0; scan(); }); })
+      .observe(document.documentElement, { childList: true, subtree: true });
+    scan();
+  })();
 </script>
 </body>
 </html>
