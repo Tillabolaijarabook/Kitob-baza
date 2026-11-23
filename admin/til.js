@@ -1,4 +1,4 @@
-/* VERSIYA: v24
+/* VERSIYA: v26
  * til.js — 🌐 RentBooks interfeys tili: lotin (asl) · yangi lotin · kirill · rus tili.
  * Sahifa kodiga tegmaydi: ekranga chiqqan matnni (DOM) o'zi o'giradi. Kitob nomi, muallif, ismlar, kodlar,
  * raqamlar va havolalar O'GIRILMAYDI. Qidiruv uchun TIL.key() — «Ўткан» = «O'tkan» = «Ötkan» = «Откан».
@@ -118,24 +118,45 @@
   // ------------------------------------------------------------ himoyalangan bo'laklar
   var PROT_SRC = "https?:\\/\\/\\S+|t\\.me\\/\\S+|www\\.\\S+|[\\w.+-]+@[\\w-]+\\.[\\w.]+|@\\w+|U-[A-Z0-9]{3,12}|[A-Z]{2,}-\\d+" +
     "|[^\\s<>&()«»\"'.,:;!?]*\\d(?:[^\\s<>&()«»\"]*[^\\s<>&()«»\"'.,:;!?…])?";
-  var protNames = Object.create(null), protCount = 0, namesRe = null, namesDirty = false;
-  var PROT_KEYS = { title: 1, author: 1, book: 1, book_title: 1, full_name: 1, name: 1, user_name: 1, courier: 1, courier_name: 1,
+  // protNames[matn] = 1 — o'zgarmaydi (ismlar, kodlar, tavsif); 2 — kitob nomi / muallif (🔤 v26: faqat YOZUVI o'zgaradi)
+  var protNames = Object.create(null), protCount = 0, namesRe = null, namesDirty = false, nameMode = Object.create(null);
+  var BOOK_KEYS = { title: 1, author: 1, book: 1, book_title: 1 };
+  var PROT_KEYS = { full_name: 1, name: 1, user_name: 1, courier: 1, courier_name: 1,
     customer: 1, ism: 1, nomi: 1, store: 1, address: 1, org: 1, kod: 1, code: 1, user_code: 1, description: 1, themes: 1,
     note: 1, text: 1, comment: 1, review: 1 };
-  function protect(v) {
+  function protect(v, kind) {
     if (typeof v !== "string") return;
     v = v.trim();
-    if (v.length < 3 || v.length > 3000 || protNames[v]) return;
-    protNames[v] = 1; protCount++; namesDirty = true;
+    if (v.length < 3 || v.length > 3000) return;
+    var k = kind || 1;
+    if (protNames[v] === k || (protNames[v] === 2 && k === 1)) return;   // kitob nomi sifatida tanilgan bo'lsa — shunday qoladi
+    if (!protNames[v]) protCount++;
+    protNames[v] = k; namesDirty = true;
   }
   function collect(d, depth) {
     if (!d || depth > 6) return;
     if (Array.isArray(d)) { for (var i = 0; i < d.length && i < 5000; i++) collect(d[i], depth + 1); return; }
-    if (typeof d === "object") for (var k in d) {
-      var v = d[k];
-      if (typeof v === "string") { if (PROT_KEYS[k]) protect(v); }
-      else if (v && typeof v === "object") collect(v, depth + 1);
+    if (typeof d === "object") {
+      var nk = typeof d.nk === "string" ? d.nk : null;      // katalogdagi har kitob tanlovi: auto / saqla / ozgar
+      for (var k in d) {
+        var v = d[k];
+        if (typeof v === "string") {
+          if (BOOK_KEYS[k]) { protect(v, 2); if (nk && nk !== "auto") nameMode[v.trim()] = nk; }
+          else if (PROT_KEYS[k]) protect(v, 1);
+        } else if (v && typeof v === "object") collect(v, depth + 1);
+      }
     }
+  }
+  // 🔤 kitob nomi / muallif yozuvga qarab o'zgaradimi (tarjima — hech qachon)
+  var UZ_MARK = new RegExp("[oOgG]" + APO_RE + "|[ʻʼ‘’]|sh|ch|\\bq|q\\b|x", "i");
+  var FOREIGN_MARK = /th|w|ck|ee|oo|ph|tion|ou|ea|c(?!h)|\b(the|and|of|to|in|for|with|my|your)\b|[bcdfgjklmnpqrstvxz]y\b|[^aeiou\s]y[^aeiou\s]/i;
+  function nameConverts(name) {
+    var md = nameMode[name.trim()] || "auto";
+    if (md === "saqla") return false;
+    if (md === "ozgar") return true;
+    if (!/[A-Za-z]/.test(name)) return false;
+    if (UZ_MARK.test(name)) return true;
+    return !FOREIGN_MARK.test(name);
   }
   function namesRegex() {
     if (namesDirty) {
@@ -145,18 +166,25 @@
     }
     return namesRe;
   }
-  function split(text) {          // [[o'giriladimi, bo'lak], ...]
+  function split(text) {          // [[true — o'giriladi | false — o'zgarmaydi | "name" — kitob nomi, bo'lak], ...]
     var spans = [], m, re;
     var nr = namesRegex();
-    if (nr) { nr.lastIndex = 0; while ((m = nr.exec(text))) { spans.push([m.index, m.index + m[0].length]); if (!m[0].length) nr.lastIndex++; } }
+    if (nr) { nr.lastIndex = 0; while ((m = nr.exec(text))) { if (m[0].length) spans.push([m.index, m.index + m[0].length, protNames[m[0]] === 2 ? "name" : false]); else nr.lastIndex++; } }
     re = new RegExp(PROT_SRC, "g");
-    while ((m = re.exec(text))) { if (m[0].length) spans.push([m.index, m.index + m[0].length]); else re.lastIndex++; }
+    while ((m = re.exec(text))) { if (m[0].length) spans.push([m.index, m.index + m[0].length, false]); else re.lastIndex++; }
     if (!spans.length) return [[true, text]];
-    spans.sort(function (a, b) { return a[0] - b[0]; });
+    spans.sort(function (a, b) { return a[0] - b[0] || b[1] - a[1]; });
     var merged = [];
-    spans.forEach(function (s) { var last = merged[merged.length - 1]; if (last && s[0] < last[1]) last[1] = Math.max(last[1], s[1]); else merged.push([s[0], s[1]]); });
+    spans.forEach(function (s) {
+      var last = merged[merged.length - 1];
+      if (last && s[0] < last[1]) {
+        // nom ichidagi raqam («1984») — nom bo'lib qoladi; boshqa kesishuv — o'zgarmas
+        last[2] = (last[2] === "name" && s[1] <= last[1]) ? "name" : (last[2] === s[2] ? last[2] : false);
+        last[1] = Math.max(last[1], s[1]);
+      } else merged.push([s[0], s[1], s[2]]);
+    });
     var out = [], pos = 0;
-    merged.forEach(function (s) { if (s[0] > pos) out.push([true, text.slice(pos, s[0])]); out.push([false, text.slice(s[0], s[1])]); pos = s[1]; });
+    merged.forEach(function (s) { if (s[0] > pos) out.push([true, text.slice(pos, s[0])]); out.push([s[2], text.slice(s[0], s[1])]); pos = s[1]; });
     if (pos < text.length) out.push([true, text.slice(pos)]);
     return out;
   }
@@ -203,6 +231,10 @@
     lg = lg || lang;
     if (!text || lg === "lat" || typeof text !== "string" || !/[A-Za-z]/.test(text)) return text;
     return split(text).map(function (p) {
+      if (p[0] === "name") {                                  // 🔤 kitob nomi / muallif — tarjimasiz, faqat yozuvi
+        if (!nameConverts(p[1])) return p[1];
+        return lg === "yl" ? lat2yl(p[1]) : lat2cyr(p[1]);    // rus tilida ham o'zbek kirilli
+      }
       if (!p[0] || !/[A-Za-z]/.test(p[1])) return p[1];
       if (lg === "cyr") return lat2cyr(p[1]);
       if (lg === "yl") return lat2yl(p[1]);
@@ -333,7 +365,7 @@
 
   window.TIL = {
     codes: CODES, names: NAMES, key: key, match: match, toLat: toLat, tr: function (t, l) { return tr(t, l); }, lat2cyr: lat2cyr, lat2yl: lat2yl,
-    protect: protect, collect: function (d) { collect(d, 0); },
+    protect: protect, collect: function (d) { collect(d, 0); }, nameConverts: nameConverts,
     get lang() { return lang; }, fromUrl: CODES.indexOf(fromUrl) >= 0, saved: !!store("rb_til"), tgLang: tgLang,
     set: setLang, onChange: function (f) { listeners.push(f); },
     /** til tanlash tugmalari (HTML) — data-til="kod" */
