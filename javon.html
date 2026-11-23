@@ -169,6 +169,13 @@ textarea.field { height: 110px; padding: 12px 14px; resize: vertical; }
 .pw-eye:hover, .pw-eye:focus-visible { opacity: 1; background: rgba(127,127,127,.12); }
 .pw-caps { display: none; margin-top: 4px; font-size: 12px; font-weight: 600; color: #C2410C; text-align: left; }
 .pw-wrap.caps .pw-caps { display: block; }
+.pw-meter { display: flex; align-items: center; gap: 8px; margin-top: 6px; font-size: 12px; }
+.pw-meter i { flex: 0 0 90px; height: 6px; border-radius: 3px; background: rgba(127,127,127,.25); position: relative; overflow: hidden; }
+.pw-meter i::after { content: ""; position: absolute; inset: 0 auto 0 0; width: 0; border-radius: 3px; transition: width .2s, background .2s; }
+.pw-meter[data-lv="1"] i::after { width: 33%; background: #DC2626; }
+.pw-meter[data-lv="2"] i::after { width: 66%; background: #D97706; }
+.pw-meter[data-lv="3"] i::after { width: 100%; background: #16A34A; }
+.pw-meter b { font-weight: 600; opacity: .85; }
 </style>
 </head>
 <body>
@@ -346,7 +353,7 @@ const CONFIG = {
     WRONG_LOGIN: "Telefon yoki parol noto'g'ri.", LOCKED: "Ko'p xato — 15 daqiqadan keyin urinib ko'ring.", BLOCKED: "Kirish bloklangan. Do'konga murojaat qiling.",
     NO_NAME: "Ismingizni yozing.", SMS_OFF: "Bu raqam botimizga bog'lanmagan, SMS esa hozircha yopiq. Botda 🆘 Yordam'ga yozing yoki do'konga murojaat qiling — kirish parolini beramiz.",
     TG_SEND: "Kodni Telegram botga yuborib bo'lmadi. Botni ochib /start bosing, keyin qayta urinib ko'ring.",
-    NO_TG: "Hisobingiz Telegram botga bog'lanmagan — yangi qurilmadan kirish uchun do'konga murojaat qiling.", TOO_MANY: "Juda ko'p urinish. Bir daqiqadan keyin urinib ko'ring.", ORIGIN: "Bu saytdan kirib bo'lmaydi."
+    NO_TG: "Hisobingiz Telegram botga bog'lanmagan — yangi qurilmadan kirish uchun do'konga murojaat qiling.", TOO_MANY: "Juda ko'p urinish. Bir daqiqadan keyin urinib ko'ring.", CODE_LIMIT_HOUR: "Bir soatda 5 marta kod so'raldi. Bir soatdan keyin urinib ko'ring.", DENIED: "Kirish rad etildi (botda «Bu men emasman» bosildi).", ORIGIN: "Bu saytdan kirib bo'lmaydi."
   };
   const authErr = (r) => (r && AUTH_ERR[r.error]) || errText(r);
   function afterLogin(r) {
@@ -365,8 +372,10 @@ const CONFIG = {
         '<div class="row" style="gap:8px"><button class="btn" id="tobot">Botga o\'tish</button><button class="btn ghost" id="tologin">Parolim bor — kirish</button></div>',
         (el) => { $("#tobot", el).onclick = () => goBot("start"); $("#tologin", el).onclick = () => openLogin("login"); });
     };
-    let phone = "", devVia = "telegram";
-    const field = (id, label, type, ph) => '<label class="col" style="gap:4px"><span class="small muted">' + label + '</span><input id="' + id + '" type="' + type + '" placeholder="' + (ph || "") + '" style="padding:12px;border-radius:12px;border:1px solid var(--line);font-size:16px"></label>';
+    let phone = "", devVia = "telegram", waitTok = null, waitT = null;   // ✅ v31 (U06): «Ha, menman» kutish tokeni
+    const field = (id, label, type, ph) => '<label class="col" style="gap:4px"><span class="small muted">' + label + '</span><input id="' + id + '" type="' + type + '" placeholder="' + (ph || "") + '"' +
+      (type === "password" ? ' autocomplete="' + (/^Yangi parol/.test(label) ? "new-password" : "current-password") + '"' : type === "tel" ? ' autocomplete="tel"' : "") +
+      ' style="padding:12px;border-radius:12px;border:1px solid var(--line);font-size:16px"></label>';
     const draw = (m) => {
       const T = { login: "🔑 Kirish", register: "📝 Ro'yxatdan o'tish", reset: "♻️ Parolni tiklash", device: "📱 Yangi qurilma", change: "🔐 Yangi parol" }[m];
       let h = '<div class="h2">' + T + "</div>";
@@ -378,14 +387,38 @@ const CONFIG = {
         (m === "register" ? field("nm", "Ismingiz (botda bo'lmasangiz)", "text") : "") + field("pw", "Yangi parol (kamida 8 belgi)", "password") +
         '<button class="btn" id="go">' + (m === "register" ? "Ro'yxatdan o'tish" : "Saqlash") + "</button></div>" +
         '<span class="small muted">Kod botimizga bog\'langan raqamga <b>Telegram\'dagi @' + esc(CONFIG.BOT_USERNAME) + '</b> orqali keladi' + (smsOn ? ", aks holda SMS bilan (kuniga 2, haftasiga 5 ta)" : "") + '. Keyin kirish — parol bilan.</span>';
-      if (m === "device") h += '<span class="small muted">🔐 Yangi qurilmadan kirilmoqda — xavfsizlik uchun tasdiq kodi ' + (devVia === "sms" ? "SMS bilan" : "<b>Telegram\'dagi @" + esc(CONFIG.BOT_USERNAME) + " botimizga</b>") + ' yuborildi.</span>' + field("cd", "Kod", "text", "6 xonali") + '<button class="btn" id="go">Tasdiqlash</button>' +
+      if (m === "device") h += (devVia !== "sms" && waitTok
+          ? '<div class="card" style="padding:12px;border-radius:12px;background:rgba(46,125,50,.10);border:1px solid rgba(46,125,50,.35)"><b>📲 Telegram\'dagi @' + esc(CONFIG.BOT_USERNAME) + ' botimizni oching va «✅ Ha, menman» tugmasini bosing.</b><br><span class="small muted" id="waitst">⏳ Tasdiq kutilmoqda… bosilishi bilan sayt o\'zi ochiladi.</span></div>' +
+            '<span class="small muted">Tugma ishlamasa — xabardagi zaxira kodni yozing:</span>'
+          : '<span class="small muted">🔐 Yangi qurilmadan kirilmoqda — xavfsizlik uchun tasdiq kodi ' + (devVia === "sms" ? "SMS bilan" : "<b>Telegram\'dagi @" + esc(CONFIG.BOT_USERNAME) + " botimizga</b>") + ' yuborildi.</span>') +
+        field("cd", "Kod", "text", "6 xonali") + '<button class="btn" id="go">Tasdiqlash</button>' +
         '<div class="row between small"><a href="#" id="resend">Kodni qayta yuborish</a><a href="#" id="tobotd">Botni ochish</a></div>' +
         '<span class="tiny muted">Bir marta tasdiqlangan qurilmadan 30 kun davomida kod so\'ralmaydi.</span>';
       if (m === "change") h += '<span class="small muted">Vaqtinchalik parol bilan kirdingiz — o\'zingizning parolingizni o\'rnating.</span>' + field("old", "Hozirgi (vaqtinchalik) parol", "password") + field("pw", "Yangi parol (kamida 8 belgi)", "password") + '<button class="btn" id="go">Saqlash</button>';
       return h;
     };
     let pwKeep = "";
-    const open = (m) => sheet(draw(m), (el) => {
+    // ✅ v31 (U06): «Ha, menman» — 2.5 soniyada bir tekshiramiz (oyna yopilsa yoki 10 daqiqa o'tsa — to'xtaydi)
+    const stopWait = () => { if (waitT) { clearTimeout(waitT); waitT = null; } };
+    const startWait = (el) => {
+      stopWait();
+      if (!waitTok) return;
+      const t0 = Date.now(), tok = waitTok;
+      const tick = async () => {
+        waitT = null;
+        if (!el.isConnected || tok !== waitTok || Date.now() - t0 > 600e3) return;
+        const r = await api("auth_wait", { wait: tok, device: devId() });
+        if (!el.isConnected || tok !== waitTok) return;
+        if (r && r.ok) { waitTok = null; toast("✅ Tasdiqlandi"); return afterLogin(r); }
+        const st = $("#waitst", el);
+        if (r && r.error === "DENIED") { waitTok = null; if (st) st.textContent = "❌ Botda «Bu men emasman» bosildi — kirish rad etildi."; return toast("❌ Kirish rad etildi"); }
+        if (r && (r.error === "WAIT_EXPIRED" || r.error === "WAIT_USED" || r.error === "WAIT_BAD")) { if (st) st.textContent = "⌛ Kutish tugadi — kodni yozing yoki kodni qayta yuboring."; return; }
+        waitT = setTimeout(tick, 2500);
+      };
+      waitT = setTimeout(tick, 2500);
+    };
+    const open = (m) => { stopWait(); return sheet(draw(m), (el) => {
+      if (m === "device") startWait(el);
       const v = (id) => ($("#" + id, el) ? $("#" + id, el).value.trim() : "");
       if ($("#toreg", el)) $("#toreg", el).onclick = (e) => { e.preventDefault(); open("register"); };
       if ($("#torst", el)) $("#torst", el).onclick = (e) => { e.preventDefault(); open("reset"); };
@@ -400,7 +433,7 @@ const CONFIG = {
       if ($("#resend", el)) $("#resend", el).onclick = async (e) => {     // qayta yuborish = parol bilan qayta kirish (kod o'zi ketadi)
         e.preventDefault();
         const r = await api("auth_login", { phone, password: pwKeep, device: devId() });
-        if (r && r.error === "NEED_DEVICE_CODE") { devVia = r.via || devVia; return toast("📩 Yangi kod yuborildi"); }
+        if (r && r.error === "NEED_DEVICE_CODE") { devVia = r.via || devVia; waitTok = r.wait || null; startWait(el); return toast("📩 Botga yangi tasdiq yuborildi"); }
         if (r && r.ok) return afterLogin(r);
         toast(authErr(r));
       };
@@ -410,18 +443,18 @@ const CONFIG = {
         if (m === "login") { phone = v("ph"); pwKeep = $("#pw", el).value; r = await api("auth_login", { phone, password: pwKeep, device: devId() }); }
         if (m === "register") r = await api("auth_register", { phone, code: v("cd"), password: $("#pw", el).value, name: v("nm"), device: devId() });
         if (m === "reset") { r = await api("auth_reset", { phone, code: v("cd"), password: $("#pw", el).value }); if (r.ok) { toast("✅ Parol yangilandi — kiring"); return open("login"); } }
-        if (m === "device") r = await api("auth_device", { phone, password: pwKeep, code: v("cd"), device: devId() });
+        if (m === "device") { r = await api("auth_device", { phone, password: pwKeep, code: v("cd"), device: devId() }); if (r && r.ok) { waitTok = null; stopWait(); } }
         if (m === "change") { r = await api("auth_pw_change", { old: $("#old", el).value, password: $("#pw", el).value });
           if (r.ok) { toast("✅ Parol saqlandi"); closeSheet();
             const s2 = await api("auth_session", {}); if (s2 && s2.ok && s2.staff) { location.href = "admin/"; }   // 👮 xodim — admin panelga
             return; } }
         if (r && r.error === "NEED_DEVICE_CODE") {           // 🤖 v31 (U06): kod parol tekshirilgach darvozaning o'zi yuborgan
-          phone = r.phone || phone; devVia = r.via || "telegram"; return open("device");
+          phone = r.phone || phone; devVia = r.via || "telegram"; waitTok = r.wait || null; return open("device");
         }
         if (!r || !r.ok) return toast(authErr(r));
         afterLogin(r);
       };
-    });
+    }); };
     open(mode);
   }
   // ?kirish=1 — admin saytidan «Telefon va parol bilan kirish»; ?kirish=change — vaqtinchalik parolni almashtirish
@@ -1697,7 +1730,33 @@ const CONFIG = {
       };
       set(false);
       b.addEventListener("mousedown", (e) => e.preventDefault());          // bosilganda maydon fokusini yo'qotmasin
-      b.addEventListener("click", () => { set(inp.type === "password"); inp.focus(); });
+      if (numeric) {
+        // 🔢 v31 (U05.4): PIN — faqat BOSIB TURGANDA ko'rinadi (qo'yib yuborilsa darhol yashirinadi)
+        b.title = "Bosib turing — PIN ko'rinadi"; b.setAttribute("aria-label", b.title);
+        const on = (e) => { e.preventDefault(); inp.type = "text"; b.textContent = "🙈"; };
+        const off = () => { inp.type = "password"; b.textContent = "👁"; };
+        b.addEventListener("pointerdown", on); ["pointerup", "pointerleave", "pointercancel", "blur"].forEach((ev) => b.addEventListener(ev, off));
+        b.addEventListener("keydown", (e) => { if (e.key === " " || e.key === "Enter") on(e); });
+        b.addEventListener("keyup", off);
+      } else b.addEventListener("click", () => { set(inp.type === "password"); inp.focus(); });
+      inp._pwHide = () => { if (inp.type === "text") { if (numeric) { inp.type = "password"; b.textContent = "👁"; } else set(false); } };
+      // 💪 v31 (U05.3): yangi parol — kuchliligi ko'rsatkichi (kamida 8 belgi, harf + raqam — server qoidasi bilan bir xil)
+      const lbl = ((inp.getAttribute("placeholder") || "") + " " + ((inp.closest("label") || {}).textContent || "")).toLowerCase();
+      if (!numeric && inp.getAttribute("autocomplete") === "new-password" && !/takror/.test(lbl)) {
+        const m = document.createElement("span"); m.className = "pw-meter"; m.innerHTML = "<i></i><b></b>"; w.appendChild(m);
+        const upd = () => {
+          const v = inp.value || "";
+          let sc = 0;
+          if (v.length >= 8) sc++; if (v.length >= 12) sc++;
+          if (/[A-Za-zА-Яа-яЁёЎўҚқҒғҲҳ]/.test(v) && /\d/.test(v)) sc++;
+          if (/[a-zа-я]/.test(v) && /[A-ZА-Я]/.test(v)) sc++; if (/[^A-Za-z0-9А-Яа-яЁё]/.test(v)) sc++;
+          const ok = v.length >= 8 && /[A-Za-zА-Яа-яЁёЎўҚқҒғҲҳ]/.test(v) && /\d/.test(v);
+          const lv = !v ? 0 : !ok ? 1 : sc >= 4 ? 3 : 2;
+          m.dataset.lv = lv;
+          m.querySelector("b").textContent = !v ? "" : !ok ? (v.length < 8 ? "Zaif — kamida 8 belgi" : "Zaif — harf va raqam bo'lsin") : lv === 3 ? "Kuchli 💪" : "O'rtacha";
+        };
+        inp.addEventListener("input", upd); upd();
+      }
       inp.addEventListener("blur", () => setTimeout(() => { if (document.activeElement !== b && document.activeElement !== inp) set(false); }, 120));
       if (cap) {
         const ck = (e) => { if (e.getModifierState) w.classList.toggle("caps", !!e.getModifierState("CapsLock")); };
@@ -1706,6 +1765,12 @@ const CONFIG = {
       if (inp.form) inp.form.addEventListener("submit", () => set(false));
     };
     const scan = () => document.querySelectorAll('input[type="password"]:not([data-eye])').forEach(enh);
+    // U05.2: «Kirish» / «Saqlash» va boshqa tugma bosilganda ko'rsatilgan parollar darhol yashiriladi
+    document.addEventListener("click", (e) => {
+      const t = e.target && e.target.closest && e.target.closest("button, .btn");
+      if (!t || t.classList.contains("pw-eye")) return;
+      document.querySelectorAll("input[data-eye]").forEach((i) => { if (i._pwHide) i._pwHide(); });
+    }, true);
     let q = 0;
     if (window.MutationObserver) new MutationObserver(() => { if (!q) q = requestAnimationFrame(() => { q = 0; scan(); }); })
       .observe(document.documentElement, { childList: true, subtree: true });
