@@ -1,3 +1,7 @@
+RentBooks 3D kutubxona — tashqi kod va materiallar litsenziyalari
+
+1) three.js r186 — MIT litsenziya
+----------------------------------------
 The MIT License
 
 Copyright © 2010-2026 three.js authors
@@ -19,3 +23,13 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
+
+2) qrcode-generator 1.4.4 (Kazuhiko Arase) — MIT litsenziya
+----------------------------------------
+Copyright (c) 2009 Kazuhiko Arase — URL: http://www.d-project.com/
+Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
+(MIT litsenziya matni yuqoridagi three.js bo'limidagi bilan bir xil.)
+
+3) Teksturalar (k3d/tx/*.webp) — Poly Haven (polyhaven.com), CC0 (jamoat mulki, cheklovsiz)
+   dark_wood, herringbone_parquet, dark_paneled_wood, plastered_wall, brown_leather, floral_jacquard
+   Mualliflar: Dario Barresi, Dimitrios Savva, Rico Cilliers va boshq. — rahmat!

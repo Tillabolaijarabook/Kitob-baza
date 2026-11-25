@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
-<!-- VERSIYA: k3d-pro-1 (v31) · 🏛 BOY 3D kutubxona (Three.js) — faqat sayt. Telegram'da yoki WebGL yo'q bo'lsa — sodda versiya (kutubxona.html) -->
+<!-- VERSIYA: k3d-pro-2 (v31) · 🏛 BOY 3D kutubxona (Three.js) — faqat sayt. Telegram'da yoki WebGL yo'q bo'lsa — sodda versiya (kutubxona.html) -->
 <script src="config.js"></script>
 <script>
   (function () {
@@ -76,8 +76,13 @@
   #skip { right: 20px; bottom: calc(110px + env(safe-area-inset-bottom)); height: 40px; padding: 0 16px; border-radius: 20px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); font-weight: 700; cursor: pointer; }
 
   /* yo'lak oxiri — manzillar */
-  #endcard { left: 50%; top: 50%; transform: translate(-50%, -40%); width: min(560px, 92vw); padding: 26px; border-radius: 24px; text-align: center; opacity: 0; pointer-events: none; transition: opacity .5s, transform .6s cubic-bezier(.2,.8,.2,1); }
+  /* manzillar — faqat so'ralganda (yo'lak oxiridagi lavha yoki pastdagi tugma) */
+  #endcard { left: 50%; top: 50%; z-index: 40; transform: translate(-50%, -40%); width: min(560px, 92vw); padding: 26px; border-radius: 24px; text-align: center; opacity: 0; pointer-events: none; transition: opacity .4s, transform .5s cubic-bezier(.2,.8,.2,1); }
   #endcard.on { opacity: 1; pointer-events: auto; transform: translate(-50%, -50%); }
+  #endclose { position: absolute; right: 12px; top: 12px; width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--line); background: transparent; color: var(--ink); font-size: 18px; cursor: pointer; }
+  #endpill { left: 50%; bottom: calc(96px + env(safe-area-inset-bottom)); transform: translate(-50%, 10px); height: 40px; padding: 0 16px; border-radius: 20px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); font-weight: 700; font-size: 13.5px; cursor: pointer; opacity: 0; pointer-events: none; transition: opacity .4s, transform .4s; }
+  #endpill.on { opacity: 1; pointer-events: auto; transform: translate(-50%, 0); }
+  body.reading #endpill { opacity: 0; pointer-events: none; }
   #endcard .lg { width: 84px; height: 84px; margin: 0 auto 10px; border-radius: 22px; background: #fff url("logo_rang.png") center / 86% no-repeat; box-shadow: 0 0 34px rgba(240,181,74,.35); }
   #endcard h3 { margin: 0 0 4px; font: 700 30px var(--serif); color: #FFE2A3; }
   #endcard p { margin: 0 0 16px; color: var(--muted); font-size: 14px; }
@@ -112,7 +117,20 @@
   #info .prices small { display: block; color: var(--muted); font-size: 12px; margin-bottom: 3px; }
   #info .prices b { font-size: 19px; } #info .prices s { color: var(--muted); font-size: 13px; margin-right: 4px; }
   #info .prices .r b { color: var(--accent); }
-  #info .st { font-size: 13.5px; margin: -6px 0 16px; }
+  #info .st { font-size: 13.5px; margin: -6px 0 16px; line-height: 1.6; }
+  #info .muted { color: var(--muted); }
+  #info h4 { margin: 4px 0 6px; font: 700 15px var(--sans); color: #FFE2A3; letter-spacing: .02em; }
+  #info .desc.full { display: block; -webkit-line-clamp: unset; overflow: visible; }
+  #info .lnk { border: 0; background: none; color: var(--accent); font: 700 13px var(--sans); padding: 0; margin: -8px 0 14px; cursor: pointer; }
+  #info .themes { font-size: 13.5px; color: #D9CBB4; margin: 0 0 16px; line-height: 1.5; }
+  #info .themes b { color: var(--ink); }
+  #info .rt { margin: -8px 0 14px; color: var(--accent); font-weight: 800; }
+  #info .rt small { color: var(--muted); font-weight: 600; }
+  #info .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  #info .row2 .btn { margin-bottom: 0; }
+  #revs { margin-top: 16px; } #revs:empty { display: none; }
+  #revs .rv { font-size: 13.5px; color: #D9CBB4; padding: 10px 12px; border-radius: 12px; background: rgba(255,255,255,.04); border: 1px solid var(--line); margin-bottom: 8px; line-height: 1.45; }
+  #revs .stars { color: var(--accent); letter-spacing: .05em; } #revs small { color: var(--muted); }
   .btn { display: flex; align-items: center; justify-content: center; height: 52px; border-radius: 16px; background: var(--accent); color: var(--accent-ink); font-weight: 800; font-size: 16px; width: 100%; margin-bottom: 10px; border: 0; cursor: pointer; }
   .btn.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); }
   .btn.ghost:hover { border-color: rgba(240,181,74,.6); }
@@ -155,7 +173,8 @@
 <div class="hud" id="note"></div>
 <div class="hud glass" id="tip" style="opacity:0"></div>
 <button type="button" class="hud" id="skip" hidden>O'tkazib yuborish ⏭</button>
-<div class="hud glass" id="endcard"><div class="lg" aria-hidden="true"></div><h3>RentBooks</h3><p>Javonlar shu yerda tugadi — biz bilan bog'laning</p><div class="ct"></div></div>
+<button type="button" class="hud" id="endpill">📇 Biz bilan bog'laning</button>
+<div class="hud glass" id="endcard" role="dialog" aria-label="Manzillar"><button type="button" id="endclose" aria-label="Yopish">✕</button><div class="lg" aria-hidden="true"></div><h3>RentBooks</h3><p>Kitob ijarasi va savdosi — biz bilan bog'laning</p><div class="ct"></div></div>
 <div class="hud" id="nav">
   <div id="chips"></div>
   <div id="pad" aria-label="Harakat tugmalari">
@@ -166,7 +185,7 @@
   </div>
 </div>
 <aside id="info" class="glass" aria-live="polite"></aside>
-<div id="drag-hint">Kitobni sichqoncha bilan aylantiring · Esc — javonga qaytarish</div>
+<div id="drag-hint">Kitobni sichqoncha bilan aylantiring (orqasida — do'kon stikeri) · Esc — javonga qaytarish</div>
 <div id="load"><div><b>RentBooks</b><span>Kutubxona eshiklari ochilmoqda…</span><i></i></div></div>
 
 <script>
