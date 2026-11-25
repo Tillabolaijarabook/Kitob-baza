@@ -11,15 +11,23 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@500;700;800&display=swap" rel="stylesheet">
-<!-- VERSIYA: k3d-2 (v31) · 3D kutubxona — faqat sayt uchun (Mini App'da ochilmaydi). Sozlamalar — config.js (javon.html bilan umumiy) -->
+<!-- VERSIYA: k3d-3 (v31) · 3D kutubxona — SODDA versiya (CSS 3D): Telegram Mini App va kuchsiz qurilmalar uchun.
+     Saytda kuchli qurilmada avtomatik boy versiyaga (kutubxona-pro.html, Three.js) o'tadi. Sozlamalar — config.js -->
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="config.js"></script>
 <script>
-  /* Telegram Mini App ichida ochilsa — oddiy do'konga qaytaramiz (bu funksiya faqat sayt uchun) */
   (function () {
     // Telegram belgilari: manzildagi #tgWebAppData, telegram-web-app.js saqlagan parametrlar (sahifadan sahifaga o'tganda ham), telefon ilovalaridagi ko'prik
     var t = window.Telegram && window.Telegram.WebApp, ss = "";
     try { ss = sessionStorage.getItem("__telegram__initParams") || ""; } catch (e) {}
-    if ((t && t.initData) || /tgWebAppData/.test(location.hash) || /tgWebAppData/.test(ss) || window.TelegramWebviewProxy) location.replace("javon.html");
+    window.RB_TG = !!((t && t.initData) || /tgWebAppData/.test(location.hash) || /tgWebAppData/.test(ss) || window.TelegramWebviewProxy);
+    // Saytda (Telegram'siz): WebGL2 bor va kamida 4 yadro — boy versiya. ?sodda=1 — majburan sodda
+    if (!window.RB_TG && !/[?&]sodda=1/.test(location.search)) {
+      try {
+        var c = document.createElement("canvas");
+        if (c.getContext("webgl2") && (navigator.hardwareConcurrency || 8) >= 4) location.replace("kutubxona-pro.html" + location.hash);
+      } catch (e) {}
+    }
   })();
 </script>
 <style>
@@ -107,6 +115,12 @@
   .neon { font: 700 64px/1 var(--serif); color: #FFE2A3; text-shadow: 0 0 8px #F0B54A, 0 0 26px #F0B54A, 0 0 60px rgba(240,181,74,.6); }
   .endwall p { margin: 0; color: var(--muted); font-size: 17px; }
   .endwall a { padding: 14px 26px; border-radius: 14px; background: var(--accent); color: var(--accent-ink); font-weight: 800; font-size: 18px; }
+  .endwall .elogo { width: 96px; height: 96px; border-radius: 24px; background: #fff url("logo_rang.png") center / 86% no-repeat; box-shadow: 0 0 30px rgba(240,181,74,.35); }
+  .endwall .ct { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; max-width: 620px; }
+  .endwall .ct a { background: rgba(255,255,255,.08); color: var(--ink); border: 1px solid rgba(255,255,255,.18); font-size: 16px; padding: 11px 18px; }
+  /* ⚡ yengil rejim (sekin telefon): mayda bezaklar o'chadi */
+  .lite .bs, .lite .bp, .lite .spn, .lite .lip { display: none; }
+  .lite .bf { box-shadow: none; }
   .poster { position: absolute; left: 50%; top: 52%; transform: translate(-50%, -50%) translateZ(4px); width: 470px; padding: 34px 34px 30px; border-radius: 18px;
             background: linear-gradient(160deg, #f6efe2, #e8dcc6); color: #1F1A14; box-shadow: 0 20px 50px rgba(0,0,0,.5); text-align: left; }
   .poster h3 { margin: 0 0 6px; font: 700 40px/1.05 var(--serif); }
@@ -114,6 +128,7 @@
   .poster .row { display: flex; gap: 12px; align-items: center; margin-top: 12px; font-size: 18px; font-weight: 700; }
   .poster .ico { width: 44px; height: 44px; flex: 0 0 auto; border-radius: 12px; background: #1F1A14; color: var(--accent); display: grid; place-items: center; font-size: 22px; }
   .poster img { width: 74px; height: 74px; border-radius: 18px; object-fit: contain; background: #fff; margin-bottom: 14px; }
+  .poster .row { margin-top: 8px; font-size: 17px; }
 
   /* ---------- interfeys ---------- */
   .hud { position: fixed; z-index: 20; }
@@ -274,6 +289,8 @@ const CONFIG = {
   "use strict";
   const $ = (s, r) => (r || document).querySelector(s);
   const BASE = CONFIG.SUPABASE_URL.replace(/\/$/, "");
+  const RB = window.RB_CONFIG || {};
+  const tg = window.RB_TG && window.Telegram && window.Telegram.WebApp;   // 📱 Telegram Mini App
   const NOCFG = !BASE || /SIZNING/.test(BASE) || !CONFIG.SUPABASE_KEY || /SIZNING/.test(CONFIG.SUPABASE_KEY);
   const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
   const fmt = (n) => String(Math.round(Number(n || 0))).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
@@ -290,7 +307,7 @@ const CONFIG = {
   const SIGN_COLORS = ["#F0B54A", "#E0533A", "#E8833A", "#3FA7A0", "#8B7BE0", "#D9577F", "#6DB257", "#4A93D6"];
 
   // ⚡ kuchsiz qurilma (≤ 4 yadro yoki ≤ 4 GB xotira): tokchada 6 kitob, 10 javon
-  const LOW = (navigator.hardwareConcurrency || 8) <= 4 || (navigator.deviceMemory || 8) <= 4;
+  const LOW = !!window.RB_TG || (navigator.hardwareConcurrency || 8) <= 4 || (navigator.deviceMemory || 8) <= 4;   // Mini App — doim yengil
   const MAX_JAVON = LOW ? Math.min(10, CONFIG.MAX_JAVON) : CONFIG.MAX_JAVON;
   const TOUCH = matchMedia("(pointer: coarse)").matches;      // telefon / planshet
   if (TOUCH) document.getElementById("hint").innerHTML = "👆 <b>Tepaga/pastga suring</b> — yurish · <b>Yonga</b> — burilish · <b>Kitobga bosing</b> — ko'ring";
@@ -375,7 +392,9 @@ const CONFIG = {
     zBack = -N * UL; zMin = zBack + 520;
 
     // kirish: ikki plakat
-    const entryL = '<div class="poster"><img src="logo_rang.png" alt="" onerror="this.remove()"><h3>RentBooks<br>kutubxonasi</h3><p>Kitob ijarasi va savdosi. Javonlar orasida yuring, yoqqan kitobni oling.</p><div class="row"><span class="ico">📢</span>@Rentbooksuz</div></div>';
+    const entryL = '<div class="poster"><img src="logo_rang.png" alt="" onerror="this.remove()"><h3>RentBooks<br>kutubxonasi</h3><p>Kitob ijarasi va savdosi. Javonlar orasida yuring, yoqqan kitobni oling.</p><div class="row"><span class="ico">📢</span>@' + esc(RB.CHANNEL || "Rentbooksuz") + '</div>' +
+      (RB.INSTAGRAM ? '<div class="row"><span class="ico">📸</span>' + esc(RB.INSTAGRAM) + '</div>' : "") +
+      '<div class="row"><span class="ico">🤖</span>@' + esc(RB.BOT_USERNAME || "Rentbooksuz_Bot") + '</div></div>';
     const entryR = '<div class="poster"><h3>Qanday<br>foydalaniladi?</h3>' + (TOUCH
       ? '<div class="row"><span class="ico">↕</span>Tepaga / pastga suring — yurish</div><div class="row"><span class="ico">↔</span>Yonga suring — burilish</div>'
       : '<div class="row"><span class="ico">🖱</span>G\'ildirak — yurish</div><div class="row"><span class="ico">↔</span>Sudrash — burilish</div>') +
@@ -419,7 +438,11 @@ const CONFIG = {
     }
     // yo'lak oxiri
     segs.push({ el: plane("endwall flat", HW * 2, UH, "translate3d(0px," + UY + "px," + zBack + "px)",
-      '<div class="neon">RentBooks</div><p>Javonlar shu yerda tugadi — barcha kitoblar saytda</p><a href="' + esc(CONFIG.SITE_URL) + '?s=catalog">Katalogni ochish →</a>'), zc: zBack });
+      '<div class="elogo" aria-hidden="true"></div><div class="neon">RentBooks</div><p>Javonlar shu yerda tugadi — barcha kitoblar saytda</p><a href="' + esc(CONFIG.SITE_URL) + '?s=catalog">Katalogni ochish →</a>' +
+      '<div class="ct">' + (RB.INSTAGRAM ? '<a href="https://www.instagram.com/' + esc(RB.INSTAGRAM) + '/" target="_blank" rel="noopener">📸 Instagram · ' + esc(RB.INSTAGRAM) + "</a>" : "") +
+      (RB.CHANNEL ? '<a href="https://t.me/' + esc(RB.CHANNEL) + '" target="_blank" rel="noopener">📢 Kanal · @' + esc(RB.CHANNEL) + "</a>" : "") +
+      (RB.BOT_USERNAME ? '<a href="https://t.me/' + esc(RB.BOT_USERNAME) + '" target="_blank" rel="noopener">🤖 Bot · @' + esc(RB.BOT_USERNAME) + "</a>" : "") +
+      '<a href="https://' + esc(RB.SITE || "rentbooks.uz") + '/" target="_blank" rel="noopener">🌐 ' + esc(RB.SITE || "rentbooks.uz") + "</a></div>"), zc: zBack });
     segs.forEach((g) => { g.fog = g.el.lastElementChild; });
 
     // pastdagi bo'lim tugmalari (bezak javonsiz)
@@ -431,7 +454,7 @@ const CONFIG = {
   const cam = { x: 0, z: 700, yaw: 0, pitch: 0 };
   const tgt = { z: 120, yaw: 0 };
   const look = { x: 0, y: 0 };
-  let P = 800, frozen = false, lastChip = -1, raf = 0, still = 0, lastT = 0;
+  let P = 800, frozen = false, lastChip = -1, raf = 0, still = 0, lastT = 0, probe = { d: [], last: 0 };
   function resize() { P = clamp(Math.round(innerWidth * 0.62), 560, 900); vp.style.perspective = P + "px"; kick(); }
   addEventListener("resize", resize);
 
@@ -478,6 +501,13 @@ const CONFIG = {
       document.querySelectorAll(".chip").forEach((c) => c.classList.toggle("on", +c.dataset.s === best));
       const on = $(".chip.on"); if (on) on.scrollIntoView({ block: "nearest", inline: "center", behavior: "smooth" });
     }
+    if (probe && t) {                                  // ⚡ birinchi ~40 kadr: sekinmi? (kamera kirish yo'lida harakatda)
+      if (probe.last) probe.d.push(t - probe.last); probe.last = t;
+      if (probe.d.length >= 40) {
+        const med = probe.d.sort((a, b) => a - b)[20]; probe = null;
+        if (med > 45) { document.body.classList.add("lite"); note("⚡ Telefoningiz uchun yengil rejim yoqildi", 2500); }
+      }
+    }
     const moving = held.size || Math.abs(dz) > 0.4 || Math.abs(dx) > 0.3 || Math.abs(dy) > 0.03 || Math.abs(dp) > 0.03;
     still = moving ? 0 : still + 1;
     if (still < 10) raf = requestAnimationFrame(frame);
@@ -518,8 +548,15 @@ const CONFIG = {
       const el = document.elementFromPoint(e.clientX, e.clientY);
       const bk = el && el.closest && el.closest(".bk");
       if (bk) openBook(slots[+bk.dataset.i]);
+      const a = !bk && el && el.closest && el.closest("a[href]");
+      if (a) openHref(a.getAttribute("href"), a.target === "_blank");
     }
   };
+  function openHref(h, ext) {
+    if (tg && /^https:\/\/t\.me\//.test(h) && tg.openTelegramLink) return tg.openTelegramLink(h);
+    if (tg && /^https:/.test(h) && tg.openLink) return tg.openLink(h);
+    if (ext) window.open(h, "_blank", "noopener"); else location.href = h;
+  }
   vp.addEventListener("pointerup", endDrag);
   vp.addEventListener("pointercancel", () => { down = null; vp.classList.remove("drag"); });
   vp.addEventListener("pointerleave", () => { look.x = 0; look.y = 0; kick(); });
@@ -710,6 +747,12 @@ const CONFIG = {
     l.innerHTML = "<div><b>" + esc(title) + "</b><span>" + esc(text) + '</span><div class="act">' +
       (retry ? '<button type="button" id="retry">🔄 Qayta urinish</button>' : "") + '<a href="' + esc(CONFIG.SITE_URL) + '">← Saytga qaytish</a></div></div>';
     if (retry) $("#retry").onclick = () => location.reload();
+  }
+
+  if (tg) {
+    try { tg.ready(); tg.expand(); if (tg.disableVerticalSwipes) tg.disableVerticalSwipes(); } catch (e) {}
+    try { tg.BackButton.show(); tg.BackButton.onClick(() => { if (open) closeBook(); else location.href = CONFIG.SITE_URL; }); } catch (e) {}
+    const back = document.querySelector('#top a.pill'); if (back) back.textContent = "← Do'konga qaytish";
   }
 
   (async function start() {
