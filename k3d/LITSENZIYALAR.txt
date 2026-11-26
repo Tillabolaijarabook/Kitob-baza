@@ -31,5 +31,5 @@ Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.p
 (MIT litsenziya matni yuqoridagi three.js bo'limidagi bilan bir xil.)
 
 3) Teksturalar (k3d/tx/*.webp) — Poly Haven (polyhaven.com), CC0 (jamoat mulki, cheklovsiz)
-   dark_wood, herringbone_parquet, dark_paneled_wood, plastered_wall, brown_leather, floral_jacquard
-   Mualliflar: Dario Barresi, Dimitrios Savva, Rico Cilliers va boshq. — rahmat!
+   herringbone_parquet (pol), plastered_wall (devorlar)
+   Mualliflar: Poly Haven jamoasi — rahmat!
