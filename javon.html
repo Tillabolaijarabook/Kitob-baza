@@ -17,6 +17,12 @@
     : (window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches);
     document.documentElement.setAttribute("data-theme", d ? "dark" : "light"); })();
 </script>
+<!-- 🎨 v31: mavzular (Avto, Kunduzgi, Tungi, Shisha, Okean…) — «Profil → 🎨 Ko'rinish». Sahifa chizilishidan OLDIN qo'llanadi (miltillamaydi) -->
+<script src="mavzular.js"></script>
+<script>
+  (function () { if (!window.RB_MAVZU) return; var r = RB_MAVZU.apply("javon");
+    if (r.dark !== null) document.documentElement.setAttribute("data-theme", r.dark ? "dark" : "light"); })();
+</script>
 <script src="vendor/qrcode.js"></script>
 <!-- ⚙️ v31: umumiy sozlamalar (Supabase manzili va ochiq kalit) — 3D kutubxona ham shundan o'qiydi -->
 <script src="config.js"></script>
@@ -1403,7 +1409,7 @@ const CONFIG = {
       '<div class="card col" style="gap:2px;padding:12px"><b style="font-size:16px">' + (me.friends || 0) + ' ta</b><span class="tiny muted">Do\'stlar</span></div></div>' +
       couponsCard(me.coupons) +
       '<div class="list">' + [["profile", "Mening ma'lumotlarim"], ["qr", "🪪 Mening QR kodim"], ["history", "📜 Balans tarixi"], ["sos", "🆘 Yordam (SOS)"],
-        ["f_request", "🙋 Kitob so'rash"], ["f_offer", "📤 Kitobingizni soting"], ["sets", "📦 To'plamlar"], ["channel", "📢 Telegram kanalimiz"], ["insta", "📸 Instagram sahifamiz"], ["til", "🌐 Til · Язык"]].map(([k, t]) =>
+        ["f_request", "🙋 Kitob so'rash"], ["f_offer", "📤 Kitobingizni soting"], ["sets", "📦 To'plamlar"], ["channel", "📢 Telegram kanalimiz"], ["insta", "📸 Instagram sahifamiz"], ["til", "🌐 Til · Язык"], ["mavzu", "🎨 Ko'rinish (mavzu)"]].map(([k, t]) =>
         '<button data-m="' + k + '"><span>' + t + '</span><span class="muted">›</span></button>').join("") + "</div>" +
       '<p class="tiny muted" style="margin:0">⚠️ Rasmiy manzillar faqat: @' + esc(CONFIG.BOT_USERNAME) + ", @" + esc(CONFIG.CHANNEL) + " va Instagram: @" + esc(CONFIG.INSTAGRAM) + ". Boshqalardan kelgan to'lov so'rovlariga ishonmang.</p>"
     );
@@ -1413,6 +1419,7 @@ const CONFIG = {
       if (k === "channel") openLink("https://t.me/" + CONFIG.CHANNEL);
       else if (k === "insta") openLink("https://www.instagram.com/" + CONFIG.INSTAGRAM + "/");
       else if (k === "til") tilSheet();
+      else if (k === "mavzu") mavzuSheet();
       else if (k.startsWith("f_")) formSheet(k.slice(2)); else go(k);
     });
   };
@@ -1428,10 +1435,11 @@ const CONFIG = {
     });
   }
   function regScreen(title) {
-    const el = view('<span class="h1">' + title + '</span><button class="btn ghost sm" id="tl" style="align-self:flex-start">🌐 Til · Язык</button><div class="card warm col"><b>Avval ro\'yxatdan o\'ting</b><span class="small muted">Botga telefon raqamingizni bir marta yuboring — shundan keyin hamma narsa shu yerda.</span><button class="btn" id="rg">Botga o\'tish</button></div>' +
+    const el = view('<span class="h1">' + title + '</span><div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn ghost sm" id="tl">🌐 Til · Язык</button><button class="btn ghost sm" id="mzb">🎨 Ko\'rinish</button></div><div class="card warm col"><b>Avval ro\'yxatdan o\'ting</b><span class="small muted">Botga telefon raqamingizni bir marta yuboring — shundan keyin hamma narsa shu yerda.</span><button class="btn" id="rg">Botga o\'tish</button></div>' +
       (DEMO ? '<div class="card small muted">Namuna rejimi: CONFIG to\'ldirilmagan.</div>' : ""));
     $("#rg", el).onclick = () => goBot("start");
     $("#tl", el).onclick = tilSheet;
+    if ($("#mzb", el)) $("#mzb", el).onclick = mavzuSheet;
   }
 
   // ---------- 👤 Mening ma'lumotlarim ----------
@@ -1692,6 +1700,7 @@ const CONFIG = {
       if (!INIT && !webTok()) { meErr = "nosign"; drawNav(); return; }
       const d = await api("me");
       if (window.TIL && d && d.til && d.til !== TIL.lang && !TIL.fromUrl) TIL.set(d.til);     // 🌐 botda tanlangan til
+      if (window.RB_MAVZU && d && d.ui_theme && d.ui_theme !== RB_MAVZU.current() && RB_MAVZU.get(d.ui_theme)) { RB_MAVZU.set(d.ui_theme); applyTheme(); }   // 🎨 akkauntdagi mavzu
       if (d.ok && d.registered) { me = d; meErr = null; }
       else if (d.ok || d.error === "NOT_REGISTERED" || d.error === "NO_PHONE") { me = null; meErr = d.error === "NOT_REGISTERED" ? "NOT_REGISTERED" : "NO_PHONE"; meStaff = !!d.is_staff; }
       else { meErr = d.error || "NETWORK"; }   // internet/server xatosi — avvalgi kabinet ma'lumoti saqlanadi
@@ -1702,6 +1711,7 @@ const CONFIG = {
   async function loadCatalog() {
     if (DEMO) { books = DEMO_BOOKS; return; }
     const fl = pub("app_flags").then((f) => { appFlags = f || {}; testRibbon(f && f.test); }).catch(() => {});
+    loadMavzular();
     try { const d = await pub("app_katalog"); books = Array.isArray(d) ? d : []; } catch (e) { if (!books.length) toast("Katalog yuklanmadi — internetni tekshiring"); }
     await fl;
   }
@@ -1712,14 +1722,30 @@ const CONFIG = {
     { id: 4, title: "Ufq", author: "Said Ahmad", genre: "Roman", available: 0, price: null, rent_fee: null, rent_30: 12, created_at: "2026-08-01" }
   ];
 
-  function applyTheme() {   // 🌗 Telegram rejimi: dark → qora, light → oq
-    const dark = tg && tg.colorScheme ? tg.colorScheme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  function applyTheme() {   // 🌗 Avto: Telegram rejimi (dark → qora, light → oq). 🎨 v31: boshqa mavzu tanlangan bo'lsa — o'sha
+    const mz = window.RB_MAVZU ? RB_MAVZU.apply("javon") : { dark: null };
+    const dark = mz.dark !== null ? mz.dark : tg && tg.colorScheme ? tg.colorScheme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
     document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
     const bg = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim();
     try { tg.setHeaderColor(bg); tg.setBackgroundColor(bg); if (tg.setBottomBarColor) tg.setBottomBarColor(bg); } catch (e) {}
   }
-  if (!tg && window.matchMedia) matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
-    document.documentElement.setAttribute("data-theme", matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"); });
+  if (!tg && window.matchMedia) matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => applyTheme());
+  // 🎨 v31: mavzu tanlash — darhol almashadi va akkauntga saqlanadi (telefon va kompyuterda bir xil)
+  function mavzuSheet() {
+    if (!window.RB_MAVZU) return;
+    sheet('<div class="h2">🎨 Ko\'rinish</div><p class="small muted" style="margin:0">Mavzu darhol almashadi' + (me && me.ok ? " va akkauntingizga saqlanadi — telefonda ham, kompyuterda ham bir xil ochiladi." : ".") +
+      " «Avto» — telefoningiz kunduzgi/tungi rejimiga qarab.</p>" + RB_MAVZU.gridHtml(RB_MAVZU.current()), (el) => {
+      $$("[data-mz]", el).forEach((b) => b.onclick = async () => {
+        const id = RB_MAVZU.set(b.dataset.mz); applyTheme(); haptic("ok");
+        $$("[data-mz]", el).forEach((x) => x.classList.toggle("on", x === b));
+        if (!DEMO && me && me.ok) { const r = await api("set_mavzu", { mavzu: id }); if (r && r.ok) me.ui_theme = id; }
+      });
+    });
+  }
+  function loadMavzular() {     // admin yaratgan qo'shimcha mavzular (bazada) — ro'yxatga qo'shiladi
+    if (DEMO || !window.RB_MAVZU) return;
+    pub("app_ui_themes").then((l) => { const was = RB_MAVZU.current(); RB_MAVZU.setCustom(l); if (/^c_/.test(was) || /^c_/.test(RB_MAVZU.current())) applyTheme(); }).catch(() => {});
+  }
 
   async function start() {
     if (tg) {

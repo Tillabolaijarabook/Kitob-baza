@@ -3,8 +3,8 @@
  * Ma'lumotlar (Supabase, kassa, mijozlar) HECH QACHON saqlanmaydi: ular har doim internetdan olinadi.
  * Sahifa har ochilganda avval internetdan yangisi olinadi — saytga yangi fayl yuklansa, ilova o'zi yangilanadi.
  */
-const CACHE = "rb-admin-v31u";
-const SHELL = ["./", "./index.html", "./til.js", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./icon-maskable-512.png"];
+const CACHE = "rb-admin-v31m";
+const SHELL = ["./", "./index.html", "./til.js", "./mavzular.js", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./icon-maskable-512.png"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => Promise.all(SHELL.map((u) => c.add(u).catch(() => null)))).then(() => self.skipWaiting()));

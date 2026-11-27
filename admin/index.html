@@ -11,6 +11,8 @@
 <!-- VERSIYA: v26 — 🖥 admin va kassir sayti (kompyuter uchun). Kirish: Telegram orqali · 🌐 til: lotin / yangi lotin / kirill -->
 <!-- 🌐 v24: til.js shu sahifa yonida (admin/til.js) turishi kerak — bo'lmasa sayt oddiy lotinda ishlayveradi -->
 <script src="til.js"></script>
+<!-- 🎨 v31: mavzular (Avto, Kunduzgi, Tungi, Shisha, Okean, Minimal apelsin…) — 🎨 Mavzu va fasl. Shu papkada turishi kerak -->
+<script src="mavzular.js"></script>
 <!-- 💻 v26: kompyuterga ilova qilib o'rnatish (Chrome / Edge). Shu papkada: manifest.webmanifest, sw.js, icon-*.png -->
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#F6F1E7">
@@ -619,16 +621,30 @@ const CONFIG = {
   function setHoliday(h) { HOL = h && h.nomi ? h : null; applyTheme(); }
   // 🌙 v23: yorug'lik rejimi — light (yumshoq, standart) / dark (tungi) / auto (kompyuter sozlamasiga qarab)
   const DARK_MQ = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
-  const isDark = () => THEME.mode === "dark" || (THEME.mode === "auto" && !!(DARK_MQ && DARK_MQ.matches));
-  if (DARK_MQ && DARK_MQ.addEventListener) DARK_MQ.addEventListener("change", () => { if (THEME.mode === "auto") applyTheme(); });
-  function applyTheme() {
+  // 🎨 v31: mavzu (palitra). Eski «Yorug'lik» tanlovi: light → Kunduzgi, dark → Tungi, auto → Avto
+  if (!THEME.palette) THEME.palette = ({ dark: "tun", auto: "auto" })[THEME.mode] || "kun";
+  const mzOf = () => (window.RB_MAVZU && RB_MAVZU.get(THEME.palette)) || { id: "kun", mode: "light" };
+  const isDark = () => { const m = mzOf(), t = m.t && window.RB_MAVZU ? RB_MAVZU.clean(m.t) : null;
+    return t ? !!t.dark : m.mode === "dark" || (m.mode === "light" ? false : !!(DARK_MQ && DARK_MQ.matches)); };
+  if (DARK_MQ && DARK_MQ.addEventListener) DARK_MQ.addEventListener("change", () => { if (mzOf().id === "auto") applyTheme(); });
+  function applyTheme(preview) {
     const b = document.body;
-    b.dataset.mode = isDark() ? "dark" : "light";
+    const HV = { "--hero-ink": "#F2F4F8", "--hero-btn": "rgba(255,255,255,.12)", "--hero-btn-b": "rgba(255,255,255,.26)", "--hero-btn-h": "rgba(255,255,255,.22)" };
+    delete b.dataset.holiday; b.style.removeProperty("--hero"); b.style.removeProperty("--acc"); Object.keys(HV).forEach((k) => b.style.removeProperty(k));
+    const mz = window.RB_MAVZU ? RB_MAVZU.apply("admin", b, preview || THEME.palette) : { dark: null };
+    b.dataset.mode = (preview ? mz.dark : isDark()) ? "dark" : "light";
     b.dataset.season = season();
     b.classList.toggle("nofx", !THEME.fx);
-    const HV = { "--hero-ink": "#F2F4F8", "--hero-btn": "rgba(255,255,255,.12)", "--hero-btn-b": "rgba(255,255,255,.26)", "--hero-btn-h": "rgba(255,255,255,.22)" };
-    if (holOn()) { b.dataset.holiday = HOL.mavzu; b.style.setProperty("--hero", holVis().hero); b.style.setProperty("--acc", holVis().acc); Object.entries(HV).forEach(([k, v]) => b.style.setProperty(k, v)); }
-    else { delete b.dataset.holiday; b.style.removeProperty("--hero"); b.style.removeProperty("--acc"); Object.keys(HV).forEach((k) => b.style.removeProperty(k)); }
+    if (holOn() && !preview) { b.dataset.holiday = HOL.mavzu; b.style.setProperty("--hero", holVis().hero); b.style.setProperty("--acc", holVis().acc); Object.entries(HV).forEach(([k, v]) => b.style.setProperty(k, v)); }
+  }
+  // akkauntdagi mavzu va admin yaratgan qo'shimcha mavzular (bazadan) — kirgandan keyin bir marta
+  let mzSynced = false;
+  async function mzSync() {
+    if (!window.RB_MAVZU) return;
+    const [l, g] = await Promise.all([call("web_ui_themes"), call("web_ui_theme_get")]);
+    if (l && Array.isArray(l.items)) RB_MAVZU.setCustom(l.items);
+    if (g && g.ok && g.theme && g.theme !== THEME.palette && RB_MAVZU.get(g.theme)) { THEME.palette = g.theme; saveTheme(); renderApp(); }
+    else applyTheme();
   }
   function saveTheme() { try { localStorage.setItem("rb_theme", JSON.stringify(THEME)); } catch (e) {} applyTheme(); }
   // fasl zarrachalari (qor, gulbarg, yaproq…): ehtiyotkor — oz va sekin
@@ -835,6 +851,7 @@ const CONFIG = {
     document.body.appendChild(el);
   }
   function renderApp() {
+    if (!mzSynced && ME) { mzSynced = true; setTimeout(mzSync, 0); }
     api("theme").then((r) => { if (r && r.ok) { testRibbon(r.test); setWxPos(r.wx); } });
     setTimeout(refreshCarts, 300);                         // 🛒 v23: ochiq savatlar — yuqoridagi panelda
     setTimeout(() => { drawDock(); pollDock(); }, 600);     // 🔔 v23: xabarlar oynalari
@@ -937,8 +954,12 @@ const CONFIG = {
   function themeModal() {
     const cur = THEME.season;
     const md = THEME.mode || "light";
-    const m = modal("🎨 Mavzu va fasl", '<b class="small">Yorug\'lik</b><div class="row">' + [["light", "🌿 Yumshoq (tavsiya)"], ["dark", "🌙 Tungi"], ["auto", "🖥 Kompyuterga qarab"]]
-        .map((x) => '<button class="paybtn' + (md === x[0] ? " on" : "") + '" data-md="' + x[0] + '">' + x[1] + "</button>").join("") + "</div>" +
+    const SUP = !!(ME && ME.super), customs = window.RB_MAVZU ? RB_MAVZU.list().filter((x) => x.custom) : [];
+    const m = modal("🎨 Mavzu va fasl", (window.RB_MAVZU ? '<b class="small">🎨 Mavzu <span class="muted" style="font-weight:400">— akkauntingizga saqlanadi (boshqa kompyuterda ham shu ochiladi)</span></b>' +
+        RB_MAVZU.gridHtml(THEME.palette, { inactive: SUP }) +
+        (SUP ? '<div class="row" style="flex-wrap:wrap"><button class="btn ghost" id="mznew">＋ Yangi mavzu</button>' +
+          customs.map((x) => '<button class="paybtn" data-mzed="' + esc(x.id) + '">✏️ ' + esc(x.e + " " + x.name) + "</button>").join("") +
+          '</div><p class="tiny muted" style="margin:0">Yangi mavzu hamma xodim va mijozlarga ko\'rinadi (saytni yangilash shart emas).</p>' : "") : "") +
       '<p class="small muted" style="margin:0">Sayt ko\'rinishi fasl bo\'yicha o\'zi almashadi. Xohlasangiz faslni qo\'lda tanlang (faqat shu kompyuterda saqlanadi).</p>' +
       '<div class="row">' + [["auto", "🔄 Avtomatik (" + SEASONS[autoSeason()].t + ")"]].concat(Object.keys(SEASONS).map((k) => [k, SEASONS[k].e + " " + SEASONS[k].t]))
         .map((x) => '<button class="paybtn' + (cur === x[0] ? " on" : "") + '" data-s="' + x[0] + '">' + esc(x[1]) + "</button>").join("") + "</div>" +
@@ -949,7 +970,7 @@ const CONFIG = {
       '<label class="row small"><input type="checkbox" id="thol"' + (THEME.holiday !== false ? " checked" : "") + "> Bayram ko'rinishi (bayramga 7 kun qolganda)" +
       (HOL ? " — hozir: " + esc(holText()) : "") + "</label>" +
       (ME && ME.super ? '<p class="tiny muted" style="margin:0">Bayram sanalari: Supabase → Table Editor → «🎉 bayramlar» (Hayit sanalarini har yili shu yerga yozasiz).</p>' : ""),
-      '<button class="btn" data-x>Tayyor</button>');
+      '<button class="btn" data-x>Tayyor</button>', true);
     // 🌐 v24: sayt yozuvi (shu kompyuterda saqlanadi). Bot va Mini App tili — har xodimning botdagi «🌐 Til» tugmasida
     if (window.TIL) {
       const box = document.createElement("div"); box.className = "col"; box.style.gap = "6px";
@@ -960,11 +981,62 @@ const CONFIG = {
     }
     $$("[data-x]", m.el).forEach((b) => b.onclick = m.close);
     $$("[data-s]", m.el).forEach((b) => b.onclick = () => { THEME.season = b.dataset.s; saveTheme(); $$("[data-s]", m.el).forEach((x) => x.classList.toggle("on", x === b)); renderApp(); });
-    $$("[data-md]", m.el).forEach((b) => b.onclick = () => { THEME.mode = b.dataset.md; saveTheme(); $$("[data-md]", m.el).forEach((x) => x.classList.toggle("on", x === b)); });
+    $$("[data-mz]", m.el).forEach((b) => b.onclick = () => {
+      THEME.palette = b.dataset.mz; saveTheme(); $$("[data-mz]", m.el).forEach((x) => x.classList.toggle("on", x === b)); renderApp();
+      call("web_ui_theme_set", { p_theme: THEME.palette }).then((r) => { if (r && r.ok === false && r.error !== "UNKNOWN_ACTION") toast(errText(r), true); });
+    });
+    if ($("#mznew", m.el)) $("#mznew", m.el).onclick = () => { m.close(); mzEditor(null); };
+    $$("[data-mzed]", m.el).forEach((b) => b.onclick = () => { m.close(); mzEditor(RB_MAVZU.get(b.dataset.mzed)); });
     $("#tfx", m.el).onchange = (e) => { THEME.fx = e.target.checked; saveTheme(); };
     $$("[data-wxm]", m.el).forEach((b) => b.onclick = () => { const v = b.dataset.wxm; THEME.wx = v === "off" ? false : v === "color" ? "color" : true; saveTheme(); wxLoad();
       $$("[data-wxm]", m.el).forEach((x) => x.classList.toggle("on", x === b)); });
     $("#thol", m.el).onchange = (e) => { THEME.holiday = e.target.checked; saveTheme(); renderApp(); };
+  }
+  // 🎨 v31: yangi mavzu yaratish / tahrirlash (superadmin). Faqat ranglar va raqamlar saqlanadi — baza ham tekshiradi
+  function mzEditor(t) {
+    const tk = Object.assign({ dark: false, bg: "#f3f2ee", bg2: "#c9d6f0", bg3: "#f0d9c9", card: "#ffffff", cardA: 1, ink: "#2c313c", muted: "#666c7a", accent: "#e2b15a", side: "#ecebe6", blur: 0, radius: 14, style: "soft" },
+      t && t.t ? RB_MAVZU.clean(t.t) : {});
+    const col = (k, label) => '<label class="col small" style="gap:4px">' + label + '<input type="color" data-k="' + k + '" value="' + esc(tk[k] || "#888888") + '" style="width:100%;height:38px;border:0;background:none;padding:0"></label>';
+    const rng = (k, label, lo, hi, v) => '<label class="col small" style="gap:2px">' + label + ' <span class="muted" data-v="' + k + '">' + v + '</span><input type="range" data-r="' + k + '" min="' + lo + '" max="' + hi + '" value="' + v + '"></label>';
+    const m = modal(t ? "✏️ Mavzuni tahrirlash" : "＋ Yangi mavzu",
+      '<div class="row"><input class="input" id="mzn" placeholder="Nomi (masalan: Yalpiz)" maxlength="40" value="' + esc(t ? t.name : "") + '" style="flex:1">' +
+      '<input class="input" id="mze" maxlength="4" value="' + esc(t ? t.e : "🎨") + '" style="width:70px;text-align:center" aria-label="Belgi (emoji)"></div>' +
+      '<label class="row small"><input type="checkbox" id="mzd"' + (tk.dark ? " checked" : "") + "> 🌙 Tungi (qorong'i) mavzu</label>" +
+      '<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px">' + col("bg", "Fon") + col("card", "Karta") + col("ink", "Matn") + col("muted", "Kulrang matn") +
+      col("accent", "Urg'u (tugma)") + col("side", "Yon panel") + col("bg2", "Fon 2") + col("bg3", "Fon 3") + "</div>" +
+      '<label class="row small"><input type="checkbox" id="mzg"' + (t && t.t && t.t.bg2 ? " checked" : "") + "> 🌈 Gradient fon (Fon 2 va Fon 3 dog'lari)</label>" +
+      '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px">' + rng("cardA", "Karta zichligi %", 5, 100, Math.round(tk.cardA * 100)) +
+      rng("blur", "Shisha xiraligi px", 0, 30, tk.blur) + rng("radius", "Burchak px", 0, 28, Math.max(0, tk.radius)) + "</div>" +
+      '<div class="row">' + [["flat", "▭ Tekis"], ["soft", "☁️ Yumshoq soya"], ["skeuo", "🪵 Bo'rtma"]].map((x) => '<button class="paybtn' + (tk.style === x[0] ? " on" : "") + '" data-st="' + x[0] + '">' + x[1] + "</button>").join("") + "</div>" +
+      '<label class="row small"><input type="checkbox" id="mza"' + (!t || t.active !== false ? " checked" : "") + "> Faol — hamma tanlay oladi</label>" +
+      '<p class="tiny muted" style="margin:0">O\'zgarishlar shu sahifada darhol ko\'rinadi (sinab ko\'ring). «Saqlash» bosilgach hamma uchun ochiladi. Shisha uchun: karta zichligini 10–60% va xiralikni 12–20 px qiling.</p>',
+      '<button class="btn" id="mzs">💾 Saqlash</button>' + (t ? '<button class="btn ghost" id="mzdel">🗑 O\'chirish</button>' : "") + '<button class="btn ghost" data-x>Bekor</button>', true);
+    let style = tk.style;
+    const tokens = () => { const o = { dark: $("#mzd", m.el).checked, style };
+      $$("[data-k]", m.el).forEach((i) => { o[i.dataset.k] = i.value.toLowerCase(); });
+      if (!$("#mzg", m.el).checked) { delete o.bg2; delete o.bg3; }
+      $$("[data-r]", m.el).forEach((i) => { o[i.dataset.r] = i.dataset.r === "cardA" ? Number(i.value) / 100 : Number(i.value); });
+      return o; };
+    const live = () => applyTheme({ id: "preview", t: tokens() });
+    m.el.addEventListener("input", (e) => { if (e.target.dataset.r) $('[data-v="' + e.target.dataset.r + '"]', m.el).textContent = e.target.value; live(); });
+    m.el.addEventListener("change", live);
+    $$("[data-st]", m.el).forEach((b) => b.onclick = () => { style = b.dataset.st; $$("[data-st]", m.el).forEach((x) => x.classList.toggle("on", x === b)); live(); });
+    const done = () => { m.close(); applyTheme(); renderApp(); };
+    $$("[data-x]", m.el).forEach((b) => b.addEventListener("click", () => { m.close(); applyTheme(); }));
+    m.el.addEventListener("mousedown", (e) => { if (e.target === m.el) applyTheme(); });
+    $("#mzs", m.el).onclick = async () => {
+      const name = $("#mzn", m.el).value.trim(); if (!name) return toast("Mavzu nomini yozing", true);
+      const r = await call("web_ui_theme_save", { p_id: t ? t.id : null, p_name: name, p_emoji: $("#mze", m.el).value.trim() || "🎨", p_tokens: JSON.stringify(tokens()), p_active: $("#mza", m.el).checked });
+      if (!r || r.ok === false) return toast(errText(r), true);
+      toast("✅ Mavzu saqlandi — hamma tanlay oladi"); await mzSync(); done();
+    };
+    if ($("#mzdel", m.el)) $("#mzdel", m.el).onclick = async () => {
+      if (!confirm("«" + t.name + "» mavzusi o'chirilsinmi? Uni tanlaganlar «Avto» ga qaytadi.")) return;
+      const r = await call("web_ui_theme_delete", { p_id: t.id }); if (!r || r.ok === false) return toast(errText(r), true);
+      if (THEME.palette === t.id) { THEME.palette = "auto"; saveTheme(); }
+      toast("O'chirildi"); await mzSync(); done();
+    };
+    live();
   }
   function setBadge(n) { pendingN = n; const b = $("#pbadge"); if (b) { b.textContent = n; b.classList.toggle("hidden", !n); } }
   setInterval(() => { if (ME && document.visibilityState === "visible") refreshBadge(); }, 30000);
