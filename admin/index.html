@@ -303,6 +303,43 @@ tr.click { cursor: pointer; }
 .bar .b2 { display: flex; gap: 3px; align-items: flex-end; width: 100%; justify-content: center; flex: 1; }
 .bar i { display: block; width: 40%; max-width: 22px; border-radius: 5px 5px 0 0; min-height: 2px; }
 .legend { display: flex; gap: 14px; font-size: 12px; color: var(--mut); }
+/* 📊 v31: grafiklar (SVG, mavzu ranglariga moslashadi) */
+.ch { display: block; width: 100%; height: auto; overflow: visible; }
+.ch .cg { stroke: var(--line); stroke-width: 1; stroke-dasharray: 3 4; }
+.ch .cy, .ch .cx { font-size: 11px; fill: var(--mut); font-family: inherit; }
+.ch .cy { text-anchor: end; } .ch .cx { text-anchor: middle; }
+.ch .cl { animation: chDraw 1s ease-out both; stroke-dasharray: 2000; }
+.ch .cp { transition: r .12s; cursor: pointer; } .ch .cp:hover { r: 6.5; }
+.ch .hit { fill: transparent; cursor: crosshair; } .ch .vline { stroke: var(--mut); stroke-width: 1; stroke-dasharray: 2 3; opacity: 0; } .ch g.hv:hover .vline { opacity: .6; }
+@keyframes chDraw { from { stroke-dashoffset: 2000; } to { stroke-dashoffset: 0; } }
+.dnut { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+.dnut svg { width: 150px; height: 150px; flex: 0 0 auto; }
+.dnut svg circle.sg { transition: stroke-width .15s, opacity .15s; cursor: pointer; } .dnut svg circle.sg:hover { stroke-width: 24; }
+.dnut text { pointer-events: none; }
+.dnut .c1 { font-size: 15px; font-weight: 750; fill: var(--ink); text-anchor: middle; } .dnut .c2 { font-size: 10px; fill: var(--mut); text-anchor: middle; }
+.dnl { flex: 1; min-width: 160px; display: flex; flex-direction: column; gap: 7px; font-size: 13px; }
+.dnl div { display: flex; align-items: center; gap: 8px; } .dnl i { width: 10px; height: 10px; border-radius: 3px; flex: 0 0 auto; }
+.dnl span { flex: 1; color: var(--mut); } .dnl b { font-weight: 700; } .dnl small { color: var(--mut); width: 38px; text-align: right; }
+.hbars { display: flex; flex-direction: column; gap: 9px; margin-top: 10px; }
+.hbars .r { display: grid; grid-template-columns: minmax(90px, 30%) 1fr auto; gap: 10px; align-items: center; font-size: 13px; }
+.hbars .t { display: flex; flex-direction: column; gap: 3px; } .hbars .t i { display: block; height: 9px; border-radius: 5px; min-width: 2px; transform-origin: left; animation: hbIn .7s ease-out both; }
+@keyframes hbIn { from { transform: scaleX(0); } to { transform: none; } }
+.fun { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+.fun .st { position: relative; margin: 0 auto; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; color: #fff; font-size: 13.5px; font-weight: 650; min-width: 180px; max-width: 100%; transition: width .6s; }
+.fun .st small { font-weight: 600; opacity: .9; } .fun .cv { text-align: center; font-size: 11.5px; color: var(--mut); }
+.heat { display: grid; grid-template-columns: 26px repeat(15, 1fr); gap: 3px; margin-top: 10px; font-size: 10.5px; color: var(--mut); }
+.heat i { height: 22px; border-radius: 5px; background: var(--hover); cursor: default; } .heat span { display: grid; place-items: center; }
+.hsp { display: block; width: 100%; height: 34px; margin-top: 6px; }
+#chtip { position: fixed; z-index: 99; pointer-events: none; padding: 7px 10px; border-radius: 10px; background: rgba(20,22,28,.92); color: #fff; font-size: 12px; line-height: 1.4; box-shadow: 0 8px 24px rgba(0,0,0,.25); opacity: 0; transition: opacity .12s; max-width: 260px; }
+#chtip.on { opacity: 1; }
+.skel { background: linear-gradient(90deg, var(--hover), var(--card), var(--hover)); background-size: 200% 100%; animation: skl 1.2s infinite; }
+@keyframes skl { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+/* 📋 v31: jadvallar — zebra, hover, ustun bo'yicha saralash */
+.tw tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--hover) 55%, transparent); }
+.tw tbody tr:hover td { background: var(--hover); }
+.tw thead th { cursor: pointer; user-select: none; white-space: nowrap; } .tw thead th:hover { color: var(--ink); }
+.tw thead th[data-sort]::after { content: " ▲"; font-size: 9px; } .tw thead th[data-sort="desc"]::after { content: " ▼"; }
+@media (prefers-reduced-motion: reduce) { .ch .cl, .hbars .t i { animation: none; } }
 .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
 
 /* 🏠 bosh sahifa */
@@ -1157,9 +1194,148 @@ const CONFIG = {
   // HEMIS kartasi: katta raqam, sarlavha, qo'shimcha qatorlar, pastda izoh
   const hc = (o) => '<div class="hc' + (o.tone ? " " + o.tone : "") + (o.to || o.k ? " click" : "") + '"' + (o.to ? ' data-go="' + o.to + '"' : "") + (o.k ? ' data-k="' + o.k + '"' : "") + ">" +
     '<div class="hb"><div class="hi">' + (IC[o.ic] || "") + '</div><div class="hv">' + o.v + (o.u ? "<small>" + o.u + "</small>" : "") + "</div>" +
-    '<div class="ht">' + o.t + (o.dl ? " " + o.dl : "") + "</div>" + (o.l || []).filter(Boolean).map((x) => '<div class="hl">' + x[0] + ": <b>" + x[1] + "</b></div>").join("") + "</div>" +
+    '<div class="ht">' + o.t + (o.dl ? " " + o.dl : "") + "</div>" + (o.l || []).filter(Boolean).map((x) => '<div class="hl">' + x[0] + ": <b>" + x[1] + "</b></div>").join("") +
+    (o.sp ? sparkline(o.sp, o.spc || "var(--hc)") : "") + "</div>" +
     (o.f ? '<div class="hf">' + o.f + "</div>" : "") + "</div>";
   const nf = (n) => fmt(n);
+  // =====================================================================================================
+  // 📊 v31: GRAFIKLAR — SVG, tashqi kutubxonasiz; ranglar mavzudan (CSS o'zgaruvchilari). Sichqoncha bilan aniq raqam
+  // =====================================================================================================
+  const CHC = ["var(--blue)", "var(--ok)", "var(--acc)", "var(--red)", "#8E44AD", "#3FA7A0", "#E8833A", "#9AA2BC", "#D9577F", "#5B7C99"];
+  const OYQ = ["Yan", "Fev", "Mar", "Apr", "May", "Iyn", "Iyl", "Avg", "Sen", "Okt", "Noy", "Dek"];
+  const shortN = (v) => { v = Number(v) || 0; const a = Math.abs(v); return a >= 1e9 ? (v / 1e9).toFixed(1).replace(".0", "") + " mlrd" : a >= 1e6 ? (v / 1e6).toFixed(1).replace(".0", "") + " mln"
+    : a >= 1e4 ? Math.round(v / 1e3) + " ming" : String(Math.round(v)); };
+  const niceMax = (m) => { if (m <= 0) return 1; const p = Math.pow(10, Math.floor(Math.log10(m))), f = m / p; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * p; };
+  function smoothPath(pts) {
+    if (!pts.length) return ""; let d = "M" + pts[0][0].toFixed(1) + "," + pts[0][1].toFixed(1);
+    for (let i = 0; i < pts.length - 1; i++) { const p0 = pts[i - 1] || pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || p2;
+      d += " C" + (p1[0] + (p2[0] - p0[0]) / 6).toFixed(1) + "," + (p1[1] + (p2[1] - p0[1]) / 6).toFixed(1) + " " + (p2[0] - (p3[0] - p1[0]) / 6).toFixed(1) + "," +
+        (p2[1] - (p3[1] - p1[1]) / 6).toFixed(1) + " " + p2[0].toFixed(1) + "," + p2[1].toFixed(1); }
+    return d;
+  }
+  let chUid = 0, CHW = 0;
+  // to'lqinli chiziq + gradient fon. labels: [..], series: [{ label, color, values: [..], money }]
+  function areaChart(labels, series, o) {
+    o = o || {}; const W = Math.round(o.w || CHW || 640), H = o.h || 220, pl = 52, pr = 14, pt = 14, pb = 28, n = labels.length;   // eni — haqiqiy piksel (yozuvlar kattalashmaydi)
+    const max = niceMax(Math.max(1, ...series.flatMap((x) => x.values.map((v) => Number(v) || 0))));
+    const X = (i) => pl + (n < 2 ? (W - pl - pr) / 2 : i * (W - pl - pr) / (n - 1)), Y = (v) => pt + (1 - (Number(v) || 0) / max) * (H - pt - pb);
+    let g = "", defs = "";
+    for (let k = 0; k <= 4; k++) { const v = max * k / 4, yy = Y(v).toFixed(1); g += '<line class="cg" x1="' + pl + '" x2="' + (W - pr) + '" y1="' + yy + '" y2="' + yy + '"/><text class="cy" x="' + (pl - 8) + '" y="' + (+yy + 4) + '">' + shortN(v) + "</text>"; }
+    labels.forEach((l, i) => { if (n <= 14 || i % Math.ceil(n / 12) === 0) g += '<text class="cx" x="' + X(i).toFixed(1) + '" y="' + (H - 8) + '">' + esc(l) + "</text>"; });
+    series.forEach((sr, si) => {
+      const id = "chg" + (++chUid), pts = sr.values.map((v, i) => [X(i), Y(v)]), d = smoothPath(pts);
+      defs += '<linearGradient id="' + id + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:' + sr.color + ';stop-opacity:.30"/><stop offset="1" style="stop-color:' + sr.color + ';stop-opacity:0"/></linearGradient>';
+      if (!o.noFill && pts.length) g += '<path d="' + d + " L" + pts[pts.length - 1][0].toFixed(1) + "," + Y(0).toFixed(1) + " L" + pts[0][0].toFixed(1) + "," + Y(0).toFixed(1) + ' Z" style="fill:url(#' + id + ')"/>';
+      g += '<path class="cl" d="' + d + '" style="fill:none;stroke:' + sr.color + ';stroke-width:2.6;stroke-linecap:round"/>';
+    });
+    // har bir nuqta ustida ko'rinmas ustun: sichqoncha → barcha qatorlar qiymati
+    labels.forEach((l, i) => {
+      const tipTxt = (o.full ? o.full[i] : l) + "\n" + series.map((sr) => sr.label + ": " + (sr.money ? som(sr.values[i]) : nf(sr.values[i]))).join("\n");
+      const w = n < 2 ? W - pl - pr : (W - pl - pr) / (n - 1);
+      g += '<g class="hv" data-tip="' + esc(tipTxt) + '"><rect class="hit" x="' + (X(i) - w / 2).toFixed(1) + '" y="' + pt + '" width="' + w.toFixed(1) + '" height="' + (H - pt - pb) + '"/><line class="vline" x1="' + X(i).toFixed(1) + '" x2="' + X(i).toFixed(1) + '" y1="' + pt + '" y2="' + (H - pb) + '"/>' +
+        series.map((sr) => '<circle class="cp" cx="' + X(i).toFixed(1) + '" cy="' + Y(sr.values[i]).toFixed(1) + '" r="3.6" style="fill:var(--card);stroke:' + sr.color + ';stroke-width:2"/>').join("") + "</g>";
+    });
+    return '<svg class="ch" viewBox="0 0 ' + W + " " + H + '"><defs>' + defs + "</defs>" + g + "</svg>";
+  }
+  // halqa diagramma. parts: [{ label, value, color }], o: { money, center, sub }
+  function donutChart(parts, o) {
+    o = o || {}; parts = parts.filter((p) => Number(p.value) > 0);
+    const tot = parts.reduce((a, p) => a + Number(p.value), 0), R = 52, C = 2 * Math.PI * R;
+    if (!tot) return '<div class="empty" style="padding:18px">Ma\'lumot yo\'q</div>';
+    let off = 0;
+    const segs = parts.map((p, i) => { const f = Number(p.value) / tot, len = Math.max(0, f * C - (parts.length > 1 ? 2 : 0));
+      const sg = '<circle class="sg" cx="75" cy="75" r="' + R + '" fill="none" style="stroke:' + (p.color || CHC[i % CHC.length]) + '" stroke-width="18" stroke-dasharray="' + len.toFixed(2) + " " + C.toFixed(2) +
+        '" stroke-dashoffset="' + (-off * C).toFixed(2) + '" transform="rotate(-90 75 75)" data-tip="' + esc(p.label + ": " + (o.money ? som(p.value) : nf(p.value)) + " (" + Math.round(f * 100) + "%)") + '"/>';
+      off += f; return sg; }).join("");
+    return '<div class="dnut"><svg viewBox="0 0 150 150"><circle cx="75" cy="75" r="' + R + '" fill="none" style="stroke:var(--hover)" stroke-width="18"/>' + segs +
+      '<text class="c1" x="75" y="76">' + esc(o.center != null ? o.center : (o.money ? shortN(tot) : nf(tot))) + '</text><text class="c2" x="75" y="92">' + esc(o.sub || "jami") + "</text></svg>" +
+      '<div class="dnl">' + parts.map((p, i) => '<div><i style="background:' + (p.color || CHC[i % CHC.length]) + '"></i><span>' + esc(p.label) + "</span><b>" + (o.money ? shortN(p.value) : nf(p.value)) + "</b><small>" +
+        Math.round(Number(p.value) / tot * 100) + "%</small></div>").join("") + "</div></div>";
+  }
+  // gorizontal ustunlar (janrlar): rows: [{ label, vals: [..] }], keys: [{ label, color, money }]
+  function hBars(rows, keys) {
+    if (!rows.length) return '<div class="empty" style="padding:18px">Ma\'lumot yo\'q</div>';
+    const mx = keys.map((k, j) => Math.max(1, ...rows.map((r) => Number(r.vals[j]) || 0)));
+    return '<div class="hbars">' + rows.map((r) => '<div class="r" data-tip="' + esc(r.label + "\n" + keys.map((k, j) => k.label + ": " + (k.money ? som(r.vals[j]) : nf(r.vals[j]))).join("\n")) + '"><span>' + esc(r.label) + '</span><div class="t">' +
+      keys.map((k, j) => '<i style="width:' + Math.max(1, (Number(r.vals[j]) || 0) / mx[j] * 100) + "%;background:" + k.color + '"></i>').join("") + "</div><b>" + keys.map((k, j) => k.money ? shortN(r.vals[j]) : nf(r.vals[j])).join(" · ") + "</b></div>").join("") + "</div>";
+  }
+  // voronka: steps: [{ label, n, color }]
+  function funnel(steps) {
+    const top = Math.max(1, Number(steps[0].n) || 0);
+    return '<div class="fun">' + steps.map((st, i) => {
+      const prev = i ? Math.max(1, Number(steps[i - 1].n) || 0) : null, w = Math.max(28, (Number(st.n) || 0) / top * 100);
+      return (i ? '<div class="cv">↓ ' + Math.round((Number(st.n) || 0) / prev * 100) + "% o'tdi</div>" : "") +
+        '<div class="st" style="width:' + w + "%;background:" + st.color + '" data-tip="' + esc(st.label + ": " + nf(st.n) + " (" + Math.round((Number(st.n) || 0) / top * 100) + "% boshidan)") + '"><span>' + esc(st.label) + "</span><small>" + nf(st.n) + "</small></div>";
+    }).join("") + "</div>";
+  }
+  // issiqlik xaritasi: hafta kuni × soat (8–22)
+  function heatMap(cells) {
+    const map = {}; let mx = 1; (cells || []).forEach((c_) => { map[c_.d + ":" + c_.h] = Number(c_.n); mx = Math.max(mx, Number(c_.n)); });
+    const WD = ["", "Du", "Se", "Ch", "Pa", "Ju", "Sh", "Ya"];
+    let h = '<div class="heat"><span></span>' + Array.from({ length: 15 }, (_, i) => "<span>" + (i + 8) + "</span>").join("");
+    for (let dw = 1; dw <= 7; dw++) { h += "<span>" + WD[dw] + "</span>";
+      for (let hr = 8; hr <= 22; hr++) { const v = map[dw + ":" + hr] || 0, p = v ? 18 + Math.round(v / mx * 82) : 0;
+        h += '<i data-tip="' + WD[dw] + ", " + hr + ":00–" + (hr + 1) + ":00 — " + v + ' ta amal"' + (p ? ' style="background:color-mix(in srgb, var(--acc) ' + p + '%, var(--hover))"' : "") + "></i>"; } }
+    return h + "</div>";
+  }
+  // kartadagi kichik grafik
+  function sparkline(vals, color) {
+    vals = (vals || []).map((v) => Number(v) || 0); if (vals.length < 2) return "";
+    const W = 200, H = 34, mx = Math.max(1, ...vals), pts = vals.map((v, i) => [i * W / (vals.length - 1), H - 3 - v / mx * (H - 8)]), d = smoothPath(pts), id = "chs" + (++chUid);
+    return '<svg class="hsp" viewBox="0 0 ' + W + " " + H + '" preserveAspectRatio="none"><defs><linearGradient id="' + id + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:' + color + ';stop-opacity:.25"/><stop offset="1" style="stop-color:' + color + ';stop-opacity:0"/></linearGradient></defs>' +
+      '<path d="' + d + " L" + W + "," + H + " L0," + H + ' Z" style="fill:url(#' + id + ')"/><path d="' + d + '" style="fill:none;stroke:' + color + ';stroke-width:2" vector-effect="non-scaling-stroke"/></svg>';
+  }
+  // sichqoncha ostidagi aniq raqam (barcha grafiklar uchun bitta)
+  (() => {
+    const tp = document.createElement("div"); tp.id = "chtip"; document.body.appendChild(tp);
+    document.addEventListener("mouseover", (e) => { const t = e.target.closest && e.target.closest("[data-tip]"); if (!t) { tp.classList.remove("on"); return; }
+      tp.innerHTML = esc(t.getAttribute("data-tip")).replace(/\n/g, "<br>"); tp.classList.add("on"); });
+    document.addEventListener("mousemove", (e) => { if (!tp.classList.contains("on")) return; const x = Math.min(innerWidth - tp.offsetWidth - 8, e.clientX + 14), y = Math.min(innerHeight - tp.offsetHeight - 8, e.clientY + 14);
+      tp.style.left = x + "px"; tp.style.top = y + "px"; });
+    // 📋 jadval ustunini bosish — saralash (raqamlar raqamdek, matn — alifbo bo'yicha)
+    document.addEventListener("click", (e) => {
+      const th = e.target.closest && e.target.closest(".tw thead th"); if (!th || e.target.closest("button,a,input,select")) return;
+      const tb = th.closest("table").tBodies[0]; if (!tb || tb.rows.length < 2) return;
+      const i = [...th.parentNode.children].indexOf(th), dir = th.dataset.sort === "asc" ? "desc" : "asc";
+      [...th.parentNode.children].forEach((x) => delete x.dataset.sort); th.dataset.sort = dir;
+      const num = (t) => { const m = t.replace(/\s|so'm|ta|%/g, "").replace(",", ".").replace("−", "-").match(/^-?\d+(\.\d+)?/); return m ? parseFloat(m[0]) : null; };
+      const col = new Intl.Collator("uz", { numeric: true, sensitivity: "base" });
+      const rows = [...tb.rows].filter((r) => r.cells.length > i);
+      rows.sort((a, b) => { const x = a.cells[i].innerText.trim(), y = b.cells[i].innerText.trim(), nx = num(x), ny = num(y);
+        const r = nx != null && ny != null ? nx - ny : col.compare(x, y); return dir === "asc" ? r : -r; });
+      rows.forEach((r) => tb.appendChild(r));
+    });
+  })();
+  // 12 oylik tendensiya va boshqa ma'lumot (SQL 28: web_insights) — oy bo'yicha xotirada
+  const INS = {};
+  const insights = (month) => (INS[month] = INS[month] || call("web_insights", { p_month: month }));
+  const INSV = {
+    trend: (r, d) => { const t = r.trend || [], lb = t.map((x) => OYQ[+x.m.slice(5) - 1]), full = t.map((x) => monthName(x.m));
+      const se = r.fin ? [{ label: "Kirim", color: "var(--ok)", money: true, values: t.map((x) => x.money ? x.money.jami : 0) }, { label: "Xarajat", color: "var(--red)", money: true, values: t.map((x) => x.expense || 0) }]
+        : [{ label: "Berildi (ijara)", color: "var(--blue)", values: t.map((x) => x.given) }, { label: "Sotildi", color: "var(--ok)", values: t.map((x) => x.sold) }];
+      return legend(se) + areaChart(lb, se, { full }); },
+    trendRent: (r) => { const t = r.trend || [], se = [{ label: "Berildi", color: "var(--blue)", values: t.map((x) => x.given) }, { label: "Qaytdi", color: "var(--acc)", values: t.map((x) => x.returned) }];
+      return legend(se) + areaChart(t.map((x) => OYQ[+x.m.slice(5) - 1]), se, { full: t.map((x) => monthName(x.m)), h: 200 }); },
+    trendUsers: (r) => { const t = r.trend || [], se = [{ label: "Yangi mijozlar", color: "var(--ok)", values: t.map((x) => x.new_users) }];
+      return legend(se) + areaChart(t.map((x) => OYQ[+x.m.slice(5) - 1]), se, { full: t.map((x) => monthName(x.m)), h: 200 }); },
+    trendSales: (r) => { const t = r.trend || [], se = r.fin ? [{ label: "Sotuv summasi", color: "var(--ok)", money: true, values: t.map((x) => x.sales_sum || 0) }] : [{ label: "Sotildi", color: "var(--ok)", values: t.map((x) => x.sold) }];
+      return legend(se) + areaChart(t.map((x) => OYQ[+x.m.slice(5) - 1]), se, { full: t.map((x) => monthName(x.m)), h: 200 }); },
+    genres: (r) => { const keys = [{ label: "Ijara", color: "var(--blue)" }, { label: "Sotuv", color: "var(--ok)" }];
+      return legend(keys) + hBars((r.genres || []).map((g) => ({ label: g.name, vals: [g.rent, g.sold] })), keys); },
+    heat: (r) => heatMap(r.heat) + '<p class="tiny muted" style="margin:8px 0 0">Oxirgi 90 kun: kitob berish va sotuvlar. To\'qroq — gavjumroq.</p>',
+    funnel: (r) => { const f = r.funnel || {}; return funnel([{ label: "Bron qilindi", n: f.bron, color: "var(--blue)" }, { label: "Kitob berildi", n: f.given, color: "#5B7C99" },
+      { label: "Qaytarildi", n: f.returned, color: "var(--acc)" }, { label: "O'z vaqtida", n: f.on_time, color: "var(--ok)" }]) +
+      (Number(f.cancelled) ? '<p class="tiny muted" style="margin:8px 0 0">Bekor qilingan bronlar: <b>' + f.cancelled + "</b></p>" : ""); },
+  };
+  async function fillIns(c, d) {
+    const boxes = $$("[data-ins]", c); if (!boxes.length) return;
+    const r = await insights(d.month);
+    if (!r || r.ok === false) delete INS[d.month];
+    boxes.forEach((b) => { if (!b.isConnected) return;
+      if (!r || r.ok === false) { b.innerHTML = '<div class="tiny muted" style="padding:14px 0">' + (r && (r.error === "UNKNOWN_ACTION" || r.error === "SERVER" || r.error === "DB") ? "📊 Bu grafik uchun Supabase'da <b>28_v31_grafiklar.sql</b> ni ishga tushiring (va admin darvozasini yangilang)." : esc(errText(r))) + "</div>"; return; }
+      try { CHW = Math.max(300, b.clientWidth || 640); b.innerHTML = INSV[b.dataset.ins](r, d); } catch (e) { b.innerHTML = ""; } finally { CHW = 0; } });
+  }
+  const insCard = (title, key, extra) => '<div class="card pad"><b>' + title + "</b>" + (extra || "") + '<div data-ins="' + key + '" style="margin-top:8px"><div class="skel" style="height:180px;border-radius:12px"></div></div></div>';
   const delta = (a, b) => {                                         // o'tgan oyga nisbatan
     a = Number(a || 0); b = Number(b || 0);
     if (!b && !a) return "";
@@ -1267,9 +1443,9 @@ const CONFIG = {
     $("#mprev", c).onclick = () => { const i = ms.indexOf(d.month); if (ms[i + 1]) { homeMonth = ms[i + 1]; VIEWS.home(c); } };
     $("#mnext", c).onclick = () => { const i = ms.indexOf(d.month); if (i > 0) { homeMonth = ms[i - 1]; VIEWS.home(c); } };
     if ($("#mnow", c)) $("#mnow", c).onclick = () => { homeMonth = null; VIEWS.home(c); };
-    $("#hrel", c).onclick = () => VIEWS.home(c);
+    $("#hrel", c).onclick = () => { delete INS[d.month]; VIEWS.home(c); };
     $$("[data-t]", c).forEach((b) => b.onclick = () => { homeTab = b.dataset.t; try { localStorage.setItem("rb_home_tab", homeTab); } catch (e) {} $$("[data-t]", c).forEach((x) => x.classList.toggle("on", x === b)); draw(); });
-    const draw = () => { $("#hbody", c).innerHTML = (HT[homeTab] || HT.umumiy)(d); bind(); };
+    const draw = () => { $("#hbody", c).innerHTML = (HT[homeTab] || HT.umumiy)(d); bind(); fillIns(c, d); };
     const bind = () => {
       $$("[data-go]", c).forEach((x) => x.onclick = () => { const [p, f] = x.dataset.go.split(":"); rentFilter = f || "all"; if (ITEM[p] && allowed(ITEM[p].perm)) go(p); else toast("⛔ Bu bo'lim sizga yopiq", true); });
       $$("[data-k]", c).forEach((x) => x.onclick = () => (HK[x.dataset.k] || (() => {}))(d));
@@ -1312,18 +1488,25 @@ const CONFIG = {
         hc({ v: n.overdue, u: "ta", t: "Muddati o'tgan", ic: "alert", tone: Number(n.overdue) ? "red" : "", to: "rentals:overdue", l: [["Bugun qaytishi kerak", n.due_today]], f: "Qaytarish muddati o'tib ketgan — jarima yoziladi" }) +
         hc({ v: n.deliveries, u: "ta", t: "Faol yetkazishlar", ic: "truck", to: "deliveries", f: "Kuryerga berilgan yoki kutilayotgan yetkazishlar" });
       if (F) {
-        h += hc({ v: nf(t.money.jami), u: "so'm", t: "Bugungi kirim", ic: "cash", tone: "ok", k: "money", l: moneyLines(t), f: "Bosing — naqd, PK va o'tkazma: kun, hafta, oy bo'yicha" }) +
+        const spM = (d.days || []).map((x) => x.money ? x.money.jami : 0);
+        h += hc({ v: nf(t.money.jami), u: "so'm", t: "Bugungi kirim", ic: "cash", tone: "ok", k: "money", l: moneyLines(t), sp: spM, spc: "var(--ok)", f: "Bosing — naqd, PK va o'tkazma: kun, hafta, oy bo'yicha" }) +
           hc({ v: nf(w.money.jami), u: "so'm", t: "Haftalik kirim (7 kun)", ic: "chart", k: "money", l: moneyLines(w), f: "Oxirgi 7 kunda kassaga tushgan pul" }) +
-          hc({ v: nf(mo.money.jami), u: "so'm", dl: delta(mo.money.jami, pv.money.jami), t: mn + " kirimi", ic: "trend", k: "money", l: moneyLines(mo), f: "Oy davomida kassaga tushgan pul (o'tgan oyga nisbatan)" }) +
-          hc({ v: nf(mo.expense), u: "so'm", dl: delta(mo.expense, pv.expense), t: mn + " xarajatlari", ic: "wallet", tone: "warn", k: "exp", l: (d.exp_types || []).slice(0, 3).map((x) => [esc(x.name), som(x.sum)]), f: "Tasdiqlangan xarajatlar, turi bo'yicha" + (Number(d.exp_pending) ? " · " + d.exp_pending + " ta tasdiq kutyapti" : "") }) +
+          hc({ v: nf(mo.money.jami), u: "so'm", dl: delta(mo.money.jami, pv.money.jami), t: mn + " kirimi", ic: "trend", k: "money", l: moneyLines(mo), sp: spM, f: "Oy davomida kassaga tushgan pul (o'tgan oyga nisbatan)" }) +
+          hc({ v: nf(mo.expense), u: "so'm", dl: delta(mo.expense, pv.expense), t: mn + " xarajatlari", ic: "wallet", tone: "warn", k: "exp", l: (d.exp_types || []).slice(0, 3).map((x) => [esc(x.name), som(x.sum)]), sp: (d.days || []).map((x) => x.expense || 0), spc: "var(--warn)", f: "Tasdiqlangan xarajatlar, turi bo'yicha" + (Number(d.exp_pending) ? " · " + d.exp_pending + " ta tasdiq kutyapti" : "") }) +
           hc({ v: nf(Number(mo.revenue) - Number(mo.expense)), u: "so'm", t: "Sof natija (" + mn + ")", ic: "pie", tone: Number(mo.revenue) - Number(mo.expense) < 0 ? "red" : "ok", k: "rev", l: [["Daromad", som(mo.revenue)], ["Xarajat", som(mo.expense)]], f: "Daromad minus xarajatlar (bosing — daromad turlari)" }) +
           hc({ v: nf(n.my_cash), u: "so'm", t: "Qo'limdagi naqd", ic: "cash", to: "kassa", l: [["Barcha kassirlarda", som(n.all_cash)], ["Hisob raqamda", som(n.schot)]], f: "Sizning kassangiz — topshirish Kassa bo'limida" });
       } else {
-        h += hc({ v: t.given, u: "ta", t: "Bugun berildi", ic: "book", l: [["Qaytarildi", t.returned], ["Sotildi", t.sold]], f: "Bugungi ish natijasi" }) +
+        h += hc({ v: t.given, u: "ta", t: "Bugun berildi", ic: "book", l: [["Qaytarildi", t.returned], ["Sotildi", t.sold]], sp: (d.days || []).map((x) => x.given), f: "Bugungi ish natijasi" }) +
           hc({ v: mo.given, u: "ta", t: mn + ": berildi", ic: "chart", l: [["Qaytarildi", mo.returned], ["Sotildi", mo.sold]], f: "Oy bo'yicha kitob harakati" }) +
           hc({ v: nf(n.my_cash), u: "so'm", t: "Qo'limdagi naqd", ic: "cash", to: "kassa", f: "Sizning kassangiz — topshirish Kassa bo'limida" });
       }
       h += "</div>";
+      // 📊 v31: 12 oylik dinamika + halqa (kirim tarkibi / fond holati)
+      const bk = d.books || {};
+      h += '<div class="two" style="margin-top:14px">' + insCard("📈 12 oylik dinamika", "trend") +
+        '<div class="card pad"><b>' + (F ? "🍩 Kirim tarkibi — " + mn : "📚 Kitoblar fondi — hozir") + "</b>" +
+        (F ? donutChart(["naqd", "karta", "schot", "onlayn"].map((k) => ({ label: PAYN[k].replace(/^\S+ /, ""), value: mo.money[k], color: PAYC[k] })), { money: true, sub: "so'm" })
+           : donutChart([["bosh", "Bo'sh", "#1E8E4E"], ["ijarada", "Ijarada", "#2F4FD8"], ["band", "Bron", "#B7791F"], ["kuryerda", "Kuryerda", "#8E44AD"]].map((x) => ({ label: x[1], value: bk[x[0]], color: x[2] })), { sub: "nusxa" })) + "</div></div>";
       const series = F ? ["naqd", "karta", "schot", "onlayn"].map((k) => ({ label: PAYN[k].replace(/^\S+ /, ""), color: PAYC[k], money: true, get: (x) => x.money[k] }))
         : [{ label: "Berildi", color: "var(--blue)", get: (x) => x.given }, { label: "Qaytdi", color: "var(--acc)", get: (x) => x.returned }, { label: "Sotildi", color: "var(--ok)", get: (x) => x.sold }];
       h += '<div class="card pad" style="margin-top:14px"><div class="row between"><b>' + (F ? "Kunlik kirim — " : "Kunlik harakat — ") + mn + "</b>" + legend(series) + "</div>" + stackChart(d.days || [], series) + "</div>";
@@ -1342,6 +1525,9 @@ const CONFIG = {
       h += '<div class="two" style="margin-top:14px"><div class="card pad"><b>Kirim tarkibi — ' + mn + "</b>" + share + legend(["naqd", "karta", "schot", "onlayn"].map((k) => ({ label: PAYN[k].replace(/^\S+ /, ""), color: PAYC[k] }))) +
         '<div style="margin-top:10px">' + [["Jami kirim", som(m.jami)], ["Naqd qaytarildi", "−" + som(m.qaytim)], ["To'lovlar soni", m.n], ["Tuzatilgan to'lovlar", m.fixed || 0]].map((x) => '<div class="kv"><span>' + x[0] + "</span><b>" + x[1] + "</b></div>").join("") + "</div></div>" +
         '<div class="card pad"><b>Daromad turlari — ' + mn + "</b>" + ((d.rev_types || []).length ? (d.rev_types || []).map((x) => '<div class="kv"><span>' + esc(x.name) + ' <span class="tiny muted">· ' + x.n + "</span></span><b>" + som(x.sum) + "</b></div>").join("") : '<div class="empty">Yo\'q</div>') + "</div></div>";
+      h += '<div class="two" style="margin-top:14px"><div class="card pad"><b>🍩 Daromad turlari — ' + mn + "</b>" + donutChart((d.rev_types || []).map((x) => ({ label: x.name, value: x.sum })), { money: true, sub: "so'm" }) + "</div>" +
+        '<div class="card pad"><b>🍩 Xarajat turlari — ' + mn + "</b>" + donutChart((d.exp_types || []).map((x, i) => ({ label: x.name, value: x.sum, color: CHC[(i + 3) % CHC.length] })), { money: true, sub: "so'm" }) + "</div></div>";
+      h += '<div style="margin-top:14px">' + insCard("📈 Kirim va xarajat — 12 oy", "trend") + "</div>";
       const series = [{ label: "Kirim", color: "var(--ok)", money: true, get: (x) => x.money.jami }, { label: "Xarajat", color: "var(--red)", money: true, get: (x) => x.expense }];
       h += '<div class="card pad" style="margin-top:14px"><div class="row between"><b>Kirim va xarajat — kunlar bo\'yicha</b>' + legend(series) + "</div>" + stackChart(d.days || [], series) + "</div>";
       return h;
@@ -1355,6 +1541,8 @@ const CONFIG = {
         hc({ v: d.today.sold, u: "ta", t: "Bugun sotildi", ic: "tag", l: [["7 kunda", d.week.sold], F ? ["Bugungi summa", som(d.today.sales_sum)] : null], f: "Bugungi sotuvlar" }) + "</div>";
       h += '<div class="two" style="margin-top:14px"><div class="card pad"><b>🏆 Eng ko\'p sotilgan — ' + mn + "</b>" + ((d.top_sold || []).length ? (d.top_sold || []).map((x, i) => '<div class="kv"><span>' + (i + 1) + ". " + esc(x.title) + "</span><b>" + x.n + " ta" + (x.sum != null ? ' <span class="tiny muted">· ' + som(x.sum) + "</span>" : "") + "</b></div>").join("") : '<div class="empty">Bu oy sotuv yo\'q</div>') + "</div>" +
         '<div class="card pad"><b>To\'lov turi bo\'yicha</b>' + (F && (d.sales_pay || []).length ? d.sales_pay.map((x) => '<div class="kv"><span>' + esc(PAYM(x.pay)) + ' <span class="tiny muted">· ' + x.n + " ta</span></span><b>" + som(x.sum) + "</b></div>").join("") : '<div class="empty">' + (F ? "Yo'q" : "Faqat hisobot vakolati bilan") + "</div>") + "</div></div>";
+      if (F && (d.sales_pay || []).length) h += '<div class="two" style="margin-top:14px"><div class="card pad"><b>🍩 To\'lov turlari — ' + mn + "</b>" + donutChart(d.sales_pay.map((x) => ({ label: PAYM(x.pay), value: x.sum })), { money: true, sub: "so'm" }) + "</div>" + insCard("📈 Sotuv — 12 oy", "trendSales") + "</div>";
+      else h += '<div style="margin-top:14px">' + insCard("📈 Sotuv — 12 oy", "trendSales") + "</div>";
       const series = [{ label: "Sotildi", color: "var(--ok)", get: (x) => x.sold }];
       h += '<div class="card pad" style="margin-top:14px"><div class="row between"><b>Kunlik sotuv — ' + mn + "</b>" + legend(series) + "</div>" + stackChart(d.days || [], series, 140) + "</div>";
       return h;
@@ -1369,6 +1557,7 @@ const CONFIG = {
       h += '<div class="two" style="margin-top:14px"><div class="card pad"><b>📖 Eng ko\'p ijaraga olingan — ' + mn + "</b>" + ((d.top_rent || []).length ? d.top_rent.map((x, i) => '<div class="kv"><span>' + (i + 1) + ". " + esc(x.title) + "</span><b>" + x.n + " marta</b></div>").join("") : '<div class="empty">Yo\'q</div>') + "</div>";
       const series = [{ label: "Berildi", color: "var(--blue)", get: (x) => x.given }, { label: "Qaytdi", color: "var(--acc)", get: (x) => x.returned }];
       h += '<div class="card pad"><div class="row between"><b>Kunlar bo\'yicha</b>' + legend(series) + "</div>" + stackChart(d.days || [], series, 200) + "</div></div>";
+      h += '<div class="two" style="margin-top:14px">' + insCard("🔻 Bron voronkasi — " + mn, "funnel", '<div class="tiny muted">Oy ichida ochilgan ijara bronlari qayergacha yetdi</div>') + insCard("📈 Ijara — 12 oy", "trendRent") + "</div>";
       return h;
     },
     kitob: (d) => {
@@ -1383,6 +1572,7 @@ const CONFIG = {
         (d.fin ? hc({ v: nf(b.value), u: "so'm", t: "Fond qiymati (tannarx)", ic: "wallet", f: "Do'kondagi va mijozlardagi nusxalar tannarxi" }) : "") + "</div>";
       h += '<div class="card pad" style="margin-top:14px"><b>Fond tarkibi</b><div class="sbar" style="height:14px;margin:10px 0">' + parts.map((x) => '<i title="' + x[1] + ": " + b[x[0]] + '" style="width:' + (Number(b[x[0]]) / tot * 100) + "%;background:" + x[2] + '"></i>').join("") + "</div>" +
         legend(parts.map((x) => ({ label: x[1] + " — " + b[x[0]], color: x[2] }))) + "</div>";
+      h += '<div class="card pad" style="margin-top:14px"><b>🍩 Fond tarkibi</b>' + donutChart(parts.map((x) => ({ label: x[1], value: b[x[0]], color: x[2] })), { sub: "nusxa" }) + "</div>";
       return h;
     },
     mijoz: (d) => {
@@ -1393,7 +1583,8 @@ const CONFIG = {
         hc({ v: u.renters, u: "nafar", t: "Hozir o'qiyotganlar", ic: "book", to: "rentals", f: "Qo'lida ijara kitobi bor mijozlar" }) +
         hc({ v: u.buyers, u: "nafar", t: "Xaridorlar (" + mn + ")", ic: "cart", f: "Shu oy kitob sotib olgan mijozlar (anonimlarsiz)" }) +
         hc({ v: u.debtors, u: "nafar", t: "Qarzdor mijozlar", ic: "alert", tone: Number(u.debtors) ? "red" : "", l: [F ? ["Jami qarz", som(u.debt)] : null], f: "Jarima yoki zarar uchun qarzi bor" }) +
-        (F ? hc({ v: nf(u.cashback), u: "so'm", t: "Keshbek (" + mn + ")", ic: "wallet", f: "Mijozlar balansiga qaytgan keshbek" }) : "") + "</div>";
+        (F ? hc({ v: nf(u.cashback), u: "so'm", t: "Keshbek (" + mn + ")", ic: "wallet", f: "Mijozlar balansiga qaytgan keshbek" }) : "") + "</div>" +
+        '<div style="margin-top:14px">' + insCard("📈 Yangi mijozlar — 12 oy", "trendUsers") + "</div>";
     },
     // 📊 v23: tahlil — gavjum soat/kunlar, o'rtacha chek, qaytib kelgan mijozlar, janrlar, kutilgan kitoblar, filiallar
     tahlil: (d) => {
@@ -1406,7 +1597,9 @@ const CONFIG = {
       let h = '<div class="hgrid">' +
         (F ? hc({ v: nf(x.avg_sale || 0), u: "so'm", t: "O'rtacha chek — sotuv", ic: "cart", f: mn + " bo'yicha" }) + hc({ v: nf(x.avg_rent || 0), u: "so'm", t: "O'rtacha ijara haqi", ic: "book", f: "Qaytarilgan ijaralar bo'yicha" }) : "") +
         hc({ v: share, u: "%", t: "Qaytib kelgan mijozlar", ic: "users", l: [["Mijozlar", x.customers || 0], ["Bir martadan ko'p", x.returning || 0]], f: "Oy ichida 2+ marta kelganlar ulushi" }) + "</div>" +
-        '<div class="two" style="margin-top:14px"><div class="card pad"><b>⏰ Gavjum soatlar</b>' + bars(x.hours || [], "h", hrs) + '</div><div class="card pad"><b>📅 Hafta kunlari</b>' + bars(x.weekdays || [], "d", wd) + "</div></div>";
+        '<div class="two" style="margin-top:14px"><div class="card pad"><b>⏰ Gavjum soatlar</b>' + bars(x.hours || [], "h", hrs) + '</div><div class="card pad"><b>📅 Hafta kunlari</b>' + bars(x.weekdays || [], "d", wd) + "</div></div>" +
+        '<div style="margin-top:14px">' + insCard("🔥 Qachon gavjum — hafta kuni × soat", "heat") + "</div>" +
+        '<div class="two" style="margin-top:14px">' + insCard("📚 Janrlar — " + mn, "genres") + insCard("🔻 Bron voronkasi — " + mn, "funnel") + "</div>";
       if (F && (x.genres || []).length) h += '<div class="card tw" style="margin-top:14px"><div class="pad"><b>📚 Janrlar bo\'yicha daromad</b></div><table><tbody>' + x.genres.map((g) => "<tr><td>" + esc(g.name) + "</td><td>" + g.n + " ta</td><td><b>" + som(g.sum) + "</b></td></tr>").join("") + "</tbody></table></div>";
       if ((x.waited || []).length) h += '<div class="card tw" style="margin-top:14px"><div class="pad"><b>🔔 Eng ko\'p kutilayotgan kitoblar</b> <span class="tiny muted">(navbat — hozir)</span></div><table><tbody>' + x.waited.map((w) => "<tr><td>" + esc(w.title) + "</td><td><b>" + w.n + "</b> kishi</td></tr>").join("") + "</tbody></table></div>";
       if (F && (x.stores || []).length) h += '<div class="card tw" style="margin-top:14px"><div class="pad"><b>🏬 Filiallar (sotuv)</b></div><table><tbody>' + x.stores.map((s_) => "<tr><td>" + esc(s_.name) + "</td><td>" + s_.n + " ta</td><td><b>" + som(s_.sum) + "</b></td></tr>").join("") + "</tbody></table></div>";
