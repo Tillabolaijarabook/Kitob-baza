@@ -1116,12 +1116,24 @@ const CONFIG = {
       if (!r.ok) return toast(errText(r), true);
       $("#cstep", m.el).classList.remove("hidden");
       $("#chint", m.el).textContent = r.sent ? "✅ Kod yuborildi (" + r.ttl + " daqiqa amal qiladi). Mijoz aytgan raqamni kiriting." : "⚠️ Telegram'ga yetmadi (mijoz botni bloklagan bo'lishi mumkin). Kodsiz bajaring.";
-      sb.textContent = "🔁 Qayta yuborish"; $("#code", m.el).focus();
+      sb.textContent = "🔁 Qayta yuborish"; if (m.otp) m.otp.focus(); else $("#code", m.el).focus();
     };
+    // 🔐 v31: 5 ta katak — mijoz aytgan kod to'lishi bilan darhol tekshiriladi (✓ yashil / ✗ silkinadi)
+    const ci = $("#code", m.el);
+    if (ci && window.RB_UI && !m.otp) {
+      const box = document.createElement("div"); ci.replaceWith(box);
+      m.otp = RB_UI.otp(box, { n: 5, name: "code", label: "Mijoz kodi", onDone: async (code) => {
+        m.otp.busy(true); const v = await api("verify_code", { purpose, id, code }); m.otp.busy(false);
+        const hint = $("#chint", m.el);
+        if (v && v.ok) { m.otp.ok(); m.el.dataset.codeOk = code; if (hint) hint.textContent = "✅ Kod to'g'ri — endi amalni bajaring."; }
+        else { delete m.el.dataset.codeOk; m.otp.bad(); toast(errText(v), true); }
+      } });
+    }
   }
   // kod kiritilgan bo'lsa tekshiradi; kodsiz sabab bo'lsa o'shani qaytaradi. null — davom etib bo'lmaydi
   async function confirmStep(m, purpose, id) {
     const code = ($("#code", m.el) || {}).value, ncr = (($("#ncr", m.el) || {}).value || "").trim();
+    if (code && m.el.dataset.codeOk === code) return { no_code_reason: null };          // kataklar to'lganda tekshirilgan
     if (code && code.replace(/\D/g, "").length === 5) {
       const v = await api("verify_code", { purpose, id, code });
       if (!v.ok) { toast(errText(v), true); return null; }

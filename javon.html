@@ -414,7 +414,7 @@ const CONFIG = {
         '<button class="btn" id="go">' + (m === "register" ? "Ro'yxatdan o'tish" : "Saqlash") + "</button></div>" +
         '<span class="small muted">Kod botimizga bog\'langan raqamga <b>Telegram\'dagi @' + esc(CONFIG.BOT_USERNAME) + '</b> orqali keladi' + (smsOn ? ", aks holda SMS bilan (kuniga 2, haftasiga 5 ta)" : "") + '. Keyin kirish — parol bilan.</span>';
       if (m === "device") h += (devVia !== "sms" && waitTok
-          ? '<div class="card" style="padding:12px;border-radius:12px;background:rgba(46,125,50,.10);border:1px solid rgba(46,125,50,.35)"><b>📲 Telegram\'dagi @' + esc(CONFIG.BOT_USERNAME) + ' botimizni oching va «✅ Ha, menman» tugmasini bosing.</b><br><span class="small muted" id="waitst">⏳ Tasdiq kutilmoqda… bosilishi bilan sayt o\'zi ochiladi.</span></div>' +
+          ? '<div class="card" style="padding:12px;border-radius:12px;background:rgba(46,125,50,.10);border:1px solid rgba(46,125,50,.35)"><b>📲 Telegram\'dagi @' + esc(CONFIG.BOT_USERNAME) + ' botimizni oching va «✅ Ha, menman» tugmasini bosing.</b><br><span class="small muted" id="waitst"><span class="rb-wait"></span>Tasdiq kutilmoqda… bosilishi bilan sayt o\'zi ochiladi.</span></div>' +
             '<span class="small muted">Tugma ishlamasa — xabardagi zaxira kodni yozing:</span>'
           : '<span class="small muted">🔐 Yangi qurilmadan kirilmoqda — xavfsizlik uchun tasdiq kodi ' + (devVia === "sms" ? "SMS bilan" : "<b>Telegram\'dagi @" + esc(CONFIG.BOT_USERNAME) + " botimizga</b>") + ' yuborildi.</span>') +
         field("cd", "Kod", "text", "6 xonali") + '<button class="btn" id="go">Tasdiqlash</button>' +
@@ -435,7 +435,7 @@ const CONFIG = {
         if (!el.isConnected || tok !== waitTok || Date.now() - t0 > 600e3) return;
         const r = await api("auth_wait", { wait: tok, device: devId() });
         if (!el.isConnected || tok !== waitTok) return;
-        if (r && r.ok) { waitTok = null; toast("✅ Tasdiqlandi"); return afterLogin(r); }
+        if (r && r.ok) { waitTok = null; return doneThen(el, r); }
         const st = $("#waitst", el);
         if (r && r.error === "DENIED") { waitTok = null; if (st) st.textContent = "❌ Botda «Bu men emasman» bosildi — kirish rad etildi."; return toast("❌ Kirish rad etildi"); }
         if (r && (r.error === "WAIT_EXPIRED" || r.error === "WAIT_USED" || r.error === "WAIT_BAD")) { if (st) st.textContent = "⌛ Kutish tugadi — kodni yozing yoki kodni qayta yuboring."; return; }
@@ -443,9 +443,26 @@ const CONFIG = {
       };
       waitT = setTimeout(tick, 2500);
     };
+    // 🔐 v31: ✓ «Tasdiqlandi» (konfetti) — keyin kabinet ochiladi
+    const doneThen = (el, r) => {
+      const tt = $(".toast"); if (tt) tt.style.display = "none";          // eski «kod noto'g'ri» xabari qolmasin
+      if (window.RB_UI) { RB_UI.done(el, "Tasdiqlandi", r.staff ? "Boshqaruv paneli ochilmoqda…" : "Kabinetingiz ochilmoqda…"); haptic("ok"); setTimeout(() => afterLogin(r), 1150); }
+      else { toast("✅ Tasdiqlandi"); afterLogin(r); }
+    };
     const open = (m) => { stopWait(); return sheet(draw(m), (el) => {
       if (m === "device") startWait(el);
       const v = (id) => ($("#" + id, el) ? $("#" + id, el).value.trim() : "");
+      // 🔐 v31: kod — 6 ta alohida katak (videodagidek): yozilsa keyingisiga o'tadi, telefon SMS/Telegram kodini o'zi taklif qiladi,
+      //    to'lishi bilan: yangi qurilmada — darhol tekshiriladi; ro'yxatdan o'tishda — keyingi maydonga o'tadi
+      let otpCtl = null, busy = false;
+      const cdIn = $("#cd", el);
+      if (cdIn && window.RB_UI) {
+        const box = document.createElement("div"); cdIn.replaceWith(box);
+        otpCtl = RB_UI.otp(box, { n: 6, name: "cd", label: "Tasdiqlash kodi",
+          onDone: () => { if (m === "device") $("#go", el).click(); else { const nx = $("#nm", el) || $("#pw", el); if (nx) nx.focus(); } },
+          onEnter: () => $("#go", el).click() });
+        if (m === "device") setTimeout(() => otpCtl.focus(), 350);
+      }
       if ($("#toreg", el)) $("#toreg", el).onclick = (e) => { e.preventDefault(); open("register"); };
       if ($("#torst", el)) $("#torst", el).onclick = (e) => { e.preventDefault(); open("reset"); };
       if ($("#sms", el)) $("#sms", el).onclick = async () => {
@@ -453,7 +470,7 @@ const CONFIG = {
         const r = await api("auth_sms", { phone, purpose: m === "register" ? "register" : "reset" });
         if (r && r.error === "SMS_OFF") return viaAdmin(m);           // botga bog'lanmagan raqam, SMS yopiq — admin orqali
         if (!r.ok) return toast(authErr(r));
-        phone = r.phone; $("#step2", el).style.display = ""; $("#sms", el).style.display = "none";
+        phone = r.phone; $("#step2", el).style.display = ""; $("#sms", el).style.display = "none"; if (otpCtl) setTimeout(() => otpCtl.focus(), 50);
         toast(r.via === "telegram" ? "📩 Kod Telegram'dagi botimizga yuborildi" : "📩 Kod SMS bilan yuborildi");
       };
       if ($("#resend", el)) $("#resend", el).onclick = async (e) => {     // qayta yuborish = parol bilan qayta kirish (kod o'zi ketadi)
@@ -465,6 +482,10 @@ const CONFIG = {
       };
       if ($("#tobotd", el)) $("#tobotd", el).onclick = (e) => { e.preventDefault(); goBot("start"); };
       $("#go", el).onclick = async () => {
+        if (busy) return; busy = true; const gb = $("#go", el); if (gb) gb.disabled = true; if (otpCtl) otpCtl.busy(true);
+        try { await goRun(); } finally { busy = false; if (gb) gb.disabled = false; if (otpCtl) otpCtl.busy(false); }
+      };
+      const goRun = async () => {
         let r;
         if (m === "login") { phone = v("ph"); pwKeep = $("#pw", el).value; r = await api("auth_login", { phone, password: pwKeep, device: devId() }); }
         if (m === "register") r = await api("auth_register", { phone, code: v("cd"), password: $("#pw", el).value, name: v("nm"), device: devId() });
@@ -477,7 +498,9 @@ const CONFIG = {
         if (r && r.error === "NEED_DEVICE_CODE") {           // 🤖 v31 (U06): kod parol tekshirilgach darvozaning o'zi yuborgan
           phone = r.phone || phone; devVia = r.via || "telegram"; waitTok = r.wait || null; return open("device");
         }
+        if (r && r.error === "WRONG_CODE" && otpCtl) { otpCtl.bad(); return toast(authErr(r)); }
         if (!r || !r.ok) return toast(authErr(r));
+        if (m === "device" || m === "register") { if (otpCtl) otpCtl.ok(); return doneThen(el, r); }
         afterLogin(r);
       };
     }); };

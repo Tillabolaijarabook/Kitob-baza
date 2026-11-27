@@ -214,4 +214,79 @@
       try { localStorage.setItem(LSC, JSON.stringify(custom)); } catch (e) {}
     }
   };
+
+  // =====================================================================================================
+  // 🔐 UMUMIY UI: katakli tasdiqlash kodi (OTP) va «✓ Tasdiqlandi» oynasi — sayt va admin panel birga ishlatadi
+  //   RB_UI.otp(host, { n: 6, name: "cd", onDone(code), onEnter() }) → { value, focus, clear, bad, ok, busy }
+  //     • raqam yozilsa keyingi katakka o'tadi, Backspace — orqaga, joylashtirish (paste) va telefonning
+  //       «SMS'dagi kod» taklifi butun kodni kataklarga taqsimlaydi; to'lishi bilan onDone chaqiriladi
+  //     • name — yashirin <input id="name"> (eski kod o'sha maydondan o'qiydi)
+  //   RB_UI.done(host, sarlavha, izoh) — yashil ✓ va konfetti
+  // =====================================================================================================
+  var UI_CSS = ".rb-otp{display:flex;gap:8px;justify-content:center;position:relative;margin:2px 0}" +
+    ".rb-otp input{flex:1 1 0;min-width:0;max-width:52px;height:58px;padding:0;text-align:center;font-family:inherit;font-size:24px;font-weight:700;border-radius:14px;" +
+      "border:1.5px solid var(--line);background:var(--card);color:var(--ink);caret-color:var(--accent,var(--acc));transition:border-color .15s,box-shadow .15s,transform .12s,background .2s;-webkit-appearance:none;appearance:none}" +
+    ".rb-otp input:focus{outline:none;border-color:var(--accent,var(--acc));box-shadow:0 0 0 4px color-mix(in srgb,var(--accent,var(--acc)) 22%,transparent)}" +
+    ".rb-otp input.f{border-color:color-mix(in srgb,var(--accent,var(--acc)) 55%,var(--line));transform:translateY(-1px)}" +
+    ".rb-otp.busy input{opacity:.55}" +
+    ".rb-otp.bad input{border-color:var(--red);color:var(--red);animation:rbShake .42s}" +
+    ".rb-otp.ok input{border-color:var(--ok);color:var(--ok);background:color-mix(in srgb,var(--ok) 10%,var(--card))}" +
+    "@keyframes rbShake{0%,100%{transform:none}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}" +
+    ".rb-done{display:flex;flex-direction:column;align-items:center;gap:8px;padding:26px 8px 18px;text-align:center;position:relative;overflow:hidden}" +
+    ".rb-done .ck{width:78px;height:78px;border-radius:24px;display:grid;place-items:center;background:color-mix(in srgb,var(--ok) 15%,transparent);border:2px solid var(--ok);animation:rbPop .5s cubic-bezier(.2,1.6,.4,1)}" +
+    ".rb-done .ck svg{width:40px;height:40px;stroke:var(--ok);stroke-width:3;fill:none;stroke-dasharray:30;stroke-dashoffset:30;animation:rbDraw .45s .2s forwards}" +
+    ".rb-done b{font-size:20px;color:var(--ok)}.rb-done span{font-size:13.5px;opacity:.75}" +
+    ".rb-done i{position:absolute;width:7px;height:7px;border-radius:2px;left:50%;top:64px;opacity:0;animation:rbConf 1.1s ease-out forwards}" +
+    "@keyframes rbPop{from{transform:scale(.4);opacity:0}to{transform:none;opacity:1}}@keyframes rbDraw{to{stroke-dashoffset:0}}" +
+    "@keyframes rbConf{0%{opacity:1;transform:translate(0,0) rotate(0)}100%{opacity:0;transform:translate(var(--x),var(--y)) rotate(260deg)}}" +
+    ".rb-wait{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--ok);margin-right:6px;vertical-align:1px;animation:rbPulse 1.2s ease-in-out infinite}" +
+    "@keyframes rbPulse{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--ok) 55%,transparent)}50%{box-shadow:0 0 0 7px transparent}}" +
+    "@media (prefers-reduced-motion: reduce){.rb-otp.bad input,.rb-done .ck,.rb-done i,.rb-wait{animation:none}.rb-done .ck svg{stroke-dashoffset:0;animation:none}}";
+  function uiCss() { if (document.getElementById("rb-ui-css")) return; var s = document.createElement("style"); s.id = "rb-ui-css"; s.textContent = UI_CSS; (document.head || document.documentElement).appendChild(s); }
+  function otp(host, o) {
+    uiCss(); o = o || {};
+    var n = o.n || 6, h = "", fired = "";
+    host.classList.add("rb-otp"); host.setAttribute("role", "group"); host.setAttribute("aria-label", o.label || "Tasdiqlash kodi");
+    for (var i = 0; i < n; i++) h += '<input inputmode="numeric" pattern="[0-9]*" maxlength="' + (i ? 1 : n) + '" aria-label="' + (i + 1) + '-raqam" autocomplete="' + (i ? "off" : "one-time-code") + '">';
+    host.innerHTML = h + (o.name ? '<input type="hidden" id="' + esc(o.name) + '">' : "");
+    var ins = [].slice.call(host.querySelectorAll("input:not([type=hidden])")), hid = o.name ? host.querySelector('input[type="hidden"]') : null;
+    function val() { return ins.map(function (x) { return x.value; }).join(""); }
+    function sync() {
+      var v = val(); ins.forEach(function (x) { x.classList.toggle("f", !!x.value); }); if (hid) hid.value = v;
+      if (v.length === n && /^\d+$/.test(v)) { if (v !== fired) { fired = v; if (o.onDone) o.onDone(v); } } else fired = "";
+    }
+    function fill(from, d) { for (var k = 0; k < d.length && from + k < n; k++) ins[from + k].value = d.charAt(k); ins[Math.min(from + d.length, n - 1)].focus(); sync(); }
+    ins.forEach(function (inp, i) {
+      inp.addEventListener("input", function () { host.classList.remove("bad"); var d = inp.value.replace(/\D/g, ""); inp.value = ""; if (d.length) fill(i, d); else sync(); });
+      inp.addEventListener("keydown", function (e) {
+        if (e.key === "Backspace" && !inp.value && i > 0) { ins[i - 1].value = ""; ins[i - 1].focus(); sync(); e.preventDefault(); }
+        else if (e.key === "ArrowLeft" && i > 0) ins[i - 1].focus(); else if (e.key === "ArrowRight" && i < n - 1) ins[i + 1].focus();
+        else if (e.key === "Enter" && o.onEnter) o.onEnter();
+      });
+      inp.addEventListener("paste", function (e) { var t = ((e.clipboardData || window.clipboardData).getData("text") || "").replace(/\D/g, ""); if (t) { e.preventDefault(); fill(i, t); } });
+      inp.addEventListener("focus", function () { try { inp.select(); } catch (e) {} });
+    });
+    return {
+      value: val,
+      focus: function () { var e = ins.filter(function (x) { return !x.value; })[0] || ins[n - 1]; e.focus(); },
+      clear: function () { ins.forEach(function (x) { x.value = ""; }); host.classList.remove("ok", "bad"); fired = ""; sync(); ins[0].focus(); },
+      bad: function () {
+        host.classList.remove("ok", "bad"); void host.offsetWidth; host.classList.add("bad");
+        try { if (navigator.vibrate) navigator.vibrate([30, 40, 30]); } catch (e) {}
+        setTimeout(function () { ins.forEach(function (x) { x.value = ""; }); fired = ""; sync(); ins[0].focus(); }, 450);
+      },
+      ok: function () { host.classList.remove("bad"); host.classList.add("ok"); ins.forEach(function (x) { x.blur(); }); },
+      busy: function (b) { host.classList.toggle("busy", !!b); ins.forEach(function (x) { x.disabled = !!b; }); }
+    };
+  }
+  function done(host, title, sub) {
+    uiCss();
+    var cf = "", cols = ["var(--ok)", "var(--accent,var(--acc))", "#4F8CFF", "#F2C14E", "#E0533A"];
+    for (var i = 0; i < 22; i++) { var a = (i / 22) * Math.PI * 2, r = 70 + (i % 4) * 26;
+      cf += '<i style="--x:' + Math.round(Math.cos(a) * r) + "px;--y:" + Math.round(Math.sin(a) * r * 0.8 + 30) + "px;background:" + cols[i % cols.length] + ";animation-delay:" + (0.15 + (i % 5) * 0.03) + 's"></i>'; }
+    host.innerHTML = '<div class="rb-done" role="status"><div class="ck"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>' +
+      "<b>" + esc(title || "Tasdiqlandi") + "</b>" + (sub ? "<span>" + esc(sub) + "</span>" : "") + cf + "</div>";
+    try { if (navigator.vibrate) navigator.vibrate(40); } catch (e) {}
+  }
+  window.RB_UI = { otp: otp, done: done };
 })();
